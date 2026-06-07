@@ -1,0 +1,55 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: law-ai-postgres
+    restart: unless-stopped
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lawai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lawai_password}
+      POSTGRES_DB: ${POSTGRES_DB:-law_ai}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-lawai}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: law-ai-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '4000:4000'
+    env_file:
+      - apps/backend/.env
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+    volumes:
+      - ./apps/backend/src:/app/src
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    container_name: law-ai-frontend
+    depends_on:
+      - backend
+    ports:
+      - '3000:3000'
+    env_file:
+      - apps/frontend/.env.local
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:4000
+
+volumes:
+  postgres_data:

@@ -1,0 +1,45 @@
+{
+  "name": "@law-ai/frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LAW AI Frontend - Next.js 14 + Tailwind + shadcn/ui + NextAuth.js",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf .next .turbo .tsbuildinfo"
+  },
+  "dependencies": {
+    "@auth/core": "^0.34.3",
+    "@hookform/resolvers": "^3.9.0",
+    "@law-ai/shared": "workspace:*",
+    "@radix-ui/react-label": "^2.1.0",
+    "@radix-ui/react-slot": "^1.1.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.395.0",
+    "next": "13.5.6",
+    "next-auth": "4.24.7",
+    "next-themes": "0.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.52.1",
+    "tailwind-merge": "^2.3.0",
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@law-ai/config": "workspace:*",
+    "@types/node": "^20.14.2",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.19",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "13.5.6",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /dev/null -w \"FE home: HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -i http://localhost:3000/api/auth/providers -H \"Origin: http://localhost:3000\")",
+      "Bash(node dist/apply-migration.js)",
+      "Bash(curl -s -o /dev/null -w \"FE 3000: HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s --max-time 8 -o /dev/null -w \"FE 3000: HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(netstat -ano)",
+      "Bash(cat /tmp/landing.html | head -c 2000)",
+      "Read(//tmp/**)"
+    ]
+  }
+}

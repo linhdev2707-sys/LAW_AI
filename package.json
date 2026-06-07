@@ -1,0 +1,33 @@
+{
+  "name": "law-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LAW AI - Turborepo monorepo (Next.js + NestJS + TypeORM + PostgreSQL)",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json,yml,yaml}\"",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "type-check": "turbo run type-check",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
+    "db:migrate": "pnpm --filter @law-ai/backend migration:run",
+    "db:migrate:generate": "pnpm --filter @law-ai/backend migration:generate",
+    "db:migrate:revert": "pnpm --filter @law-ai/backend migration:revert",
+    "db:seed": "pnpm --filter @law-ai/backend seed"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "prettier-plugin-tailwindcss": "^0.5.13",
+    "turbo": "^1.13.0",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.0.0"
+}

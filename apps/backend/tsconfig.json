@@ -1,0 +1,15 @@
+{
+  "extends": "@law-ai/config/tsconfig/nest.json",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "tsBuildInfoFile": "./.tsbuildinfo",
+    "strictPropertyInitialization": false
+  },
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
