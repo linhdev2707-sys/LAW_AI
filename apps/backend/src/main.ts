@@ -13,11 +13,16 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('BACKEND_PORT', 4000);
-  const corsOrigin = configService.get<string>(
-    'BACKEND_CORS_ORIGIN',
-    configService.get<string>('CORS_ORIGIN', 'http://localhost:3000'),
+  // Railway/Render inject PORT env var; fall back to BACKEND_PORT for local
+  const port = parseInt(
+    process.env.PORT ||
+      String(configService.get<number>('BACKEND_PORT', 4000)),
+    10,
   );
+  const corsOrigin =
+    process.env.CORS_ORIGIN ||
+    process.env.BACKEND_CORS_ORIGIN ||
+    configService.get<string>('app.corsOrigin', 'http://localhost:3000');
 
   // Security — helmet PHẢI được configure TRƯỚC khi gọi enableCors,
   // nếu không các header CSP/CORP mặc định của helmet sẽ chặn

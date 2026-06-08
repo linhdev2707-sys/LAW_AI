@@ -5,6 +5,10 @@ export const validationSchema = Joi.object({
   BACKEND_PORT: Joi.number().default(4000),
   CORS_ORIGIN: Joi.string().default('http://localhost:3000'),
 
+  // Full connection URL (Railway / Neon / Supabase / Render)
+  DATABASE_URL: Joi.string().optional(),
+
+  // Split form (local docker-compose)
   DATABASE_HOST: Joi.string().default('localhost'),
   DATABASE_PORT: Joi.number().default(5432),
   DATABASE_USER: Joi.string().default('lawai'),
