@@ -10,6 +10,11 @@ COPY packages ./packages
 
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @law-ai/shared build
+
+# Sanity log: confirm NEXT_PUBLIC_API_URL is set in build context. If this
+# prints "undefined" the env var was not injected by Railway and the
+# built bundle will fall back to http://localhost:4000.
+RUN echo ">>> NEXT_PUBLIC_API_URL=[$NEXT_PUBLIC_API_URL] NEXT_PUBLIC_APP_URL=[$NEXT_PUBLIC_APP_URL]"
 RUN pnpm --filter @law-ai/frontend build
 
 # ---- Production stage ----
