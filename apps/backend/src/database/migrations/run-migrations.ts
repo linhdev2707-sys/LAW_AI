@@ -27,7 +27,10 @@ const isProd = process.env.NODE_ENV === 'production';
 const baseOptions = {
   type: 'postgres' as const,
   entities: [User, Conversation, Message],
-  migrations: [__dirname + '/*.{ts,js}'],
+  // Glob matches migration files of the form "<timestamp>-<Name>.{ts,js}"
+  // (e.g. 1700000000000-InitialSchema.js). Excludes this runner itself,
+  // which would otherwise recurse infinitely during migrations discovery.
+  migrations: [__dirname + '/[0-9]*-*.{ts,js}'],
   synchronize: false,
   logging: ['error', 'warn'] as ('error' | 'warn')[],
 };

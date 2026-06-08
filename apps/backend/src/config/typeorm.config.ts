@@ -19,7 +19,11 @@ export const typeOrmModuleOptions = (configService: ConfigService): TypeOrmModul
   const baseOptions: TypeOrmModuleOptions = {
     type: 'postgres',
     entities: [User, Conversation, Message],
-    migrations: [__dirname + '/../database/migrations/*.{ts,js}'],
+    // Glob matches migration files of the form "<timestamp>-<Name>.{ts,js}".
+    // Avoids matching non-migration files (e.g. the standalone runner) in the
+    // same directory, which would otherwise cause infinite recursion in
+    // TypeORM's DirectoryExportedClassesLoader.
+    migrations: [__dirname + '/../database/migrations/[0-9]*-*.{ts,js}'],
     migrationsRun: false,
     synchronize: false, // use migrations
     logging: isProd ? ['error'] : ['error', 'warn'],
