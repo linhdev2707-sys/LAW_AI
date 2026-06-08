@@ -29,7 +29,7 @@ const baseOptions = {
   entities: [User, Conversation, Message],
   migrations: [__dirname + '/*.{ts,js}'],
   synchronize: false,
-  logging: ['error', 'warn'] as const,
+  logging: ['error', 'warn'] as ('error' | 'warn')[],
 };
 
 export const AppDataSource = new DataSource(
