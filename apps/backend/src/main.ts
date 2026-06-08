@@ -24,6 +24,10 @@ async function bootstrap() {
     process.env.BACKEND_CORS_ORIGIN ||
     configService.get<string>('app.corsOrigin', 'http://localhost:3000');
 
+  // DEBUG: log effective CORS origin so we can see what the deployed BE
+  // actually picked up from the env vars.
+  Logger.log(`🔒 CORS origin(s) allowed: ${corsOrigin}`, 'Bootstrap');
+
   // Security — helmet PHẢI được configure TRƯỚC khi gọi enableCors,
   // nếu không các header CSP/CORP mặc định của helmet sẽ chặn
   // cross-origin requests từ FE.
@@ -35,8 +39,17 @@ async function bootstrap() {
   );
 
   // CORS
+  const allowedOrigins = corsOrigin.split(',').map((o) => o.trim().replace(/\/$/, ''));
   app.enableCors({
-    origin: corsOrigin.split(',').map((o) => o.trim()),
+    origin: (origin, callback) => {
+      // Allow same-origin / curl / server-to-server (no Origin header)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      Logger.warn(`CORS blocked for origin: ${origin}`, 'Bootstrap');
+      return callback(new Error(`Origin ${origin} not allowed by CORS`), false);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
