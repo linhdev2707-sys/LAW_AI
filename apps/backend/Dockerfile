@@ -42,4 +42,6 @@ COPY --from=builder /deploy/package.json ./
 
 EXPOSE 4000
 
-CMD ["node", "dist/main"]
+# Run pending migrations first, then boot NestJS. If migrations fail the
+# container will exit non-zero and Railway will surface the error.
+CMD ["sh", "-c", "node dist/database/migrations/run-migrations.js && node dist/main"]
