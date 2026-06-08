@@ -26,7 +26,10 @@ RUN pnpm --filter @law-ai/backend build
 # Use `pnpm deploy` to produce a flat, self-contained node_modules
 # (with @law-ai/shared bundled in) that the runtime image can use
 # without the pnpm loader.
-RUN pnpm --filter @law-ai/backend --prod deploy /deploy
+# Include dev dependencies so the migration runner has access to `dotenv`
+# (needed for best-effort .env loading — production env vars are injected
+# by Railway, but the import is still resolved at runtime).
+RUN pnpm --filter @law-ai/backend deploy /deploy --prod=false
 
 # ---- Production stage ----
 FROM node:20-alpine AS runner
@@ -42,6 +45,10 @@ COPY --from=builder /deploy/package.json ./
 
 EXPOSE 4000
 
-# Run pending migrations first, then boot NestJS. If migrations fail the
-# container will exit non-zero and Railway will surface the error.
-CMD ["sh", "-c", "node dist/database/migrations/run-migrations.js && node dist/main"]
+# Run pending migrations first, then boot NestJS. We use a tiny shell
+# entrypoint (entrypoint.sh) instead of `sh -c "..."` in CMD because some
+# container runtimes (including BuildKit on Railway) don't pass the shell
+# properly via JSON-array CMD. entrypoint.sh is the most portable form.
+COPY apps/backend/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
