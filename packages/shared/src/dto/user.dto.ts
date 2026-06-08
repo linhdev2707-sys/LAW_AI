@@ -2,20 +2,20 @@ import { z } from 'zod';
 import { UserRole } from '../constants/roles';
 
 export const CreateUserSchema = z.object({
-  email: z.string().email('Invalid email'),
+  email: z.string().email('Email không hợp lệ'),
   password: z
     .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain an uppercase letter')
-    .regex(/[a-z]/, 'Password must contain a lowercase letter')
-    .regex(/[0-9]/, 'Password must contain a digit'),
-  fullName: z.string().min(2, 'Full name too short').max(100, 'Full name too long'),
+    .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
+    .regex(/[A-Z]/, 'Mật khẩu phải có ít nhất một chữ hoa')
+    .regex(/[a-z]/, 'Mật khẩu phải có ít nhất một chữ thường')
+    .regex(/[0-9]/, 'Mật khẩu phải có ít nhất một chữ số'),
+  fullName: z.string().min(2, 'Họ tên quá ngắn').max(100, 'Họ tên quá dài'),
   role: z.nativeEnum(UserRole).optional().default(UserRole.USER),
 });
 export type CreateUserDto = z.infer<typeof CreateUserSchema>;
 
 export const UpdateUserSchema = z.object({
-  fullName: z.string().min(2).max(100).optional(),
+  fullName: z.string().min(2, 'Họ tên quá ngắn').max(100, 'Họ tên quá dài').optional(),
   role: z.nativeEnum(UserRole).optional(),
   isActive: z.boolean().optional(),
 });

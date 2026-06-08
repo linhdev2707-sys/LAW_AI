@@ -9,6 +9,7 @@ COPY apps/frontend ./apps/frontend
 COPY packages ./packages
 
 RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @law-ai/shared build
 RUN pnpm --filter @law-ai/frontend build
 
 # ---- Production stage ----

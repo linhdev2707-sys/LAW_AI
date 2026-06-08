@@ -73,12 +73,21 @@ export const authOptions: NextAuthOptions = {
       }
       return `${baseUrl}/chat`;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      // Initial sign-in: copy everything from the authorize() result.
       if (user) {
         token.id = (user as any).id;
         token.role = (user as any).role;
         token.accessToken = (user as any).accessToken;
         token.refreshToken = (user as any).refreshToken;
+        return token;
+      }
+      // update() called from the client (e.g. after a token refresh) —
+      // merge the new values into the existing token, preserving id/role.
+      if (trigger === 'update' && session) {
+        if ((session as any).accessToken) token.accessToken = (session as any).accessToken;
+        if ((session as any).refreshToken) token.refreshToken = (session as any).refreshToken;
+        return token;
       }
       return token;
     },

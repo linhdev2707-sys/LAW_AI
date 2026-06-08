@@ -1,0 +1,22 @@
+# Exclude all node_modules — pnpm creates them with symlinks that
+# Docker BuildKit (on Windows) refuses to ship in the build context.
+# pnpm install inside the container will recreate them.
+**/node_modules
+**/node_modules/**
+**/.next
+**/dist
+**/.turbo
+**/.tsbuildinfo
+
+# Local env / git
+**/.env
+**/.env.local
+**/.env.*.local
+**/.git
+**/.git/**
+
+# Editor / OS
+**/.vscode
+**/.idea
+**/Thumbs.db
+**/.DS_Store

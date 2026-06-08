@@ -19,14 +19,14 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: 'LAW AI | Precision Engineering for High-Stakes Litigation',
+  title: 'LAW AI | Công Nghệ Pháp Lý Chính Xác Cho Vụ Kiện Quan Trọng',
   description:
-    'Harness the power of AI to streamline your legal research, document analysis, and case management with surgical precision and unmatched speed.',
+    'Tận dụng sức mạnh của trí tuệ nhân tạo để tối ưu nghiên cứu pháp lý, phân tích tài liệu và quản lý vụ việc với độ chính xác tuyệt đối và tốc độ vượt trội.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`} suppressHydrationWarning>
+    <html lang="vi" className={`${inter.variable} ${playfair.variable}`} suppressHydrationWarning>
       <head>
         {/* Material Symbols Outlined (icons used in landing page) */}
         <link

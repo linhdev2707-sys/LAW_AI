@@ -1,41 +1,41 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useState } from 'react';
 import { ChatShell } from '@/components/chat/chat-shell';
 import { EmptyState } from '@/components/chat/empty-state';
+import { chatApi } from '@/lib/chat';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
+/**
+ * The chat index page intentionally does NOT auto-redirect to the most
+ * recent conversation. It always renders the empty state, so the user
+ * lands in a calm, predictable place after login and can pick a
+ * conversation from the sidebar — or start a new one by clicking a
+ * suggestion.
+ */
 export default function ChatIndexPage() {
   const router = useRouter();
+  const [creating, setCreating] = useState(false);
 
-  // On mount, if there are existing conversations, jump to the most recent one.
-  // Otherwise show the empty state in place (user can click a suggestion to start).
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/chat/conversations`, {
-          cache: 'no-store',
-        });
-        if (!res.ok) return;
-        const json = await res.json();
-        const list = json?.data as Array<{ id: string }> | undefined;
-        if (cancelled) return;
-        if (list && list.length > 0) {
-          router.replace(`/chat/${list[0]!.id}`);
-        }
-      } catch {
-        // ignore
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
+  async function handleSelect(prompt: string) {
+    if (creating) return;
+    setCreating(true);
+    try {
+      const conv = await chatApi.create();
+      router.push(`/chat/${conv.id}?q=${encodeURIComponent(prompt)}`);
+    } catch (err) {
+      toast.error('Không thể tạo cuộc trò chuyện', {
+        description: err instanceof Error ? err.message : 'Vui lòng thử lại',
+      });
+    } finally {
+      setCreating(false);
+    }
+  }
 
   return (
     <ChatShell>
-      <EmptyState />
+      <EmptyState onSelect={handleSelect} />
     </ChatShell>
   );
 }

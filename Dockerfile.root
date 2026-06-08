@@ -1,0 +1,27 @@
+# Root Dockerfile — builds both backend and frontend in one stage,
+# avoiding the symlink-in-build-context issue on Docker Desktop (Windows).
+# Usage:
+#   docker build -f Dockerfile.root -t law-ai-build .
+#   docker run --rm law-ai-build pnpm --filter @law-ai/shared build
+#
+# In docker-compose.yml, point both services at this file and the right
+# target command.
+
+# ---- Build stage ----
+FROM node:20-alpine AS builder
+RUN corepack enable
+WORKDIR /app
+
+# Copy everything (includes packages, apps, symlinks resolved as real files
+# when the build context is sent by BuildKit with --load).
+COPY . .
+
+# Install all workspace deps
+RUN pnpm install --frozen-lockfile
+
+# Build shared first (BE + FE depend on its dist)
+RUN pnpm --filter @law-ai/shared build
+
+# Build backend and frontend
+RUN pnpm --filter @law-ai/backend build
+RUN pnpm --filter @law-ai/frontend build

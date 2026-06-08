@@ -14,31 +14,31 @@ interface Expert {
 
 const EXPERTS: Expert[] = [
   {
-    name: 'Jonathan Vance',
-    role: 'Senior Litigation Partner',
+    name: 'Trần Văn Chính',
+    role: 'Luật sư cao cấp - Tranh tụng',
     rating: 4.9,
     ratingLabel: '4.9/5',
-    quote: 'Exceptional expertise in corporate law.',
+    quote: 'Chuyên môn xuất sắc trong lĩnh vực luật doanh nghiệp.',
     avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=256&h=256&fit=crop',
-    initials: 'JV',
+    initials: 'NK',
   },
   {
-    name: 'Elena Rodriguez',
-    role: 'Intellectual Property Specialist',
+    name: 'Bùi Anh Đạt',
+    role: 'Chuyên gia Sở hữu trí tuệ',
     rating: 5.0,
     ratingLabel: '5.0/5',
-    quote: 'Highly strategic and detail-oriented.',
+    quote: 'Tư duy chiến lược sắc bén và tỉ mỉ đến từng chi tiết.',
     avatar: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=256&h=256&fit=crop',
-    initials: 'ER',
+    initials: 'TL',
   },
   {
-    name: 'Marcus Chen',
-    role: 'Technology Law Expert',
+    name: 'Cao Nguyễn Vũ',
+    role: 'Chuyên gia Luật Công nghệ',
     rating: 4.8,
     ratingLabel: '4.8/5',
-    quote: 'A true pioneer in AI legal frameworks.',
+    quote: 'Người tiên phong trong các khuôn khổ pháp lý về AI.',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=256&h=256&fit=crop',
-    initials: 'MC',
+    initials: 'LM',
   },
 ];
 
@@ -46,7 +46,7 @@ function Stars({ rating }: { rating: number }) {
   const full = Math.floor(rating);
   const half = rating - full >= 0.5;
   return (
-    <div className="mb-4 flex items-center gap-1">
+    <div className="mb-4 flex items-center gap-1.5">
       {Array.from({ length: 5 }).map((_, i) => {
         const isHalf = i === full && half;
         return (
@@ -54,11 +54,11 @@ function Stars({ rating }: { rating: number }) {
             key={i}
             name={isHalf ? 'star_half' : 'star'}
             filled={!isHalf}
-            className="text-[18px] text-brand-secondary"
+            className="text-[20px] text-brand-secondary drop-shadow-[0_0_6px_rgba(251,191,36,0.35)]"
           />
         );
       })}
-      <span className="ml-1 text-sm font-medium text-brand-on-surface-variant">
+      <span className="ml-2 text-sm font-semibold text-brand-on-surface">
         {rating.toFixed(1)}/5
       </span>
     </div>
@@ -71,7 +71,7 @@ export function ExpertsSection() {
       <Container>
         <div className="mb-20 flex flex-col items-center text-center">
           <h2 className="mb-6 font-headline text-headline-lg font-medium text-brand-on-surface">
-            Top-Rated Legal Experts
+            Chuyên gia pháp lý hàng đầu
           </h2>
           <div className="beam-gradient h-1 w-24 rounded-full opacity-70" />
         </div>
@@ -80,9 +80,12 @@ export function ExpertsSection() {
           {EXPERTS.map((e) => (
             <article
               key={e.name}
-              className="glass-card group flex flex-col items-center rounded-xl border border-brand-tertiary/15 p-8 text-center transition-all duration-500 hover:-translate-y-2 hover:border-brand-tertiary/40 hover:shadow-xl hover:shadow-brand-tertiary/10"
+              className="glass-card group relative flex flex-col items-center overflow-hidden rounded-2xl border border-brand-tertiary/25 bg-gradient-to-b from-brand-surface-container-high/40 to-brand-surface-container-low/40 p-8 text-center shadow-lg shadow-black/20 transition-all duration-500 hover:-translate-y-2 hover:border-brand-tertiary/60 hover:shadow-2xl hover:shadow-brand-tertiary/20"
             >
-              <div className="mb-6 h-32 w-32 overflow-hidden rounded-full border-2 border-brand-tertiary/30 bg-brand-surface-container p-1">
+              {/* Decorative top accent */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-tertiary/60 to-transparent" />
+
+              <div className="mb-6 h-32 w-32 overflow-hidden rounded-full border-2 border-brand-tertiary/50 bg-brand-surface-container p-1 shadow-lg shadow-brand-tertiary/20">
                 <div
                   className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-brand-primary to-brand-tertiary font-headline text-3xl font-semibold text-white"
                   aria-label={e.name}
@@ -91,18 +94,18 @@ export function ExpertsSection() {
                 </div>
               </div>
               <h3 className="mb-1 font-headline text-2xl text-brand-on-surface">{e.name}</h3>
-              <p className="mb-4 font-label text-label-sm font-semibold uppercase tracking-widest text-brand-on-surface-variant">
+              <p className="mb-4 font-label text-label-sm font-semibold uppercase tracking-widest text-brand-on-surface">
                 {e.role}
               </p>
               <Stars rating={e.rating} />
-              <p className="mb-8 font-body text-body-md italic text-brand-on-surface-variant">
+              <p className="mb-8 mt-2 font-body text-body-md italic leading-relaxed text-brand-on-surface-variant">
                 &ldquo;{e.quote}&rdquo;
               </p>
               <Button
-                variant="outline"
-                className="w-full rounded-full border border-brand-tertiary/40 font-label text-label-md font-semibold text-brand-on-surface transition-all duration-300 hover:border-brand-tertiary hover:bg-brand-tertiary/10 hover:text-brand-tertiary"
+                className="w-full rounded-full bg-gradient-to-r from-brand-primary to-brand-tertiary px-6 py-3 font-label text-label-md font-semibold text-white shadow-lg shadow-brand-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-primary/50"
               >
-                View Profile
+                Xem hồ sơ
+                <MaterialIcon name="arrow_forward" className="ml-2 text-[18px]" />
               </Button>
             </article>
           ))}

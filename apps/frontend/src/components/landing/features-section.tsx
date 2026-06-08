@@ -10,21 +10,21 @@ interface Feature {
 const FEATURES: Feature[] = [
   {
     icon: 'manage_search',
-    title: 'AI Research',
+    title: 'Nghiên cứu bằng AI',
     description:
-      'Automate complex case law searches across decades of precedents. Our neural engine identifies subtle legal correlations human researchers might overlook.',
+      'Tự động hóa việc tra cứu án lệ phức tạp qua hàng thập kỷ tiền lệ. Bộ máy neural của chúng tôi phát hiện những liên hệ pháp lý tinh tế mà nghiên cứu viên có thể bỏ sót.',
   },
   {
     icon: 'contract_edit',
-    title: 'Contract Analysis',
+    title: 'Phân tích hợp đồng',
     description:
-      'Instant risk detection in multi-thousand-page documents. LAW AI flags inconsistencies, liabilities, and opportunities in seconds, not days.',
+      'Phát hiện rủi ro tức thì trong các tài liệu hàng nghìn trang. LAW AI gắn cờ mâu thuẫn, trách nhiệm pháp lý và cơ hội trong vài giây thay vì hàng ngày.',
   },
   {
     icon: 'query_stats',
-    title: 'Case Strategy',
+    title: 'Chiến lược vụ kiện',
     description:
-      'Predictive insights for high-stakes litigation. Leverage historical judge data and opposing counsel tactics to build an invincible legal offensive.',
+      'Phân tích dự đoán cho các vụ tranh tụa quan trọng. Tận dụng dữ liệu thẩm phán lịch sử và chiến thuật của đối phương để xây dựng pháp lý không thể bác bỏ.',
   },
 ];
 
@@ -37,7 +37,7 @@ export function FeaturesSection() {
       <Container className="relative">
         <div className="mb-20 flex flex-col items-center text-center">
           <h2 className="mb-6 font-headline text-headline-lg font-medium text-brand-on-surface">
-            Elite Intelligence Modules
+            Các mô-đun trí tuệ đẳng cấp
           </h2>
           <div className="beam-gradient h-1 w-24 rounded-full opacity-70" />
         </div>
@@ -46,7 +46,7 @@ export function FeaturesSection() {
           {FEATURES.map((f) => (
             <article
               key={f.title}
-              className="glass-card group rounded-xl p-10 transition-all duration-500 hover:-translate-y-2 hover:border-brand-tertiary/40 hover:shadow-2xl hover:shadow-brand-tertiary/10"
+              className="glass-card group flex h-full flex-col rounded-xl p-10 transition-all duration-500 hover:-translate-y-2 hover:border-brand-tertiary/40 hover:shadow-2xl hover:shadow-brand-tertiary/10"
             >
               <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-xl border border-brand-tertiary/20 bg-gradient-to-br from-brand-primary-container to-brand-surface-container-low shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:border-brand-tertiary/60 group-hover:shadow-lg group-hover:shadow-brand-tertiary/20">
                 <MaterialIcon
@@ -60,11 +60,14 @@ export function FeaturesSection() {
               <p className="mb-8 font-body text-body-md leading-relaxed text-brand-on-surface-variant">
                 {f.description}
               </p>
+              {/* mt-auto pushes the link to the bottom of the card so all
+                  three cards' CTAs sit on the same baseline even when the
+                  heading/description lengths differ. */}
               <a
                 href="#"
-                className="inline-flex items-center font-label text-label-md text-brand-tertiary transition-all duration-300 group-hover:gap-3 hover:text-brand-primary"
+                className="mt-auto inline-flex items-center self-start font-label text-label-md text-brand-tertiary transition-all duration-300 group-hover:gap-3 hover:text-brand-primary"
               >
-                Learn more
+                Tìm hiểu thêm
                 <MaterialIcon name="arrow_forward" className="ml-2 text-[18px]" />
               </a>
             </article>

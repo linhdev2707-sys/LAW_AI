@@ -4,15 +4,15 @@ import { Container } from './container';
 import { NewsletterForm } from './newsletter-form';
 
 const LEGAL_LINKS = [
-  { href: '#', label: 'Privacy Policy' },
-  { href: '#', label: 'Terms of Service' },
-  { href: '#', label: 'Security' },
+  { href: '#', label: 'Chính sách bảo mật' },
+  { href: '#', label: 'Điều khoản dịch vụ' },
+  { href: '#', label: 'Bảo mật' },
 ];
 
 const SUPPORT_LINKS = [
-  { href: '#', label: 'Contact Support' },
-  { href: '#', label: 'Documentation' },
-  { href: '#', label: 'API Reference' },
+  { href: '#', label: 'Liên hệ hỗ trợ' },
+  { href: '#', label: 'Tài liệu hướng dẫn' },
+  { href: '#', label: 'Tham chiếu API' },
 ];
 
 export function LandingFooter() {
@@ -34,16 +34,16 @@ export function LandingFooter() {
               </span>
             </div>
             <p className="font-body text-sm leading-relaxed text-brand-on-surface-variant">
-              © {new Date().getFullYear()} LAW AI. Precision Engineering for High-Stakes Litigation.
+              © {new Date().getFullYear()} LAW AI. Công nghệ chính xác cho các vụ kiện quan trọng.
             </p>
           </div>
 
-          <FooterColumn title="Legal" links={LEGAL_LINKS} />
-          <FooterColumn title="Support" links={SUPPORT_LINKS} />
+          <FooterColumn title="Pháp lý" links={LEGAL_LINKS} />
+          <FooterColumn title="Hỗ trợ" links={SUPPORT_LINKS} />
 
           <div>
             <h4 className="mb-4 font-label text-label-md font-semibold uppercase tracking-widest text-brand-on-surface">
-              Stay Updated
+              Cập nhật tin tức
             </h4>
             <NewsletterForm />
           </div>

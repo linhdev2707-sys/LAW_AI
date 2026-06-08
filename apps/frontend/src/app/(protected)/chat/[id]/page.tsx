@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ChatShell } from '@/components/chat/chat-shell';
 import { MessageList } from '@/components/chat/message-list';
 import { ChatInput } from '@/components/chat/chat-input';
@@ -12,9 +12,13 @@ import { Loader2 } from 'lucide-react';
 export default function ChatConversationPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const search = useSearchParams();
   const id = params?.id;
   const { conversation, loading, sending, error, load, send } = useConversation(id);
   const [refreshKey, setRefreshKey] = useState(0);
+  // Track the last id we auto-sent a `?q=` prompt for, so re-renders / Strict
+  // Mode double-invokes don't fire the prompt twice.
+  const autoSentRef = useRef<string | null>(null);
 
   // Reload when id changes
   useEffect(() => {
@@ -25,6 +29,22 @@ export default function ChatConversationPage() {
   useEffect(() => {
     if (conversation?.messages.length) setRefreshKey((k) => k + 1);
   }, [conversation?.messages.length]);
+
+  // If we landed here via the suggestion flow (redirected from /chat with
+  // `?q=<prompt>`), wait for the conversation to finish loading, then auto-send
+  // the prompt and strip the query so a refresh doesn't re-fire it.
+  useEffect(() => {
+    if (!id) return;
+    const prompt = search.get('q');
+    if (!prompt) return;
+    if (autoSentRef.current === id) return; // already handled this id
+    if (loading) return; // wait for the conversation to load
+    if (!conversation) return; // and to actually exist
+    autoSentRef.current = id;
+    void send(prompt);
+    // Strip ?q= so a hard refresh doesn't re-send.
+    router.replace(`/chat/${id}`);
+  }, [id, search, loading, conversation, send, router]);
 
   function handleSend(content: string) {
     void send(content);
@@ -37,13 +57,13 @@ export default function ChatConversationPage() {
     <ChatShell refreshKey={refreshKey}>
       {notFound ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center text-slate-300">
-          <p className="text-lg">Conversation not found.</p>
+          <p className="text-lg">Không tìm thấy cuộc trò chuyện.</p>
           <button
             type="button"
             onClick={() => router.push('/chat')}
             className="rounded-md border border-white/20 px-4 py-2 text-sm transition hover:bg-white/5"
           >
-            Back to chats
+            Quay lại danh sách trò chuyện
           </button>
         </div>
       ) : (
@@ -74,7 +94,7 @@ export default function ChatConversationPage() {
                 onSend={handleSend}
                 disabled={loading}
                 loading={sending}
-                placeholder="Message LAW AI…"
+                placeholder="Nhắn cho LAW AI…"
               />
             </>
           )}

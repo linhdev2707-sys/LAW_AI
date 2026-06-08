@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { toast } from 'sonner';
 import { chatApi, type IConversationDetail, type IMessage } from '@/lib/chat';
 
 export function useConversation(initialId?: string) {
@@ -17,7 +18,9 @@ export function useConversation(initialId?: string) {
         const conv = await chatApi.get(id);
         setConversation(conv);
       } catch (e: any) {
-        setError(e?.message ?? 'Failed to load conversation');
+        const message = e?.message ?? 'Failed to load conversation';
+        setError(message);
+        toast.error('Không tải được cuộc trò chuyện', { description: message });
       } finally {
         setLoading(false);
       }
@@ -30,7 +33,9 @@ export function useConversation(initialId?: string) {
     async (content: string) => {
       if (!conversation) {
         // Should not happen — caller is expected to load first.
-        setError('No conversation loaded');
+        const message = 'No conversation loaded';
+        setError(message);
+        toast.error('Chưa có cuộc trò chuyện', { description: message });
         return null;
       }
       setSending(true);
@@ -60,13 +65,15 @@ export function useConversation(initialId?: string) {
         });
         return res;
       } catch (e: any) {
-        setError(e?.message ?? 'Failed to send');
+        const message = e?.message ?? 'Failed to send';
+        setError(message);
         // Roll back optimistic user message
         setConversation((prev) =>
           prev
             ? { ...prev, messages: prev.messages.filter((m) => m.id !== optimisticUser.id) }
             : prev,
         );
+        toast.error('Gửi tin nhắn thất bại', { description: message });
         return null;
       } finally {
         setSending(false);

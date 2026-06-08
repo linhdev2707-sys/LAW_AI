@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -19,37 +17,16 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
-    build:
-      context: .
-      dockerfile: apps/backend/Dockerfile
-    container_name: law-ai-backend
-    depends_on:
-      postgres:
-        condition: service_healthy
-    ports:
-      - '4000:4000'
-    env_file:
-      - apps/backend/.env
-    environment:
-      DATABASE_HOST: postgres
-      DATABASE_PORT: 5432
-    volumes:
-      - ./apps/backend/src:/app/src
-
-  frontend:
-    build:
-      context: .
-      dockerfile: apps/frontend/Dockerfile
-    container_name: law-ai-frontend
-    depends_on:
-      - backend
-    ports:
-      - '3000:3000'
-    env_file:
-      - apps/frontend/.env.local
-    environment:
-      NEXT_PUBLIC_API_URL: http://backend:4000
+  # Backend (NestJS) and Frontend (Next.js) are intentionally NOT defined
+  # here. Run them on the host via `pnpm dev` from the repo root so that
+  # HMR / file watching work natively and you can iterate on:
+  #   - Backend:  http://localhost:4000  (Swagger at /api/docs)
+  #   - Frontend: http://localhost:3000
+  # The host BE/FE talk to Postgres via localhost:5433 (see apps/backend/.env).
+  #
+  # When you're ready to deploy the full stack in containers, restore the
+  # `backend` and `frontend` services (with their Dockerfiles) and rebuild
+  # the images — see git history of this file for the full version.
 
 volumes:
   postgres_data:

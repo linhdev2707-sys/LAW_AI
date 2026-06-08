@@ -16,8 +16,17 @@ COPY packages ./packages
 # Install deps (root + workspaces)
 RUN pnpm install --frozen-lockfile
 
+# Build shared first so @law-ai/shared's dist (types + js) exists for the
+# backend's `tsc` to resolve.
+RUN pnpm --filter @law-ai/shared build
+
 # Build backend
 RUN pnpm --filter @law-ai/backend build
+
+# Use `pnpm deploy` to produce a flat, self-contained node_modules
+# (with @law-ai/shared bundled in) that the runtime image can use
+# without the pnpm loader.
+RUN pnpm --filter @law-ai/backend --prod deploy /deploy
 
 # ---- Production stage ----
 FROM node:20-alpine AS runner
@@ -26,11 +35,10 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy built output + node_modules from builder
+# Copy built dist + the flat node_modules produced by `pnpm deploy`
 COPY --from=builder /app/apps/backend/dist ./dist
-COPY --from=builder /app/apps/backend/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/backend/src ./src
+COPY --from=builder /deploy/node_modules ./node_modules
+COPY --from=builder /deploy/package.json ./
 
 EXPOSE 4000
 

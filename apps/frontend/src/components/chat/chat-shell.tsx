@@ -35,7 +35,7 @@ export function ChatShell({ children, refreshKey }: ChatShellProps) {
             size="icon"
             onClick={() => setOpen(true)}
             className="text-brand-on-surface hover:bg-white/5"
-            aria-label="Open sidebar"
+            aria-label="Mở thanh bên"
           >
             <Menu className="h-5 w-5" />
           </Button>

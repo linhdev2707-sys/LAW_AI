@@ -1,24 +1,24 @@
 import { z } from 'zod';
 
 export const LoginSchema = z.object({
-  email: z.string().email('Invalid email'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string().email('Email không hợp lệ'),
+  password: z.string().min(1, 'Vui lòng nhập mật khẩu'),
 });
 export type LoginDto = z.infer<typeof LoginSchema>;
 
 export const RegisterSchema = z.object({
-  email: z.string().email('Invalid email'),
+  email: z.string().email('Email không hợp lệ'),
   password: z
     .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain an uppercase letter')
-    .regex(/[a-z]/, 'Password must contain a lowercase letter')
-    .regex(/[0-9]/, 'Password must contain a digit'),
-  fullName: z.string().min(2, 'Full name too short').max(100, 'Full name too long'),
+    .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
+    .regex(/[A-Z]/, 'Mật khẩu phải có ít nhất một chữ hoa')
+    .regex(/[a-z]/, 'Mật khẩu phải có ít nhất một chữ thường')
+    .regex(/[0-9]/, 'Mật khẩu phải có ít nhất một chữ số'),
+  fullName: z.string().min(2, 'Họ tên quá ngắn').max(100, 'Họ tên quá dài'),
 });
 export type RegisterDto = z.infer<typeof RegisterSchema>;
 
 export const RefreshTokenSchema = z.object({
-  refreshToken: z.string().min(1, 'Refresh token is required'),
+  refreshToken: z.string().min(1, 'Vui lòng cung cấp refresh token'),
 });
 export type RefreshTokenDto = z.infer<typeof RefreshTokenSchema>;

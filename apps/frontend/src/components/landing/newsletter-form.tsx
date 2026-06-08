@@ -10,14 +10,14 @@ export function NewsletterForm() {
     >
       <input
         type="email"
-        placeholder="Email address"
+        placeholder="Địa chỉ email"
         className="w-full bg-transparent px-5 py-3 text-sm text-brand-on-surface placeholder:text-brand-on-surface-variant/60 focus:outline-none"
-        aria-label="Email address"
+        aria-label="Địa chỉ email"
       />
       <button
         type="submit"
         className="flex items-center justify-center bg-brand-primary/15 px-5 py-3 text-brand-on-surface transition-colors hover:bg-gradient-to-r hover:from-brand-primary hover:to-brand-tertiary hover:text-white"
-        aria-label="Subscribe"
+        aria-label="Đăng ký nhận tin"
       >
         <MaterialIcon name="send" className="text-[20px]" />
       </button>
