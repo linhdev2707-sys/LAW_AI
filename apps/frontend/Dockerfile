@@ -19,11 +19,19 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
-# Standalone Next.js output
+# Standalone Next.js output (the server.js + minimal node_modules Next.js
+# traced as required for the app routes).
 COPY --from=builder /app/apps/frontend/.next/standalone ./
 COPY --from=builder /app/apps/frontend/.next/static ./apps/frontend/.next/static
 COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
+
+# sharp is required by Next.js image optimization in standalone mode
+# (see https://nextjs.org/docs/messages/sharp-missing-in-production).
+# It's NOT auto-traced by Next.js into .next/standalone/node_modules, so we
+# install it explicitly in the runner image.
+RUN npm install --no-save --prefix /app sharp
 
 EXPOSE 3000
 CMD ["node", "apps/frontend/server.js"]

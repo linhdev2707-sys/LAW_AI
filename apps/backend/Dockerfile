@@ -45,10 +45,8 @@ COPY --from=builder /deploy/package.json ./
 
 EXPOSE 4000
 
-# Run pending migrations first, then boot NestJS. We use a tiny shell
-# entrypoint (entrypoint.sh) instead of `sh -c "..."` in CMD because some
-# container runtimes (including BuildKit on Railway) don't pass the shell
-# properly via JSON-array CMD. entrypoint.sh is the most portable form.
-COPY apps/backend/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
+# Run pending migrations first, then boot NestJS.
+# Use shell form (not JSON array) so Docker wraps it in `sh -c` for us.
+# This is the most portable form across container runtimes (incl. BuildKit
+# on Railway) and avoids the JSON-array CMD parsing issues we hit earlier.
+CMD node dist/database/migrations/run-migrations.js && node dist/main
