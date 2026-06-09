@@ -3,7 +3,12 @@ import { UserRole } from '@law-ai/shared';
 import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
 import { CreateUserSchema } from '@law-ai/shared';
 
-export class CreateUserDtoPipe extends ZodValidationPipe<{ email: string; password: string; fullName: string; role?: UserRole }> {
+export class CreateUserDtoPipe extends ZodValidationPipe<{
+  email: string;
+  password: string;
+  fullName: string;
+  role?: UserRole;
+}> {
   constructor() {
     super(CreateUserSchema as any);
   }

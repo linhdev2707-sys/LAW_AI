@@ -3,6 +3,8 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { User } from '../modules/user/entities/user.entity';
 import { Conversation } from '../modules/chat/entities/conversation.entity';
 import { Message } from '../modules/chat/entities/message.entity';
+import { RagDocument } from '../modules/rag/entities/rag-document.entity';
+import { RagChunk } from '../modules/rag/entities/rag-chunk.entity';
 
 /**
  * Build TypeORM options.
@@ -18,7 +20,7 @@ export const typeOrmModuleOptions = (configService: ConfigService): TypeOrmModul
 
   const baseOptions: TypeOrmModuleOptions = {
     type: 'postgres',
-    entities: [User, Conversation, Message],
+    entities: [User, Conversation, Message, RagDocument, RagChunk],
     // Glob matches migration files of the form "<timestamp>-<Name>.{ts,js}".
     // Avoids matching non-migration files (e.g. the standalone runner) in the
     // same directory, which would otherwise cause infinite recursion in

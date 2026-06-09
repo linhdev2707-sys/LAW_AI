@@ -8,6 +8,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { HealthModule } from './modules/health/health.module';
+import { LlmModule } from './modules/llm/llm.module';
+import { RagModule } from './modules/rag/rag.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { HealthModule } from './modules/health/health.module';
     UserModule,
     ChatModule,
     HealthModule,
+    LlmModule,
+    RagModule,
   ],
 })
 export class AppModule {}

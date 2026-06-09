@@ -6,29 +6,37 @@ import { ChatShell } from '@/components/chat/chat-shell';
 import { MessageList } from '@/components/chat/message-list';
 import { ChatInput } from '@/components/chat/chat-input';
 import { EmptyState } from '@/components/chat/empty-state';
-import { useConversation } from '@/hooks/use-conversation';
-import { Loader2 } from 'lucide-react';
+import { useConversationStream } from '@/hooks/use-conversation-stream';
 
 export default function ChatConversationPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const search = useSearchParams();
   const id = params?.id;
-  const { conversation, loading, sending, error, load, send } = useConversation(id);
+  const {
+    conversationId,
+    messages,
+    sources,
+    streaming,
+    error,
+    load,
+    send,
+    stop,
+  } = useConversationStream();
   const [refreshKey, setRefreshKey] = useState(0);
   // Track the last id we auto-sent a `?q=` prompt for, so re-renders / Strict
   // Mode double-invokes don't fire the prompt twice.
   const autoSentRef = useRef<string | null>(null);
 
-  // Reload when id changes
+  // Reload history when the URL id changes.
   useEffect(() => {
     if (id) void load(id);
   }, [id, load]);
 
-  // Bump sidebar refresh after each new message lands
+  // Bump sidebar refresh when message count changes.
   useEffect(() => {
-    if (conversation?.messages.length) setRefreshKey((k) => k + 1);
-  }, [conversation?.messages.length]);
+    if (messages.length) setRefreshKey((k) => k + 1);
+  }, [messages.length]);
 
   // If we landed here via the suggestion flow (redirected from /chat with
   // `?q=<prompt>`), wait for the conversation to finish loading, then auto-send
@@ -38,13 +46,13 @@ export default function ChatConversationPage() {
     const prompt = search.get('q');
     if (!prompt) return;
     if (autoSentRef.current === id) return; // already handled this id
-    if (loading) return; // wait for the conversation to load
-    if (!conversation) return; // and to actually exist
+    if (streaming) return; // wait for any current stream
+    if (!conversationId) return; // and to actually exist
     autoSentRef.current = id;
     void send(prompt);
     // Strip ?q= so a hard refresh doesn't re-send.
     router.replace(`/chat/${id}`);
-  }, [id, search, loading, conversation, send, router]);
+  }, [id, search, conversationId, streaming, send, router]);
 
   function handleSend(content: string) {
     void send(content);
@@ -74,30 +82,27 @@ export default function ChatConversationPage() {
             </div>
           )}
 
-          {loading && !conversation ? (
-            <div className="flex flex-1 items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+          {messages.length === 0 && !streaming ? (
+            <div className="flex flex-1 flex-col">
+              <div className="flex-1">
+                <EmptyState onSelect={(t) => handleSend(t)} />
+              </div>
             </div>
           ) : (
-            <>
-              {conversation && conversation.messages.length > 0 ? (
-                <MessageList messages={conversation.messages} loading={sending} />
-              ) : (
-                <div className="flex flex-1 flex-col">
-                  <div className="flex-1">
-                    <EmptyState onSelect={(t) => handleSend(t)} />
-                  </div>
-                </div>
-              )}
-
-              <ChatInput
-                onSend={handleSend}
-                disabled={loading}
-                loading={sending}
-                placeholder="Nhắn cho LAW AI…"
-              />
-            </>
+            <MessageList
+              messages={messages}
+              sources={sources}
+              loading={streaming}
+            />
           )}
+
+          <ChatInput
+            onSend={handleSend}
+            onStop={stop}
+            disabled={false}
+            loading={streaming}
+            placeholder="Nhắn cho LAW AI…"
+          />
         </>
       )}
     </ChatShell>

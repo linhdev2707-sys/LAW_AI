@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
@@ -49,11 +46,16 @@ export class AuthService {
     if (!m) return 900; // 15 min default
     const n = parseInt(m[1] ?? '15', 10);
     switch (m[2]) {
-      case 's': return n;
-      case 'm': return n * 60;
-      case 'h': return n * 3600;
-      case 'd': return n * 86400;
-      default: return n;
+      case 's':
+        return n;
+      case 'm':
+        return n * 60;
+      case 'h':
+        return n * 3600;
+      case 'd':
+        return n * 86400;
+      default:
+        return n;
     }
   }
 

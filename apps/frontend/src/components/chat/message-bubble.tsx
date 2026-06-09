@@ -4,12 +4,16 @@ import { useState } from 'react';
 import { Bot, User, Check, Copy, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { IMessage } from '@/lib/chat';
+import type { StreamSource } from '@/lib/chat-stream';
+import { SourcesRow } from './sources-row';
 
 interface MessageBubbleProps {
   message: IMessage;
+  /** RAG sources attached to this assistant message. Ignored for user msgs. */
+  sources?: StreamSource[];
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({ message, sources }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
@@ -90,6 +94,9 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               {renderContent(message.content)}
             </div>
           )}
+
+          {/* Sources row — only for AI messages */}
+          {!isUser && sources && <SourcesRow sources={sources} />}
 
           {/* Action row — only for AI messages */}
           {!isUser && (

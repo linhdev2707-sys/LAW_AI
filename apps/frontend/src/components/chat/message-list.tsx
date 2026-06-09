@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowDown, Sparkles } from 'lucide-react';
 import type { IMessage } from '@/lib/chat';
+import type { StreamSource } from '@/lib/chat-stream';
 import { MessageBubble } from './message-bubble';
 import { cn } from '@/lib/utils';
 
 interface MessageListProps {
   messages: IMessage[];
+  /** Map assistant message id → RAG sources surfaced for that turn. */
+  sources?: Record<string, StreamSource[]>;
   loading?: boolean;
 }
 
@@ -18,7 +21,7 @@ const THINKING_PHRASES = [
   'Đang tham chiếu tiền lệ…',
 ];
 
-export function MessageList({ messages, loading }: MessageListProps) {
+export function MessageList({ messages, sources, loading }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
@@ -61,7 +64,11 @@ export function MessageList({ messages, loading }: MessageListProps) {
       ) : (
         <div className="space-y-6 py-8 pb-32">
           {messages.map((m) => (
-            <MessageBubble key={m.id} message={m} />
+            <MessageBubble
+              key={m.id}
+              message={m}
+              sources={m.role === 'assistant' ? sources?.[m.id] : undefined}
+            />
           ))}
 
           {loading && (

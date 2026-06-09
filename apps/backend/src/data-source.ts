@@ -5,6 +5,8 @@ import { resolve } from 'path';
 import { User } from './modules/user/entities/user.entity';
 import { Conversation } from './modules/chat/entities/conversation.entity';
 import { Message } from './modules/chat/entities/message.entity';
+import { RagDocument } from './modules/rag/entities/rag-document.entity';
+import { RagChunk } from './modules/rag/entities/rag-chunk.entity';
 
 // Load .env from the apps/backend folder (one level up from compiled /dist/data-source.js)
 loadEnv({ path: resolve(__dirname, '../.env') });
@@ -20,7 +22,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DATABASE_USER || 'lawai',
   password: process.env.DATABASE_PASSWORD || 'lawai_password',
   database: process.env.DATABASE_NAME || 'law_ai',
-  entities: [User, Conversation, Message],
+  entities: [User, Conversation, Message, RagDocument, RagChunk],
   migrations: [resolve(__dirname, 'database/migrations/*.{ts,js}')],
   synchronize: false,
   logging: ['error', 'warn'],

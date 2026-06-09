@@ -7,12 +7,14 @@ import {
   HttpStatus,
   Param,
   Post,
+  Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import type { Response, Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
-import { IJwtPayload } from '@law-ai/shared';
 import { ChatService } from './chat.service';
 import { CreateConversationDto, SendMessageDto } from './dto/chat.dto';
 
@@ -53,5 +55,23 @@ export class ChatController {
   @HttpCode(HttpStatus.OK)
   send(@CurrentUser('sub') userId: string, @Body() dto: SendMessageDto) {
     return this.chatService.sendMessage(userId, dto);
+  }
+
+  /**
+   * Streaming reply via Server-Sent Events.
+   * See `ChatService.streamMessage` for the event protocol.
+   *
+   * We use `@Res({ passthrough: false })` to take over the response
+   * lifecycle so we can write SSE frames and hook `req.on('close')`.
+   */
+  @Post('messages/stream')
+  @HttpCode(HttpStatus.OK)
+  async stream(
+    @CurrentUser('sub') userId: string,
+    @Body() dto: SendMessageDto,
+    @Res() res: Response,
+    @Req() req: Request,
+  ): Promise<void> {
+    await this.chatService.streamMessage(userId, dto, res, req);
   }
 }

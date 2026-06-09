@@ -21,6 +21,8 @@
     "seed": "ts-node -r tsconfig-paths/register src/database/seeds/seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1064.0",
+    "@aws-sdk/s3-request-presigner": "^3.1064.0",
     "@law-ai/shared": "workspace:*",
     "@nestjs/common": "^10.3.10",
     "@nestjs/config": "^3.2.3",
@@ -34,8 +36,10 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "dotenv": "^16.4.5",
+    "gpt-tokenizer": "^3.4.0",
     "helmet": "^7.1.0",
     "joi": "^17.13.0",
+    "openai": "^6.42.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.12.0",

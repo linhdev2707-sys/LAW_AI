@@ -22,9 +22,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
       )
     `);
 
-    await queryRunner.query(
-      `CREATE UNIQUE INDEX "UQ_users_email" ON "users" ("email")`,
-    );
+    await queryRunner.query(`CREATE UNIQUE INDEX "UQ_users_email" ON "users" ("email")`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

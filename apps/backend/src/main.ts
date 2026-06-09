@@ -15,8 +15,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   // Railway/Render inject PORT env var; fall back to BACKEND_PORT for local
   const port = parseInt(
-    process.env.PORT ||
-      String(configService.get<number>('BACKEND_PORT', 4000)),
+    process.env.PORT || String(configService.get<number>('BACKEND_PORT', 4000)),
     10,
   );
   const corsOrigin =
@@ -80,10 +79,7 @@ async function bootstrap() {
     .setTitle('LAW AI API')
     .setDescription('REST API documentation')
     .setVersion('0.1.0')
-    .addBearerAuth(
-      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-      'access-token',
-    )
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'access-token')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);
