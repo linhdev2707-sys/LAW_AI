@@ -3,6 +3,18 @@ FROM node:20-alpine AS builder
 RUN corepack enable
 WORKDIR /app
 
+# IMPORTANT: NEXT_PUBLIC_* variables must be declared as ARG before use,
+# otherwise Next.js will see `undefined` at build time and the bundled
+# code will fall back to the localhost default in src/lib/env.ts.
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_APP_URL
+ARG NEXTAUTH_SECRET
+ARG NEXTAUTH_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
+ENV NEXTAUTH_URL=$NEXTAUTH_URL
+
 # Copy workspace configs
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* .npmrc ./
 COPY apps/frontend ./apps/frontend
