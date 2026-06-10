@@ -102,6 +102,11 @@ export const authOptions: NextAuthOptions = {
     },
   },
   secret: env.nextAuthSecret,
+  // On Railway/Vercel/behind proxies the `Host` header carries the real
+  // public domain. Trusting it lets NextAuth build the right baseUrl for
+  // redirects (e.g. signOut callbackUrl) even when NEXTAUTH_URL is missing.
+  // `trustHost` was added in next-auth v4.21+; cast for older type defs.
+  ...({ trustHost: true } as Record<string, unknown>),
 };
 
 /** Helper envelope type for the BE API. */
