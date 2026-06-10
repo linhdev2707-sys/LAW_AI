@@ -163,14 +163,14 @@ export function ChatInput({
 
         {/* Footer row: char counter + tip + disclaimer */}
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-brand-on-surface-variant/60">
-          <div className="flex items-center gap-3">
+          {/* <div className="flex items-center gap-3">
             <span className="hidden sm:inline">
               Nhấn <kbd className="rounded border border-brand-outline-variant/30 bg-white/5 px-1.5 py-0.5 font-mono text-[10px]">Enter</kbd> để gửi, <kbd className="rounded border border-brand-outline-variant/30 bg-white/5 px-1.5 py-0.5 font-mono text-[10px]">Shift + Enter</kbd> để xuống dòng
             </span>
             <span className="flex items-center gap-1 sm:hidden">
               <kbd className="rounded border border-brand-outline-variant/30 bg-white/5 px-1.5 py-0.5 font-mono text-[10px]">Enter</kbd> gửi
-            </span>
-          </div>
+            </span> */}
+          {/* </div> */}
           <div className="flex items-center gap-3">
             {isOverLimit && (
               <span className="flex items-center gap-1 text-red-300">

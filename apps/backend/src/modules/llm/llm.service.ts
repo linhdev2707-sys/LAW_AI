@@ -34,8 +34,11 @@ export class LlmService {
       );
     }
 
+    // Only pass `apiKey` when explicitly set — the OpenAI SDK treats an
+    // empty string as "credentials were provided but invalid" and skips its
+    // env-var fallback, so an unset key would otherwise throw at construction.
     this.client = new OpenAI({
-      apiKey,
+      ...(apiKey ? { apiKey } : {}),
       baseURL: baseUrl,
       timeout: this.timeoutMs,
       maxRetries: 0,

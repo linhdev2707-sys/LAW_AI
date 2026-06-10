@@ -8,6 +8,7 @@ import { ChunkerService } from './chunking/chunker.service';
 import { OpenAIEmbeddingService } from './embedding/openai-embedding.service';
 import { RetrieverService, IScoredChunk } from './retrieval/retriever.service';
 import { R2Service } from './storage/r2.service';
+import { DocumentParserService } from './parsers/document-parser.service';
 import { CreateRagDocumentDto } from './dto/create-rag-document.dto';
 
 export interface IIngestResult {
@@ -33,12 +34,59 @@ export class RagService {
     private readonly embeddings: OpenAIEmbeddingService,
     private readonly retriever: RetrieverService,
     private readonly r2: R2Service,
+    private readonly parser: DocumentParserService,
     private readonly dataSource: DataSource,
   ) {}
 
   /**
-   * Ingest a new document:
-   *  1) PUT raw content to R2
+   * Ingest from a plain-text DTO. Used by the JSON endpoint.
+   * Throws on any failure — caller is responsible for HTTP error mapping.
+   */
+  ingest(dto: CreateRagDocumentDto, userId: string): Promise<IIngestResult> {
+    const mimeType = dto.mimeType?.trim() || 'text/plain';
+    return this.runIngest(
+      {
+        name: dto.name.trim(),
+        content: dto.content,
+        mimeType,
+        bucket: dto.bucket.trim(),
+        sourceKind: 'text',
+      },
+      userId,
+    );
+  }
+
+  /**
+   * Ingest from an uploaded file buffer. The parser extracts plain text
+   * first, then the same pipeline as the JSON path takes over.
+   */
+  async ingestBuffer(
+    name: string,
+    buffer: Buffer,
+    mimeType: string,
+    filename: string | undefined,
+    bucket: string,
+    userId: string,
+  ): Promise<IIngestResult> {
+    const content = await this.parser.extractText(buffer, mimeType, filename);
+    // Use the parser-resolved mime type for R2 storage so the file
+    // round-trips with a useful Content-Type on download.
+    const resolvedMime = this.resolveMimeFromBuffer(mimeType, filename);
+    return this.runIngest(
+      {
+        name: name.trim(),
+        content,
+        mimeType: resolvedMime,
+        bucket: bucket.trim(),
+        sourceKind: 'file',
+      },
+      userId,
+    );
+  }
+
+  /**
+   * Shared pipeline used by both `ingest` and `ingestBuffer`:
+   *  1) PUT raw content to R2 (mandatory — R2 is required by config)
    *  2) Insert rag_documents (status=pending) → keep id
    *  3) Chunk + embed in batches
    *  4) Insert rag_chunks
@@ -46,39 +94,58 @@ export class RagService {
    * If embedding fails after R2 upload we mark status=failed and surface
    * the error in the `error` column so the admin can retry / inspect.
    */
-  async ingest(dto: CreateRagDocumentDto, userId: string): Promise<IIngestResult> {
-    const mimeType = dto.mimeType?.trim() || 'text/plain';
+  private async runIngest(
+    input: {
+      name: string;
+      content: string;
+      mimeType: string;
+      bucket: string;
+      sourceKind: 'text' | 'file';
+    },
+    userId: string,
+  ): Promise<IIngestResult> {
+    const { name, content, mimeType, bucket, sourceKind } = input;
     const r2Key = `rag/${randomUUID()}.txt`;
 
-    // 1) Upload to R2 (best-effort; we keep the row even if R2 is down so
-    //    admins see the failure in the `error` column rather than a 500)
-    if (this.r2.isEnabled()) {
-      try {
-        await this.r2.putObject(r2Key, dto.content, mimeType);
-      } catch (e: unknown) {
-        this.logger.error(`R2 upload failed: ${errorMessage(e)}`);
-        throw new Error(`R2 upload failed: ${errorMessage(e)}`);
-      }
-    } else {
-      this.logger.warn('R2 disabled — skipping raw upload (chunks still indexed)');
+    // 1) Upload to R2 (mandatory). If R2 is misconfigured or the bucket
+    //    doesn't exist (and we forgot to create it), throw — better to
+    //    surface a 500/503 here than to leave the chunk index in an
+    //    inconsistent state.
+    if (!this.r2.isEnabled()) {
+      // Should not happen — onModuleInit throws if credentials are missing.
+      throw new Error('R2 is required but client is not initialised');
+    }
+    try {
+      await this.r2.putObject(bucket, r2Key, content, mimeType);
+    } catch (e: unknown) {
+      this.logger.error(
+        `R2 upload failed (bucket=${bucket}, key=${r2Key}): ${errorMessage(e)}`,
+      );
+      throw new Error(`R2 upload failed: ${errorMessage(e)}`);
     }
 
     // 2) Insert pending row
     const doc = await this.docRepo.save(
       this.docRepo.create({
-        name: dto.name.trim(),
+        name,
         r2Key,
         mimeType,
-        sizeBytes: Buffer.byteLength(dto.content, 'utf8'),
+        bucketName: bucket,
+        bucketRegion: 'auto',
+        sizeBytes: Buffer.byteLength(content, 'utf8'),
         chunkCount: 0,
         status: RagDocumentStatus.PENDING,
         createdBy: userId,
       }),
     );
 
+    this.logger.log(
+      `Ingesting ${sourceKind} doc ${doc.id} (name="${name}", bucket=${bucket}, bytes=${doc.sizeBytes})`,
+    );
+
     try {
       // 3) Chunk
-      const chunks = this.chunker.split(dto.content);
+      const chunks = this.chunker.split(content);
       if (chunks.length === 0) {
         throw new Error('Document produced zero chunks (empty content?)');
       }
@@ -122,6 +189,24 @@ export class RagService {
     }
   }
 
+  /**
+   * Mirror of DocumentParserService.resolveMimeType — duplicated here so
+   * we can pick the right MIME for R2 storage without exposing the parser
+   * just for this. Keep in sync with parser.service.ts.
+   */
+  private resolveMimeFromBuffer(mimeType: string, filename?: string): string {
+    if (mimeType && mimeType !== 'application/octet-stream') return mimeType;
+    if (!filename) return 'text/plain';
+    const dot = filename.lastIndexOf('.');
+    if (dot < 0) return 'text/plain';
+    const ext = filename.slice(dot).toLowerCase();
+    if (ext === '.pdf') return 'application/pdf';
+    if (ext === '.docx') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    if (ext === '.md' || ext === '.markdown') return 'text/markdown';
+    if (ext === '.txt') return 'text/plain';
+    return 'text/plain';
+  }
+
   async listDocuments(): Promise<RagDocument[]> {
     return this.docRepo.find({ order: { createdAt: 'DESC' } });
   }
@@ -133,14 +218,29 @@ export class RagService {
   async deleteDocument(id: string): Promise<void> {
     const doc = await this.docRepo.findOne({ where: { id } });
     if (!doc) return;
+    // Delete the object in the document's own bucket. We don't delete the
+    // bucket itself — that's an admin operation managed elsewhere.
     if (this.r2.isEnabled()) {
       try {
-        await this.r2.deleteObject(doc.r2Key);
+        await this.r2.deleteObject(doc.bucketName, doc.r2Key);
       } catch (e: unknown) {
-        this.logger.warn(`R2 delete failed for ${doc.r2Key}: ${errorMessage(e)}`);
+        this.logger.warn(
+          `R2 delete failed for ${doc.bucketName}/${doc.r2Key}: ${errorMessage(e)}`,
+        );
       }
     }
     await this.docRepo.delete({ id });
+  }
+
+  // ─── Bucket helpers (thin pass-through to R2Service) ─────────────────
+
+  listBuckets(): Promise<string[]> {
+    if (!this.r2.isEnabled()) return Promise.resolve([]);
+    return this.r2.listBuckets();
+  }
+
+  createBucket(name: string, region?: string): Promise<void> {
+    return this.r2.createBucket(name, region);
   }
 
   /** Thin pass-through to the retriever. */

@@ -8,7 +8,8 @@
       "Bash(curl -s --max-time 8 -o /dev/null -w \"FE 3000: HTTP %{http_code}\\\\n\" http://localhost:3000/)",
       "Bash(netstat -ano)",
       "Bash(cat /tmp/landing.html | head -c 2000)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, StartTime, @{n='Cmd';e={\\(Get-CimInstance Win32_Process -Filter \"ProcessId=$\\($_.Id\\)\" -ErrorAction SilentlyContinue\\).CommandLine}} | Format-Table -AutoSize -Wrap)"
     ]
   }
 }

@@ -8,11 +8,19 @@ import { ChunkerService } from './chunking/chunker.service';
 import { OpenAIEmbeddingService } from './embedding/openai-embedding.service';
 import { RetrieverService } from './retrieval/retriever.service';
 import { R2Service } from './storage/r2.service';
+import { DocumentParserService } from './parsers/document-parser.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([RagDocument, RagChunk])],
   controllers: [RagAdminController],
-  providers: [RagService, ChunkerService, OpenAIEmbeddingService, RetrieverService, R2Service],
+  providers: [
+    RagService,
+    ChunkerService,
+    OpenAIEmbeddingService,
+    RetrieverService,
+    R2Service,
+    DocumentParserService,
+  ],
   exports: [RagService],
 })
 export class RagModule {}

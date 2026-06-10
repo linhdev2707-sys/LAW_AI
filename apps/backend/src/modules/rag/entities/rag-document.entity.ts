@@ -26,6 +26,18 @@ export class RagDocument {
   @Column({ name: 'r2_key', type: 'varchar', length: 500 })
   r2Key: string;
 
+  @Index()
+  @Column({ name: 'bucket_name', type: 'varchar', length: 100 })
+  bucketName: string;
+
+  @Column({
+    name: 'bucket_region',
+    type: 'varchar',
+    length: 20,
+    default: 'auto',
+  })
+  bucketRegion: string;
+
   @Column({ name: 'mime_type', type: 'varchar', length: 100, default: 'text/plain' })
   mimeType: string;
 

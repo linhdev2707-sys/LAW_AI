@@ -42,11 +42,16 @@ export async function apiFetch<T = unknown>(
 ): Promise<T> {
   const { body, anonymous, headers, __isRetry, ...rest } = options;
 
+  // Detect FormData so we don't force a JSON Content-Type. Browsers must
+  // set the multipart boundary themselves or the server can't parse it.
+  const isFormData =
+    typeof FormData !== 'undefined' && body instanceof FormData;
+
   const finalHeaders: Record<string, string> = {
     Accept: 'application/json',
     ...(headers as Record<string, string> | undefined),
   };
-  if (body !== undefined) {
+  if (body !== undefined && !isFormData) {
     finalHeaders['Content-Type'] = 'application/json';
   }
 
@@ -62,7 +67,7 @@ export async function apiFetch<T = unknown>(
   let res = await fetch(url, {
     ...rest,
     headers: finalHeaders,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: body !== undefined ? (isFormData ? (body as FormData) : JSON.stringify(body)) : undefined,
   });
 
   // ── Auto refresh on 401 ───────────────────────────────────────────────
@@ -75,7 +80,7 @@ export async function apiFetch<T = unknown>(
       res = await fetch(url, {
         ...rest,
         headers: retryHeaders,
-        body: body !== undefined ? JSON.stringify(body) : undefined,
+        body: body !== undefined ? (isFormData ? (body as FormData) : JSON.stringify(body)) : undefined,
       });
     } else {
       // Refresh failed — the refresh-token is expired/invalid. Kick the

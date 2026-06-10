@@ -5,8 +5,9 @@ import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { LogOut, User as UserIcon, LayoutDashboard, ChevronDown, MessageSquare } from 'lucide-react';
+import { LogOut, User as UserIcon, LayoutDashboard, ChevronDown, MessageSquare, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { UserRole } from '@law-ai/shared';
 import { Button } from '@/components/ui/button';
 import { Container } from './container';
 
@@ -48,6 +49,7 @@ export function LandingNavbar() {
     (session?.user?.name || session?.user?.email || '?').charAt(0).toUpperCase();
   const userName = session?.user?.name || session?.user?.email || '';
   const userEmail = session?.user?.email || '';
+  const isAdmin = session?.user?.role === UserRole.ADMIN;
 
   return (
     <header
@@ -168,6 +170,16 @@ export function LandingNavbar() {
                             router.push('/dashboard');
                           }}
                         />
+                        {isAdmin && (
+                          <MenuItem
+                            icon={<Database className="h-4 w-4" />}
+                            label="Quản lý Knowledge"
+                            onClick={() => {
+                              setMenuOpen(false);
+                              router.push('/knowledge');
+                            }}
+                          />
+                        )}
                       </div>
 
                       <div className="border-t border-brand-outline-variant/10 p-1.5">
