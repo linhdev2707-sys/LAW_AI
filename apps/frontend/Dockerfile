@@ -1,5 +1,5 @@
 # ---- Build stage ----
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 RUN corepack enable
 WORKDIR /app
 
@@ -30,7 +30,7 @@ RUN echo ">>> NEXT_PUBLIC_API_URL=[$NEXT_PUBLIC_API_URL] NEXT_PUBLIC_APP_URL=[$N
 RUN pnpm --filter @law-ai/frontend build
 
 # ---- Production stage ----
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 RUN corepack enable && apk add --no-cache libc6-compat
 WORKDIR /app
 

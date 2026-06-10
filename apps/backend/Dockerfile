@@ -1,5 +1,5 @@
 # ---- Build stage ----
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 RUN corepack enable
 WORKDIR /app
 
@@ -32,7 +32,7 @@ RUN pnpm --filter @law-ai/backend build
 RUN pnpm --filter @law-ai/backend deploy /deploy --prod=false
 
 # ---- Production stage ----
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 RUN corepack enable
 WORKDIR /app
 
