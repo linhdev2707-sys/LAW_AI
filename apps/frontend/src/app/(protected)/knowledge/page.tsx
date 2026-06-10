@@ -16,7 +16,6 @@ import {
 } from 'lucide-react';
 import { UserRole } from '@law-ai/shared';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -192,14 +191,27 @@ export default function KnowledgePage() {
 
   if (sessionStatus === 'loading' || !isAdmin) {
     return (
-      <main className="flex min-h-[60vh] items-center justify-center text-brand-on-surface-variant">
-        <Loader2 className="h-6 w-6 animate-spin" />
+      <main className="relative min-h-[60vh] overflow-hidden bg-brand-background text-brand-on-surface-variant">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(14,165,233,0.10),transparent_60%)]"
+        />
+        <div className="relative flex min-h-[60vh] items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="container max-w-6xl py-12">
+    <main className="relative min-h-screen overflow-hidden bg-brand-background text-brand-on-surface">
+      {/* Soft cyan glow at the top — matches landing/chat backdrop so the
+          page feels like part of the same app, not a separate white screen. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(34,211,238,0.10),transparent_60%)]"
+      />
+      <div className="container relative max-w-6xl py-12">
       <header className="mb-8">
         <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-brand-tertiary/30 bg-brand-tertiary/10 px-3 py-1 text-xs font-medium uppercase tracking-widest text-brand-on-surface">
           <Database className="h-3.5 w-3.5 text-brand-tertiary" />
@@ -213,237 +225,267 @@ export default function KnowledgePage() {
         </p>
       </header>
 
-      {/* ── Upload form ──────────────────────────────────────────────── */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <UploadCloud className="h-5 w-5 text-brand-tertiary" />
-            Tải lên tài liệu mới
-          </CardTitle>
-          <CardDescription>
-            Hỗ trợ PDF, DOCX, TXT, Markdown — tối đa 10 MB. Mỗi bộ luật nên dùng
-            một bucket riêng để dễ quản lý và phân quyền.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-2 sm:col-span-2">
-              <Label htmlFor="name">Tên tài liệu</Label>
-              <Input
-                id="name"
-                placeholder="VD: Bộ luật Dân sự 2015 - Chương 1"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                maxLength={200}
-                required
-                disabled={uploading}
-              />
+      {/* ── 2-column layout ──────────────────────────────────────────
+          Sticky form on the left (always reachable while scrolling
+          through the doc list); doc list takes the wider right column. */}
+      <div className="grid gap-6 lg:grid-cols-[360px_1fr] lg:items-start">
+        {/* ── Upload form (left, sticky) ─────────────────────────────── */}
+        <div className="lg:sticky lg:top-6">
+          <div className="relative overflow-hidden rounded-2xl border border-brand-tertiary/25 bg-brand-surface-container/80 shadow-2xl shadow-black/40 backdrop-blur-xl">
+            {/* Top accent line — matches auth/chat dialog pattern */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-tertiary to-transparent"
+            />
+            <div className="border-b border-brand-tertiary/15 px-6 py-5">
+              <h2 className="flex items-center gap-2 font-headline text-lg font-semibold text-brand-on-surface">
+                <UploadCloud className="h-5 w-5 text-brand-tertiary" />
+                Tải lên tài liệu mới
+              </h2>
+              <p className="mt-1 text-sm text-brand-on-surface-variant">
+                Hỗ trợ PDF, DOCX, TXT, Markdown — tối đa 10 MB.
+              </p>
             </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="bucket">Bucket R2</Label>
-              <select
-                id="bucket"
-                value={bucket}
-                onChange={(e) => setBucket(e.target.value)}
-                required
-                disabled={uploading || bucketsLoading}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {bucketsLoading ? (
-                  <option value="">Đang tải…</option>
-                ) : buckets.length === 0 ? (
-                  <option value="">— Chưa có bucket, hãy tạo —</option>
-                ) : (
-                  buckets.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label>&nbsp;</Label>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowCreateBucket(true)}
-                disabled={uploading}
-                className="justify-start"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Tạo bucket mới…
-              </Button>
-            </div>
-
-            <div className="grid gap-2 sm:col-span-2">
-              <Label htmlFor="file">File</Label>
-              <Input
-                id="file"
-                ref={fileInputRef}
-                type="file"
-                accept={ACCEPTED}
-                onChange={onPickFile}
-                required
-                disabled={uploading}
-              />
-              {file && (
-                <p className="text-xs text-brand-on-surface-variant">
-                  Đã chọn: <span className="font-medium text-brand-on-surface">{file.name}</span>
-                  {' · '}
-                  {formatBytes(file.size)}
-                </p>
-              )}
-            </div>
-
-            <div className="sm:col-span-2 flex items-center justify-end gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setName('');
-                  setFile(null);
-                  if (fileInputRef.current) fileInputRef.current.value = '';
-                }}
-                disabled={uploading || (!name && !file)}
-              >
-                Xoá form
-              </Button>
-              <Button
-                type="submit"
-                disabled={uploading || !file || !name.trim() || !bucket.trim()}
-              >
-                {uploading ? (
-                  <span className="inline-flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Đang tải lên…
-                  </span>
-                ) : (
-                  'Tải lên'
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* ── Document list ────────────────────────────────────────────── */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <FileText className="h-5 w-5 text-brand-tertiary" />
-              Tài liệu đã tải lên
-            </CardTitle>
-            <CardDescription>
-              {loading ? 'Đang tải…' : `${docs.length} tài liệu trong cơ sở tri thức`}
-            </CardDescription>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setLoading(true);
-              void refreshDocs();
-            }}
-            disabled={loading}
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Làm mới'}
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {loadError && (
-            <div className="mb-4 flex items-start gap-2 rounded-md border border-red-400/40 bg-red-500/10 p-3 text-sm text-red-200">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <div>
-                <p className="font-medium">Không tải được danh sách</p>
-                <p className="text-red-200/80">{loadError}</p>
+            <form onSubmit={onSubmit} className="grid gap-4 p-6">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Tên tài liệu</Label>
+                <Input
+                  id="name"
+                  placeholder="VD: Bộ luật Dân sự 2015"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={200}
+                  required
+                  disabled={uploading}
+                  className="border-brand-outline-variant/30 bg-brand-surface-container-lowest/60 focus-visible:border-brand-tertiary focus-visible:ring-brand-tertiary/30"
+                />
               </div>
-            </div>
-          )}
 
-          {loading ? (
-            <div className="flex items-center justify-center py-12 text-brand-on-surface-variant">
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <div className="grid gap-2">
+                <Label htmlFor="bucket">Bucket R2</Label>
+                <select
+                  id="bucket"
+                  value={bucket}
+                  onChange={(e) => setBucket(e.target.value)}
+                  required
+                  disabled={uploading || bucketsLoading}
+                  className="flex h-10 w-full rounded-md border border-brand-outline-variant/30 bg-brand-surface-container-lowest/60 px-3 py-2 text-sm text-brand-on-surface focus-visible:border-brand-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-tertiary/30 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {bucketsLoading ? (
+                    <option value="">Đang tải…</option>
+                  ) : buckets.length === 0 ? (
+                    <option value="">— Chưa có bucket, hãy tạo —</option>
+                  ) : (
+                    buckets.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateBucket(true)}
+                  disabled={uploading}
+                  className="mt-1 inline-flex w-fit items-center gap-1 text-xs text-brand-tertiary transition-colors hover:text-brand-primary disabled:opacity-50"
+                >
+                  <Plus className="h-3 w-3" />
+                  Tạo bucket mới
+                </button>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="file">File</Label>
+                <Input
+                  id="file"
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ACCEPTED}
+                  onChange={onPickFile}
+                  required
+                  disabled={uploading}
+                  className="border-brand-outline-variant/30 bg-brand-surface-container-lowest/60 file:mr-3 file:rounded file:border-0 file:bg-brand-tertiary/15 file:px-3 file:py-1 file:text-xs file:font-medium file:text-brand-tertiary hover:file:bg-brand-tertiary/25 focus-visible:border-brand-tertiary focus-visible:ring-brand-tertiary/30"
+                />
+                {file && (
+                  <p className="text-xs text-brand-on-surface-variant">
+                    Đã chọn:{' '}
+                    <span className="font-medium text-brand-on-surface">
+                      {file.name}
+                    </span>
+                    {' · '}
+                    {formatBytes(file.size)}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2">
+                <Button
+                  type="submit"
+                  disabled={
+                    uploading || !file || !name.trim() || !bucket.trim()
+                  }
+                  className="w-full"
+                >
+                  {uploading ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Đang tải lên…
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-2">
+                      <UploadCloud className="h-4 w-4" />
+                      Tải lên
+                    </span>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setName('');
+                    setFile(null);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                  disabled={uploading || (!name && !file)}
+                  className="w-full"
+                >
+                  Xoá form
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* ── Document list (right) ──────────────────────────────────── */}
+        <div className="relative overflow-hidden rounded-2xl border border-brand-tertiary/25 bg-brand-surface-container/80 shadow-2xl shadow-black/40 backdrop-blur-xl">
+          {/* Top accent line */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-tertiary to-transparent"
+          />
+          <div className="flex flex-row items-center justify-between gap-3 border-b border-brand-tertiary/15 px-6 py-5">
+            <div>
+              <h2 className="flex items-center gap-2 font-headline text-lg font-semibold text-brand-on-surface">
+                <FileText className="h-5 w-5 text-brand-tertiary" />
+                Tài liệu đã tải lên
+              </h2>
+              <p className="mt-1 text-sm text-brand-on-surface-variant">
+                {loading
+                  ? 'Đang tải…'
+                  : `${docs.length} tài liệu trong cơ sở tri thức`}
+              </p>
             </div>
-          ) : docs.length === 0 ? (
-            <div className="rounded-md border border-dashed border-brand-outline-variant/30 bg-white/5 p-8 text-center text-sm text-brand-on-surface-variant">
-              Chưa có tài liệu nào. Hãy tải lên file đầu tiên ở trên.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-brand-outline-variant/20 text-left text-xs uppercase tracking-wider text-brand-on-surface-variant">
-                    <th className="py-2 pr-4 font-medium">Tên</th>
-                    <th className="py-2 pr-4 font-medium">Bucket</th>
-                    <th className="py-2 pr-4 font-medium">Loại</th>
-                    <th className="py-2 pr-4 font-medium">Dung lượng</th>
-                    <th className="py-2 pr-4 font-medium">Chunks</th>
-                    <th className="py-2 pr-4 font-medium">Trạng thái</th>
-                    <th className="py-2 pr-4 font-medium">Ngày tạo</th>
-                    <th className="py-2 text-right font-medium">Hành động</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {docs.map((d) => (
-                    <tr
-                      key={d.id}
-                      className="border-b border-brand-outline-variant/10 last:border-0"
-                    >
-                      <td className="py-3 pr-4 align-top">
-                        <p className="font-medium text-brand-on-surface">{d.name}</p>
-                        {d.error && (
-                          <p
-                            className="mt-0.5 truncate text-xs text-red-300"
-                            title={d.error}
-                          >
-                            {d.error}
-                          </p>
-                        )}
-                      </td>
-                      <td className="py-3 pr-4 align-top">
-                        <span className="inline-flex items-center gap-1 rounded-full border border-brand-outline-variant/30 bg-white/5 px-2 py-0.5 text-xs font-mono text-brand-on-surface">
-                          <Database className="h-3 w-3 text-brand-tertiary" />
-                          {d.bucketName}
-                        </span>
-                      </td>
-                      <td className="py-3 pr-4 align-top text-brand-on-surface-variant">
-                        {shortMime(d.mimeType)}
-                      </td>
-                      <td className="py-3 pr-4 align-top text-brand-on-surface-variant">
-                        {formatBytes(d.sizeBytes)}
-                      </td>
-                      <td className="py-3 pr-4 align-top text-brand-on-surface-variant">
-                        {d.chunkCount}
-                      </td>
-                      <td className="py-3 pr-4 align-top">
-                        <StatusBadge status={d.status} />
-                      </td>
-                      <td className="py-3 pr-4 align-top text-brand-on-surface-variant">
-                        {formatDateTime(d.createdAt)}
-                      </td>
-                      <td className="py-3 text-right align-top">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setPendingDelete(d)}
-                          className="text-red-300 hover:bg-red-500/10 hover:text-red-200"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Xoá</span>
-                        </Button>
-                      </td>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setLoading(true);
+                void refreshDocs();
+              }}
+              disabled={loading}
+              className="text-brand-on-surface-variant hover:bg-white/5 hover:text-brand-tertiary"
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Làm mới'
+              )}
+            </Button>
+          </div>
+          <div className="p-6">
+            {loadError && (
+              <div className="mb-4 flex items-start gap-2 rounded-md border border-red-400/40 bg-red-500/10 p-3 text-sm text-red-200">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <p className="font-medium">Không tải được danh sách</p>
+                  <p className="text-red-200/80">{loadError}</p>
+                </div>
+              </div>
+            )}
+
+            {loading ? (
+              <div className="flex items-center justify-center py-12 text-brand-on-surface-variant">
+                <Loader2 className="h-5 w-5 animate-spin" />
+              </div>
+            ) : docs.length === 0 ? (
+              <div className="rounded-md border border-dashed border-brand-outline-variant/30 bg-white/5 p-8 text-center text-sm text-brand-on-surface-variant">
+                Chưa có tài liệu nào. Hãy tải lên file đầu tiên ở bên trái.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-brand-outline-variant/20 text-left text-xs uppercase tracking-wider text-brand-on-surface-variant">
+                      <th className="py-2 pr-4 font-medium">Tên</th>
+                      <th className="py-2 pr-4 font-medium">Bucket</th>
+                      <th className="py-2 pr-4 font-medium">Loại</th>
+                      <th className="py-2 pr-4 font-medium">Dung lượng</th>
+                      <th className="py-2 pr-4 font-medium">Chunks</th>
+                      <th className="py-2 pr-4 font-medium">Trạng thái</th>
+                      <th className="py-2 pr-4 font-medium">Ngày tạo</th>
+                      <th className="py-2 text-right font-medium">Hành động</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </thead>
+                  <tbody>
+                    {docs.map((d) => (
+                      <tr
+                        key={d.id}
+                        className="border-b border-brand-outline-variant/10 transition-colors last:border-0 hover:bg-white/[0.03]"
+                      >
+                        <td className="py-3 pr-4 align-top">
+                          <p className="font-medium text-brand-on-surface">
+                            {d.name}
+                          </p>
+                          {d.error && (
+                            <p
+                              className="mt-0.5 truncate text-xs text-red-300"
+                              title={d.error}
+                            >
+                              {d.error}
+                            </p>
+                          )}
+                        </td>
+                        <td className="py-3 pr-4 align-top">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-brand-tertiary/25 bg-brand-tertiary/10 px-2 py-0.5 text-xs font-mono text-brand-on-surface">
+                            <Database className="h-3 w-3 text-brand-tertiary" />
+                            {d.bucketName}
+                          </span>
+                        </td>
+                        <td className="py-3 pr-4 align-top text-brand-on-surface-variant">
+                          {shortMime(d.mimeType)}
+                        </td>
+                        <td className="py-3 pr-4 align-top text-brand-on-surface-variant">
+                          {formatBytes(d.sizeBytes)}
+                        </td>
+                        <td className="py-3 pr-4 align-top text-brand-on-surface-variant">
+                          {d.chunkCount}
+                        </td>
+                        <td className="py-3 pr-4 align-top">
+                          <StatusBadge status={d.status} />
+                        </td>
+                        <td className="py-3 pr-4 align-top text-brand-on-surface-variant">
+                          {formatDateTime(d.createdAt)}
+                        </td>
+                        <td className="py-3 text-right align-top">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setPendingDelete(d)}
+                            className="text-red-300 hover:bg-red-500/10 hover:text-red-200"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Xoá</span>
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       <ConfirmDialog
         open={!!pendingDelete}
@@ -465,6 +507,7 @@ export default function KnowledgePage() {
         onOpenChange={setShowCreateBucket}
         onSubmit={onCreateBucket}
       />
+      </div>
     </main>
   );
 }

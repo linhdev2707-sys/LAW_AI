@@ -29,11 +29,25 @@ export default function DashboardPage() {
   }, [status]);
 
   if (status === 'loading') {
-    return <main className="container py-12">Đang tải…</main>;
+    return (
+      <main className="relative min-h-[60vh] overflow-hidden bg-brand-background text-brand-on-surface-variant">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(14,165,233,0.10),transparent_60%)]"
+        />
+        <div className="relative container py-12">Đang tải…</div>
+      </main>
+    );
   }
 
   return (
-    <main className="container py-12">
+    <main className="relative min-h-screen overflow-hidden bg-brand-background text-brand-on-surface">
+      {/* Soft cyan glow at the top — matches landing/chat backdrop. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(34,211,238,0.10),transparent_60%)]"
+      />
+      <div className="container relative py-12">
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Bảng điều khiển</h1>
         <Button variant="outline" onClick={() => signOut({ callbackUrl: '/' })}>
@@ -71,6 +85,7 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
+      </div>
     </main>
   );
 }

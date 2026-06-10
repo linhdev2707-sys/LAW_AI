@@ -48,6 +48,8 @@ export default function ChatConversationPage() {
     if (autoSentRef.current === id) return; // already handled this id
     if (streaming) return; // wait for any current stream
     if (!conversationId) return; // and to actually exist
+    // Mark BEFORE calling send() so a second Strict Mode invocation (or any
+    // re-entry in the same microtask) short-circuits on the guard above.
     autoSentRef.current = id;
     void send(prompt);
     // Strip ?q= so a hard refresh doesn't re-send.

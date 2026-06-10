@@ -4,6 +4,7 @@ import { SocialProof } from '@/components/landing/social-proof';
 import { FeaturesSection } from '@/components/landing/features-section';
 import { CtaSection } from '@/components/landing/cta-section';
 import { ExpertsSection } from '@/components/landing/experts-section';
+import { DisclaimerSection } from '@/components/landing/disclaimer-section';
 import { LandingFooter } from '@/components/landing/landing-footer';
 import { LandingScroll } from '@/components/landing/landing-scroll';
 
@@ -18,6 +19,7 @@ export default function HomePage() {
       <FeaturesSection />
       <CtaSection />
       <ExpertsSection />
+      <DisclaimerSection />
       <LandingFooter />
     </main>
   );

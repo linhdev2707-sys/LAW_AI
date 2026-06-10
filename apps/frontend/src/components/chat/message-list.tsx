@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { ArrowDown, Sparkles } from 'lucide-react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { ArrowDown } from 'lucide-react';
 import type { IMessage } from '@/lib/chat';
 import type { StreamSource } from '@/lib/chat-stream';
 import { MessageBubble } from './message-bubble';
@@ -14,45 +14,46 @@ interface MessageListProps {
   loading?: boolean;
 }
 
-const THINKING_PHRASES = [
-  'Đang tra cứu văn bản pháp luật…',
-  'Đang phân tích tình huống của bạn…',
-  'Đang soạn câu trả lời…',
-  'Đang tham chiếu tiền lệ…',
-];
+/** Hide the "jump to latest" pill when this many pixels (or fewer) from
+ *  the bottom. The threshold is intentionally generous so the pill doesn't
+ *  flicker as the user scrolls a few pixels while reading. */
+const STICK_TO_BOTTOM_PX = 200;
 
 export function MessageList({ messages, sources, loading }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const [autoScroll, setAutoScroll] = useState(true);
-  const [thinkingIdx, setThinkingIdx] = useState(0);
+  const [isAtBottom, setIsAtBottom] = useState(true);
 
-  // Rotate the "thinking" phrase every 1.6s while loading so it feels alive.
-  useEffect(() => {
-    if (!loading) {
-      setThinkingIdx(0);
-      return;
-    }
-    const t = setInterval(() => {
-      setThinkingIdx((i) => (i + 1) % THINKING_PHRASES.length);
-    }, 1600);
-    return () => clearInterval(t);
-  }, [loading]);
+  // Auto-scroll to bottom while the user is parked at (or near) the bottom.
+  // We watch the messages array's serialized content (not just `length`) so
+  // streaming tokens — which mutate the *last* message's content — also
+  // trigger a stick-to-bottom scroll. Using useLayoutEffect avoids the
+  // one-frame flash where new content appears above the input bar.
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !isAtBottom) return;
+    el.scrollTop = el.scrollHeight;
+  }, [messages, loading, isAtBottom]);
 
-  // Auto-scroll to bottom only if the user hasn't scrolled up.
-  useEffect(() => {
-    if (autoScroll) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
-  }, [messages.length, loading, autoScroll]);
-
-  // Detect manual scroll: if user scrolls up, disable auto-scroll; if they
-  // scroll back to the bottom, re-enable it.
+  // Detect manual scroll: if user scrolls up, mark "not at bottom"; if they
+  // scroll back into the threshold zone, mark "at bottom" again.
   function onScroll() {
     const el = scrollRef.current;
     if (!el) return;
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    setAutoScroll(distanceFromBottom < 80);
+    setIsAtBottom(distanceFromBottom <= STICK_TO_BOTTOM_PX);
+  }
+
+  function jumpToLatest() {
+    const el = scrollRef.current;
+    if (!el) return;
+    setIsAtBottom(true);
+    // Scroll twice to defeat the smooth-scroll race: first to the *current*
+    // scrollHeight (instant), then again after a tick in case streaming
+    // appended more height in the meantime.
+    el.scrollTop = el.scrollHeight;
+    requestAnimationFrame(() => {
+      if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    });
   }
 
   return (
@@ -62,7 +63,7 @@ export function MessageList({ messages, sources, loading }: MessageListProps) {
           <p>Bắt đầu cuộc trò chuyện bằng cách gửi tin nhắn bên dưới.</p>
         </div>
       ) : (
-        <div className="space-y-6 py-8 pb-32">
+        <div className="space-y-10 py-10 pb-40">
           {messages.map((m) => (
             <MessageBubble
               key={m.id}
@@ -70,44 +71,23 @@ export function MessageList({ messages, sources, loading }: MessageListProps) {
               sources={m.role === 'assistant' ? sources?.[m.id] : undefined}
             />
           ))}
-
-          {loading && (
-            <div className="border-y border-brand-outline-variant/5 bg-gradient-to-b from-brand-surface-container-high/40 to-brand-surface-container-high/10">
-              <div className="mx-auto flex max-w-3xl gap-3 px-4 py-6 md:px-6">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-primary to-brand-tertiary text-white shadow-md shadow-brand-tertiary/20">
-                  <Sparkles className="h-4 w-4" />
-                </div>
-                <div className="flex flex-col gap-1.5 py-1">
-                  <span className="text-sm font-semibold text-brand-on-surface">LAW AI</span>
-                  <div className="flex items-center gap-2 text-sm text-brand-on-surface-variant">
-                    <TypingDots />
-                    <span key={thinkingIdx} className="animate-in fade-in slide-in-from-bottom-1 duration-300">
-                      {THINKING_PHRASES[thinkingIdx]}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div ref={bottomRef} />
         </div>
       )}
 
-      {/* Floating "jump to latest" pill — shown when user has scrolled up */}
-      {!autoScroll && (
+      {/* Floating "jump to latest" pill — shown only when the user has
+          scrolled away from the bottom. Once they click it, we force
+          isAtBottom=true and scroll instantly, which collapses the pill. */}
+      {!isAtBottom && (
         <button
           type="button"
-          onClick={() => {
-            setAutoScroll(true);
-            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-          }}
+          onClick={jumpToLatest}
           className={cn(
-            'absolute bottom-4 left-1/2 -translate-x-1/2',
-            'flex items-center gap-1.5 rounded-full border border-brand-tertiary/40',
-            'bg-brand-surface-container/90 px-3 py-1.5 text-xs font-medium text-brand-on-surface',
+            'absolute bottom-32 left-1/2 -translate-x-1/2 z-20',
+            'flex items-center gap-1.5 rounded-full border border-brand-tertiary/50',
+            'bg-brand-surface-container/95 px-3.5 py-2 text-xs font-medium text-brand-on-surface',
             'shadow-lg shadow-black/40 backdrop-blur transition-all',
-            'hover:border-brand-tertiary/70 hover:bg-brand-tertiary/15',
+            'hover:border-brand-tertiary/80 hover:bg-brand-tertiary/15',
+            'animate-in fade-in slide-in-from-bottom-2 duration-200',
           )}
           aria-label="Cuộn xuống tin nhắn mới nhất"
         >
@@ -116,15 +96,5 @@ export function MessageList({ messages, sources, loading }: MessageListProps) {
         </button>
       )}
     </div>
-  );
-}
-
-function TypingDots() {
-  return (
-    <span className="inline-flex items-center gap-0.5" aria-hidden>
-      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand-tertiary [animation-delay:0ms]" />
-      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand-tertiary [animation-delay:150ms]" />
-      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand-tertiary [animation-delay:300ms]" />
-    </span>
   );
 }

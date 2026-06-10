@@ -45,7 +45,7 @@ export function MessageBubble({ message, sources }: MessageBubbleProps) {
       */}
       <div
         className={cn(
-          'mx-auto grid max-w-3xl grid-cols-[36px_1fr_36px] gap-3 px-4 py-2.5 md:px-6',
+          'mx-auto grid max-w-3xl grid-cols-[36px_1fr_36px] gap-4 px-4 py-4 md:gap-5 md:px-6 md:py-5',
         )}
       >
         {/* Avatar (col 1) */}
@@ -72,7 +72,7 @@ export function MessageBubble({ message, sources }: MessageBubbleProps) {
           {isUser ? (
             <div
               className={cn(
-                'inline-block max-w-[85%] rounded-2xl rounded-tr-md px-4 py-2.5',
+                'inline-block max-w-[85%] rounded-2xl rounded-tr-md px-5 py-3',
                 'bg-gradient-to-br from-brand-primary to-brand-tertiary text-white shadow-md shadow-brand-primary/20',
               )}
             >
@@ -83,12 +83,12 @@ export function MessageBubble({ message, sources }: MessageBubbleProps) {
           ) : (
             <div
               className={cn(
-                'prose prose-invert max-w-none text-[15px] leading-7 text-brand-on-surface',
-                '[&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2',
+                'prose prose-invert max-w-none px-1 text-[15px] leading-7 text-brand-on-surface',
+                '[&_p]:my-3 [&_ul]:my-3 [&_ol]:my-3',
                 '[&_strong]:font-semibold [&_strong]:text-brand-tertiary',
                 '[&_code]:rounded [&_code]:bg-black/30 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-sm',
                 '[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5',
-                '[&_li]:my-1 [&_h1]:text-xl [&_h2]:text-lg [&_h3]:text-base',
+                '[&_li]:my-1.5 [&_h1]:text-xl [&_h2]:text-lg [&_h3]:text-base',
               )}
             >
               {renderContent(message.content)}
@@ -100,7 +100,7 @@ export function MessageBubble({ message, sources }: MessageBubbleProps) {
 
           {/* Action row — only for AI messages */}
           {!isUser && (
-            <div className="flex items-center gap-1 pt-1.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+            <div className="flex items-center gap-1 pt-2.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
               <ActionButton onClick={handleCopy} label={copied ? 'Đã sao chép' : 'Sao chép'}>
                 {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
               </ActionButton>

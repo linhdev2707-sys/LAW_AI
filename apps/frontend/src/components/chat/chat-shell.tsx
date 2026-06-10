@@ -5,6 +5,8 @@ import { Menu } from 'lucide-react';
 import Image from 'next/image';
 import { Sidebar } from './sidebar';
 import { Button } from '@/components/ui/button';
+import { DisclaimerGate } from './disclaimer-gate';
+import { useDisclaimerGate } from '@/hooks/use-disclaimer-gate';
 
 interface ChatShellProps {
   children: React.ReactNode;
@@ -13,14 +15,18 @@ interface ChatShellProps {
 
 export function ChatShell({ children, refreshKey }: ChatShellProps) {
   const [open, setOpen] = useState(false);
+  const { isOpen: isDisclaimerOpen } = useDisclaimerGate();
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      // Don't allow Escape to close the sidebar while the disclaimer gate
+      // is up — the user must explicitly accept.
+      if (isDisclaimerOpen) return;
       if (e.key === 'Escape') setOpen(false);
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [isDisclaimerOpen]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-brand-background text-brand-on-surface">
@@ -51,6 +57,11 @@ export function ChatShell({ children, refreshKey }: ChatShellProps) {
 
         <main className="relative flex flex-1 flex-col overflow-hidden">{children}</main>
       </div>
+
+      {/* Legal disclaimer gate — shown the first time (per browser, per
+          version) the user enters the chat section. Modal blocks all
+          interaction with the page beneath it until accepted. */}
+      <DisclaimerGate />
     </div>
   );
 }

@@ -29,6 +29,13 @@ export function useConversationStream() {
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const acRef = useRef<AbortController | null>(null);
+  // Synchronous re-entrance guard. The React `streaming` state lags by one
+  // render, so a second `send()` call landing in the same microtask (e.g.
+  // Strict Mode double-invoke of an effect, or a fast double-click on a
+  // suggestion button) would otherwise pass the `if (streaming) return` check
+  // and append the optimistic user message twice. This ref flips
+  // synchronously, so the second call short-circuits immediately.
+  const inFlightRef = useRef(false);
 
   const load = useCallback(async (id: string) => {
     setError(null);
@@ -48,12 +55,16 @@ export function useConversationStream() {
   const stop = useCallback(() => {
     acRef.current?.abort();
     acRef.current = null;
+    inFlightRef.current = false;
     setStreaming(false);
   }, []);
 
   const send = useCallback(
     async (content: string) => {
+      // Synchronous guard — see comment on `inFlightRef`.
+      if (inFlightRef.current) return null;
       if (streaming) return null;
+      inFlightRef.current = true;
       setError(null);
       setStreaming(true);
 
@@ -93,6 +104,7 @@ export function useConversationStream() {
             },
             onDone: () => {
               acRef.current = null;
+              inFlightRef.current = false;
               setStreaming(false);
             },
             onError: ({ message }) => {
@@ -101,6 +113,7 @@ export function useConversationStream() {
               // Roll back the placeholder assistant; keep the user message
               setMessages((prev) => prev.filter((m) => m.id !== assistantId));
               acRef.current = null;
+              inFlightRef.current = false;
               setStreaming(false);
             },
           },
@@ -116,6 +129,7 @@ export function useConversationStream() {
           ),
         );
         toast.error('Gửi tin nhắn thất bại', { description: message });
+        inFlightRef.current = false;
         setStreaming(false);
         return null;
       }
