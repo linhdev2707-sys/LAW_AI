@@ -52,8 +52,10 @@ export default function ChatConversationPage() {
     // re-entry in the same microtask) short-circuits on the guard above.
     autoSentRef.current = id;
     void send(prompt);
-    // Strip ?q= so a hard refresh doesn't re-send.
-    router.replace(`/chat/${id}`);
+    // Strip ?q= in the next tick to avoid browser interrupting the in-flight stream
+    setTimeout(() => {
+      router.replace(`/chat/${id}`);
+    }, 100);
   }, [id, search, conversationId, streaming, send, router]);
 
   function handleSend(content: string) {

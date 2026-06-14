@@ -35,6 +35,7 @@ export interface StreamHandlers {
 export interface StreamSendInput {
   content: string;
   conversationId?: string;
+  bucketName?: string;
 }
 
 /**
@@ -70,6 +71,9 @@ export async function streamChatMessage(
       content: input.content,
       ...(input.conversationId
         ? { conversationId: input.conversationId }
+        : {}),
+      ...(input.bucketName
+        ? { bucketName: input.bucketName }
         : {}),
     }),
     signal: ac.signal,

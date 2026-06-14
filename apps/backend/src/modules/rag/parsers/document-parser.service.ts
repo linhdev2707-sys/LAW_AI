@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { extname } from 'path';
 import mammoth from 'mammoth';
+import WordExtractor from 'word-extractor';
 
 // pdf-parse 1.x has no @types, and we lazy-load it on first PDF to avoid
 // a hard require() at module load time (the package pulls in pdfjs-dist
@@ -19,8 +20,8 @@ function getPdfParse(): PdfParseFn {
 /**
  * Best-effort plain-text extraction for uploaded documents.
  *
- * Supported input types: PDF (via pdf-parse), DOCX (via mammoth), and
- * plain text / Markdown (utf-8). Anything else is rejected with an
+ * Supported input types: PDF (via pdf-parse), DOCX (via mammoth), DOC (via word-extractor),
+ * and plain text / Markdown (utf-8). Anything else is rejected with an
  * error that's mapped to a 4xx by the global exception filter.
  *
  * The output feeds straight into the existing RAG ingest pipeline
@@ -56,6 +57,9 @@ export class DocumentParserService {
           break;
         case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
           text = await this.fromDocx(buffer);
+          break;
+        case 'application/msword':
+          text = await this.fromDoc(buffer);
           break;
         case 'text/markdown':
         case 'text/plain':
@@ -102,6 +106,8 @@ export class DocumentParserService {
         return 'application/pdf';
       case '.docx':
         return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case '.doc':
+        return 'application/msword';
       case '.md':
       case '.markdown':
         return 'text/markdown';
@@ -122,5 +128,11 @@ export class DocumentParserService {
     // mammoth.extractRawText returns { value, messages } — value is plain text.
     const result = await mammoth.extractRawText({ buffer });
     return result.value || '';
+  }
+
+  private async fromDoc(buffer: Buffer): Promise<string> {
+    const extractor = new WordExtractor();
+    const doc = await extractor.extract(buffer);
+    return doc.getBody() || '';
   }
 }

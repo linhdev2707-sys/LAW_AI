@@ -167,7 +167,10 @@ export class R2Service implements OnModuleInit {
       return;
     }
 
-    const input: { Bucket: string; CreateBucketConfiguration?: { LocationConstraint: BucketLocationConstraint } } = {
+    const input: {
+      Bucket: string;
+      CreateBucketConfiguration?: { LocationConstraint: BucketLocationConstraint };
+    } = {
       Bucket: name,
     };
     if (region && region !== 'auto') {

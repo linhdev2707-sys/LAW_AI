@@ -16,8 +16,6 @@ import { MaterialIcon } from '@/components/landing/material-icon';
 export function LoginForm() {
   const router = useRouter();
   const search = useSearchParams();
-  // Honour NextAuth's ?callbackUrl=... if it's a safe same-origin path,
-  // otherwise default to /chat.
   const rawCallback = search.get('callbackUrl');
   const callbackUrl = rawCallback && rawCallback.startsWith('/') ? rawCallback : '/chat';
   const [error, setError] = useState<string | null>(null);

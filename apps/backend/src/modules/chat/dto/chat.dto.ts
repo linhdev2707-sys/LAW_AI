@@ -8,6 +8,13 @@ export class CreateConversationDto {
   @MinLength(1)
   @MaxLength(200)
   title?: string;
+
+  @ApiPropertyOptional({ example: 'chatbotagent' })
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(63)
+  bucketName?: string;
 }
 
 export class SendMessageDto {
@@ -21,6 +28,13 @@ export class SendMessageDto {
   @IsOptional()
   @IsUUID()
   conversationId?: string;
+
+  @ApiPropertyOptional({ example: 'chatbotagent' })
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(63)
+  bucketName?: string;
 }
 
 export class ConversationIdParamDto {

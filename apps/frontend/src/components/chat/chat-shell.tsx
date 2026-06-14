@@ -29,7 +29,7 @@ export function ChatShell({ children, refreshKey }: ChatShellProps) {
   }, [isDisclaimerOpen]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-brand-background text-brand-on-surface">
+    <div className="flex h-full overflow-hidden bg-brand-background text-brand-on-surface">
       <Sidebar open={open} onClose={() => setOpen(false)} refreshKey={refreshKey} />
 
       <div className="relative flex flex-1 flex-col overflow-hidden">

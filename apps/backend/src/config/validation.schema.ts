@@ -28,10 +28,9 @@ export const validationSchema = Joi.object({
   DEEPSEEK_MAX_TOKENS: Joi.number().default(2048),
   DEEPSEEK_TEMPERATURE: Joi.number().min(0).max(2).default(0.3),
 
-  // ─── Embeddings (OpenAI) ───────────────────────────────────────────
-  OPENAI_API_KEY: Joi.string().allow('').default(''),
-  OPENAI_EMBEDDING_MODEL: Joi.string().default('text-embedding-3-small'),
-  OPENAI_EMBEDDING_DIM: Joi.number().valid(1536, 3072).default(1536),
+  // ─── Embeddings (local — Xenova/bge-m3 via ONNX) ──────────────────
+  EMBEDDING_MODEL: Joi.string().default('Xenova/bge-m3'),
+  EMBEDDING_DIM: Joi.number().valid(384, 768, 1024).default(1024),
 
   // ─── Cloudflare R2 ─────────────────────────────────────────────────
   R2_ACCOUNT_ID: Joi.string().allow('').default(''),
@@ -48,4 +47,11 @@ export const validationSchema = Joi.object({
   RAG_HISTORY_TURNS: Joi.number().default(10),
   RAG_CHUNK_SIZE: Joi.number().default(512),
   RAG_CHUNK_OVERLAP: Joi.number().default(50),
+  // Drop chunks whose cosine similarity with the query is below this
+  // threshold. 0 disables the filter. 0.35 is a reasonable default
+  // for bge-m3 embeddings (Vietnamese legal corpora).
+  RAG_MIN_COSINE_SCORE: Joi.number().min(0).max(1).default(0.35),
+  // Comma-separated list of R2 bucket names the retriever is
+  // allowed to search. Empty string = no filter (backward compat).
+  RAG_ALLOWED_BUCKETS: Joi.string().allow('').default(''),
 });

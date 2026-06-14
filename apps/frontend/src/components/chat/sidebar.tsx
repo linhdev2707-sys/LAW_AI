@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, MessageSquare, Trash2, LogOut, X, Search, Settings, Sparkles } from 'lucide-react';
+import { Plus, MessageSquare, Trash2, LogOut, X, Search, Settings, Sparkles, LayoutDashboard, Database } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -114,9 +114,10 @@ export function Sidebar({ open, onClose, refreshKey }: SidebarProps) {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-brand-outline-variant/15 p-3">
           <Link
-            href="/chat"
+            href="/dashboard"
             onClick={onClose}
             className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-semibold transition-colors hover:bg-white/5"
+            title="Quay lại Bảng điều khiển"
           >
             <Image
               src="/logo.jpg"
@@ -128,6 +129,24 @@ export function Sidebar({ open, onClose, refreshKey }: SidebarProps) {
             <span>LAW AI</span>
           </Link>
           <div className="flex items-center gap-1">
+            <Link
+              href="/dashboard"
+              onClick={onClose}
+              className="rounded-md p-1.5 text-brand-on-surface-variant transition-colors hover:bg-white/5 hover:text-brand-on-surface"
+              aria-label="Bảng điều khiển"
+              title="Bảng điều khiển"
+            >
+              <LayoutDashboard className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/knowledge"
+              onClick={onClose}
+              className="rounded-md p-1.5 text-brand-on-surface-variant transition-colors hover:bg-white/5 hover:text-brand-on-surface"
+              aria-label="Quản lý Knowledge"
+              title="Quản lý Knowledge"
+            >
+              <Database className="h-4 w-4" />
+            </Link>
             <button
               type="button"
               className="rounded-md p-1.5 text-brand-on-surface-variant transition-colors hover:bg-white/5 hover:text-brand-on-surface"

@@ -41,7 +41,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-brand-background text-brand-on-surface">
+    <main className="relative h-full overflow-y-auto bg-brand-background text-brand-on-surface">
       {/* Soft cyan glow at the top — matches landing/chat backdrop. */}
       <div
         aria-hidden

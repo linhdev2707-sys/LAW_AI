@@ -5,7 +5,7 @@ import { RagChunk } from './entities/rag-chunk.entity';
 import { RagService } from './rag.service';
 import { RagAdminController } from './rag-admin.controller';
 import { ChunkerService } from './chunking/chunker.service';
-import { OpenAIEmbeddingService } from './embedding/openai-embedding.service';
+import { LocalEmbeddingService } from './embedding/local-embedding.service';
 import { RetrieverService } from './retrieval/retriever.service';
 import { R2Service } from './storage/r2.service';
 import { DocumentParserService } from './parsers/document-parser.service';
@@ -16,7 +16,7 @@ import { DocumentParserService } from './parsers/document-parser.service';
   providers: [
     RagService,
     ChunkerService,
-    OpenAIEmbeddingService,
+    LocalEmbeddingService,
     RetrieverService,
     R2Service,
     DocumentParserService,

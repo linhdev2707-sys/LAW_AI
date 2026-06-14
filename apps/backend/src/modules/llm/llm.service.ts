@@ -82,4 +82,26 @@ export class LlmService {
       }
     }
   }
+
+  /**
+   * Get a full chat completion response (non-streaming).
+   * Useful for internal LLM logic like classification or routing.
+   */
+  async getChatCompletion(
+    messages: IChatMessage[],
+    opts: { temperature?: number; maxTokens?: number } = {},
+  ): Promise<string> {
+    if (!this.client) {
+      throw new Error('DeepSeek client not initialised');
+    }
+
+    const response = await this.client.chat.completions.create({
+      model: this.model,
+      messages: messages.map((m) => ({ role: m.role, content: m.content })),
+      temperature: opts.temperature ?? 0.1,
+      max_tokens: opts.maxTokens ?? 100,
+    });
+
+    return response.choices[0]?.message?.content ?? '';
+  }
 }

@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto';
 import { RagDocument, RagDocumentStatus } from './entities/rag-document.entity';
 import { RagChunk } from './entities/rag-chunk.entity';
 import { ChunkerService } from './chunking/chunker.service';
-import { OpenAIEmbeddingService } from './embedding/openai-embedding.service';
+import { LocalEmbeddingService } from './embedding/local-embedding.service';
 import { RetrieverService, IScoredChunk } from './retrieval/retriever.service';
 import { R2Service } from './storage/r2.service';
 import { DocumentParserService } from './parsers/document-parser.service';
@@ -31,7 +31,7 @@ export class RagService {
     @InjectRepository(RagChunk)
     private readonly chunkRepo: Repository<RagChunk>,
     private readonly chunker: ChunkerService,
-    private readonly embeddings: OpenAIEmbeddingService,
+    private readonly embeddings: LocalEmbeddingService,
     private readonly retriever: RetrieverService,
     private readonly r2: R2Service,
     private readonly parser: DocumentParserService,
@@ -118,9 +118,7 @@ export class RagService {
     try {
       await this.r2.putObject(bucket, r2Key, content, mimeType);
     } catch (e: unknown) {
-      this.logger.error(
-        `R2 upload failed (bucket=${bucket}, key=${r2Key}): ${errorMessage(e)}`,
-      );
+      this.logger.error(`R2 upload failed (bucket=${bucket}, key=${r2Key}): ${errorMessage(e)}`);
       throw new Error(`R2 upload failed: ${errorMessage(e)}`);
     }
 
@@ -201,7 +199,9 @@ export class RagService {
     if (dot < 0) return 'text/plain';
     const ext = filename.slice(dot).toLowerCase();
     if (ext === '.pdf') return 'application/pdf';
-    if (ext === '.docx') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    if (ext === '.docx')
+      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    if (ext === '.doc') return 'application/msword';
     if (ext === '.md' || ext === '.markdown') return 'text/markdown';
     if (ext === '.txt') return 'text/plain';
     return 'text/plain';
@@ -224,15 +224,22 @@ export class RagService {
       try {
         await this.r2.deleteObject(doc.bucketName, doc.r2Key);
       } catch (e: unknown) {
-        this.logger.warn(
-          `R2 delete failed for ${doc.bucketName}/${doc.r2Key}: ${errorMessage(e)}`,
-        );
+        this.logger.warn(`R2 delete failed for ${doc.bucketName}/${doc.r2Key}: ${errorMessage(e)}`);
       }
     }
     await this.docRepo.delete({ id });
   }
 
   // ─── Bucket helpers (thin pass-through to R2Service) ─────────────────
+
+  async listActiveBuckets(): Promise<string[]> {
+    const rows = await this.docRepo
+      .createQueryBuilder('doc')
+      .select('DISTINCT doc.bucket_name', 'bucketName')
+      .where('doc.status = :status', { status: RagDocumentStatus.READY })
+      .getRawMany<{ bucketName: string }>();
+    return rows.map((r) => r.bucketName).filter(Boolean);
+  }
 
   listBuckets(): Promise<string[]> {
     if (!this.r2.isEnabled()) return Promise.resolve([]);
@@ -244,7 +251,7 @@ export class RagService {
   }
 
   /** Thin pass-through to the retriever. */
-  retrieve(query: string): Promise<IScoredChunk[]> {
-    return this.retriever.retrieve(query);
+  retrieve(query: string, bucketName?: string): Promise<IScoredChunk[]> {
+    return this.retriever.retrieve(query, bucketName);
   }
 }

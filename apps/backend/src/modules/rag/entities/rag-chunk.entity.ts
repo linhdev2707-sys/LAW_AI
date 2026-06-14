@@ -32,9 +32,11 @@ export class RagChunk {
   tokenCount: number;
 
   /**
-   * JSON-serialized `number[]` of length `openai.embeddingDim` (default 1536).
-   * Stored as TEXT for MVP — switch to `vector(1536)` + HNSW index in a later
-   * migration when corpus size warrants it.
+   * JSON-serialized `number[]` of length `openai.embeddingDim` (default 3072).
+   * Stored as TEXT for MVP — switch to `vector(<dim>)` + HNSW index in a later
+   * migration when corpus size warrants it. The retriever filters out
+   * mismatched lengths at query time, so any dim is safe as long as
+   * `OPENAI_EMBEDDING_DIM` matches the model output.
    */
   @Column({ type: 'text' })
   embedding: string;

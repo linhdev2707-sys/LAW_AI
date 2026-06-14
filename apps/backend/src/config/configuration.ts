@@ -73,5 +73,18 @@ export default registerAs('app', () => ({
     historyTurns: intEnv('RAG_HISTORY_TURNS', 10),
     chunkSize: intEnv('RAG_CHUNK_SIZE', 512),
     chunkOverlap: intEnv('RAG_CHUNK_OVERLAP', 50),
+    // Drop chunks whose cosine similarity with the query is below this
+    // threshold. BGE-M3 multilingual vectors typically sit in [-0.2, 0.9];
+    // 0.35 is a reasonable floor for "loosely related" content. Set to 0
+    // to disable.
+    minCosineScore: floatEnv('RAG_MIN_COSINE_SCORE', 0.35),
+    // Optional whitelist of bucket names the retriever is allowed to
+    // search. Empty array = no filter (backward compatible). Used to
+    // prevent chat from pulling chunks from corpora that were ingested
+    // for a different purpose (e.g. an admin's "playground" bucket).
+    allowedBuckets: (process.env.RAG_ALLOWED_BUCKETS ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
   },
 }));

@@ -21,6 +21,9 @@ export class Conversation {
   @Column({ type: 'varchar', length: 200, default: 'New chat' })
   title: string;
 
+  @Column({ name: 'bucket_name', type: 'varchar', length: 63, nullable: true })
+  bucketName?: string;
+
   @OneToMany(() => Message, (m) => m.conversation, { cascade: true })
   messages: Message[];
 

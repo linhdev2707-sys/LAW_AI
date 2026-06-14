@@ -96,6 +96,7 @@ export class ChatService {
     const conv = this.convRepo.create({
       userId,
       title: dto.title?.trim() || 'New chat',
+      bucketName: dto.bucketName?.trim() || undefined,
     });
     return this.convRepo.save(conv);
   }
@@ -198,7 +199,11 @@ export class ChatService {
     // 4) Retrieve RAG context
     let sources: IRetrievedSource[] = [];
     try {
-      const retrieved = await this.rag.retrieve(dto.content);
+      let searchBucket = conversation.bucketName;
+      if (!searchBucket) {
+        searchBucket = await this.classifyBucketForQuery(dto.content);
+      }
+      const retrieved = await this.rag.retrieve(dto.content, searchBucket);
       sources = retrieved.map((s) => ({
         index: s.index,
         name: s.documentName,
@@ -280,6 +285,45 @@ export class ChatService {
 
   // ─── helpers ──────────────────────────────────────────────────────
 
+  private async classifyBucketForQuery(query: string): Promise<string | undefined> {
+    try {
+      const activeBuckets = await this.rag.listActiveBuckets();
+      if (activeBuckets.length <= 1) {
+        // If there's 0 or 1 active buckets, no routing is needed/possible.
+        return activeBuckets[0];
+      }
+
+      const prompt = `You are a Vietnamese legal expert assistant.
+Given the user's question, determine the most relevant document corpus/bucket from the available list to find the answer.
+
+Available document corpora:
+${activeBuckets.map((name) => `- ${name}`).join('\n')}
+
+User Question: "${query}"
+
+Instructions:
+1. Select exactly one bucket name from the list above that is most relevant to the question.
+2. If the question is general, spans multiple corpora, or you are not sure, reply with "all".
+3. Reply with ONLY the bucket name or "all", with no additional text, explanation, punctuation, or formatting.`;
+
+      const response = await this.llm.getChatCompletion([{ role: 'user', content: prompt }], {
+        temperature: 0.1,
+        maxTokens: 20,
+      });
+
+      const chosen = response.trim().toLowerCase();
+      this.logger.log(`[Auto-route] LLM classified query "${query}" -> response: "${chosen}"`);
+
+      if (activeBuckets.includes(chosen)) {
+        this.logger.log(`[Auto-route] Routing retrieval to bucket: "${chosen}"`);
+        return chosen;
+      }
+    } catch (e) {
+      this.logger.error(`[Auto-route] Failed to classify query: ${errorMessage(e)}`);
+    }
+    return undefined;
+  }
+
   private async persistUserMessage(
     userId: string,
     dto: SendMessageDto,
@@ -294,7 +338,13 @@ export class ChatService {
       }
     } else {
       const title = dto.content.trim().slice(0, 60) || 'New chat';
-      conversation = await this.convRepo.save(this.convRepo.create({ userId, title }));
+      conversation = await this.convRepo.save(
+        this.convRepo.create({
+          userId,
+          title,
+          bucketName: dto.bucketName?.trim() || undefined,
+        }),
+      );
     }
 
     const userMsg = await this.msgRepo.save(
