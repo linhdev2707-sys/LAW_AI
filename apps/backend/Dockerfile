@@ -1,9 +1,5 @@
 # ---- Build stage ----
-FROM node:22-alpine AS builder
-# onnxruntime-node (used by @xenova/transformers for local embeddings)
-# ships a glibc-linked binary; Alpine is musl, so we need the compat
-# shim or the runtime throws ENOENT for ld-linux-x86-64.so.2.
-RUN apk add --no-cache libc6-compat
+FROM node:22-slim AS builder
 RUN corepack enable
 WORKDIR /app
 
@@ -36,8 +32,7 @@ RUN pnpm --filter @law-ai/backend build
 RUN pnpm --filter @law-ai/backend deploy /deploy --prod=false
 
 # ---- Production stage ----
-FROM node:22-alpine AS runner
-RUN apk add --no-cache libc6-compat
+FROM node:22-slim AS runner
 RUN corepack enable
 WORKDIR /app
 
