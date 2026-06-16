@@ -63,14 +63,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
             <Image
               src="/logo.jpg"
-              alt="LAW AI"
-              width={36}
-              height={36}
-              className="h-9 w-9 rounded-md object-contain"
+              alt="ILaw"
+              width={64}
+              height={64}
+              className="h-16 w-16 rounded-md object-contain"
               priority
             />
-            <span className="font-headline text-lg font-semibold tracking-wide text-brand-on-surface">
-              LAW AI
+            <span className="font-headline text-xl font-bold tracking-wide text-brand-on-surface">
+              ILaw
             </span>
           </Link>
         </header>
@@ -82,7 +82,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         {/* Bottom strip — trust marks / legal, fixed height */}
         <footer className="shrink-0 pb-4 pt-2 text-center text-xs text-brand-on-surface-variant/60">
-          © {new Date().getFullYear()} LAW AI · Mã hoá chuẩn ngân hàng · Tuân thủ GDPR
+          © {new Date().getFullYear()} ILaw · Mã hoá chuẩn ngân hàng · Tuân thủ GDPR
         </footer>
       </div>
     </div>

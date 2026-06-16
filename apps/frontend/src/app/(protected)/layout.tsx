@@ -41,6 +41,14 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         <AppSidebar forceOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
       )}
 
+      {!isChatRoute && drawerOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
+          onClick={() => setDrawerOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       <div className="relative flex flex-1 flex-col overflow-hidden">
         {/* Mobile-only top bar with hamburger to open the AppSidebar drawer. */}
         {!isChatRoute && (
@@ -53,7 +61,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             >
               <Menu className="h-5 w-5" />
             </button>
-            <span className="text-sm font-semibold">LAW AI</span>
+            <span className="text-sm font-semibold">ILaw</span>
           </header>
         )}
 

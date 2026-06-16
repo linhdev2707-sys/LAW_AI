@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { Providers } from '@/components/providers';
 
 export const metadata: Metadata = {
-  title: 'LAW AI | Công Nghệ Pháp Lý Chính Xác Cho Vụ Kiện Quan Trọng',
+  title: 'ILaw | Công Nghệ Pháp Lý Chính Xác Cho Vụ Kiện Quan Trọng',
   description:
     'Tận dụng sức mạnh của trí tuệ nhân tạo để tối ưu nghiên cứu pháp lý, phân tích tài liệu và quản lý vụ việc với độ chính xác tuyệt đối và tốc độ vượt trội.',
 };

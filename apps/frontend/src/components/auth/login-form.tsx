@@ -60,14 +60,14 @@ export function LoginForm() {
         >
           <Image
             src="/logo.jpg"
-            alt="LAW AI"
-            width={40}
-            height={40}
-            className="h-10 w-10 rounded-md object-contain"
+            alt="ILaw"
+            width={80}
+            height={80}
+            className="h-20 w-20 rounded-md object-contain"
             priority
           />
-          <span className="font-headline text-xl font-semibold tracking-wide text-brand-on-surface">
-            LAW AI
+          <span className="font-headline text-2xl font-bold tracking-wide text-brand-on-surface">
+            ILaw
           </span>
         </Link>
 

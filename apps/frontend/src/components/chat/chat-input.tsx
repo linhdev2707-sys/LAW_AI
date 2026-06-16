@@ -189,7 +189,7 @@ export function ChatInput({
 
         {/* Disclaimer */}
         <p className="mt-1 text-center text-[11px] text-brand-on-surface-variant/50">
-          LAW AI có thể mắc sai sót · Vui lòng kiểm chứng các thông tin quan trọng
+          ILaw có thể mắc sai sót · Vui lòng kiểm chứng các thông tin quan trọng
         </p>
       </div>
     </div>

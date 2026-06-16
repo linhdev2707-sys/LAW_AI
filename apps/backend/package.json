@@ -2,7 +2,7 @@
   "name": "@law-ai/backend",
   "version": "0.1.0",
   "private": true,
-  "description": "LAW AI Backend - NestJS + TypeORM + PostgreSQL",
+  "description": "ILaw Backend - NestJS + TypeORM + PostgreSQL",
   "scripts": {
     "build": "nest build",
     "dev": "nest start --watch --preserveWatchOutput",

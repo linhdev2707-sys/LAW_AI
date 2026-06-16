@@ -4,7 +4,7 @@
  * App-wide toast notifications.
  *
  * Wraps `sonner`'s `<Toaster />` with a dark theme that matches the
- * LAW AI brand palette (navy surface + cyan accent). Import
+ * ILaw brand palette (navy surface + cyan accent). Import
  * `toast` from `sonner` and call:
  *
  *   import { toast } from 'sonner';

@@ -10,6 +10,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { HealthModule } from './modules/health/health.module';
 import { LlmModule } from './modules/llm/llm.module';
 import { RagModule } from './modules/rag/rag.module';
+import { InternalChatModule } from './modules/internal-chat/internal-chat.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { RagModule } from './modules/rag/rag.module';
     HealthModule,
     LlmModule,
     RagModule,
+    InternalChatModule,
   ],
 })
 export class AppModule {}

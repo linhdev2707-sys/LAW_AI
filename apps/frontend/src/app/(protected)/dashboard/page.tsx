@@ -50,7 +50,11 @@ export default function DashboardPage() {
       <div className="container relative py-12">
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Bảng điều khiển</h1>
-        <Button variant="outline" onClick={() => signOut({ callbackUrl: '/' })}>
+        <Button
+          variant="outline"
+          onClick={() => signOut({ callbackUrl: '/' })}
+          className="border-brand-outline-variant/30 text-brand-on-surface bg-white/5 hover:bg-white/10 hover:text-brand-tertiary transition-all"
+        >
           Đăng xuất
         </Button>
       </div>
@@ -61,27 +65,27 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <Card className="max-w-xl">
+      <Card className="max-w-xl glass-card border-brand-outline-variant/30 text-brand-on-surface">
         <CardHeader>
-          <CardTitle>Hồ sơ</CardTitle>
-          <CardDescription>Thông tin tài khoản của bạn từ máy chủ</CardDescription>
+          <CardTitle className="text-brand-on-surface">Hồ sơ</CardTitle>
+          <CardDescription className="text-brand-on-surface-variant">Thông tin tài khoản của bạn từ máy chủ</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           {loading ? (
-            <p className="text-muted-foreground">Đang tải hồ sơ…</p>
+            <p className="text-brand-on-surface-variant">Đang tải hồ sơ…</p>
           ) : profile ? (
             <dl className="grid grid-cols-2 gap-y-2 text-sm">
-              <dt className="text-muted-foreground">Họ tên</dt>
-              <dd className="font-medium">{profile.fullName}</dd>
-              <dt className="text-muted-foreground">Email</dt>
-              <dd className="font-medium">{profile.email}</dd>
-              <dt className="text-muted-foreground">Vai trò</dt>
-              <dd className="font-medium">{profile.role}</dd>
-              <dt className="text-muted-foreground">Đang hoạt động</dt>
-              <dd className="font-medium">{profile.isActive ? 'Có' : 'Không'}</dd>
+              <dt className="text-brand-on-surface-variant">Họ tên</dt>
+              <dd className="font-medium text-brand-on-surface">{profile.fullName}</dd>
+              <dt className="text-brand-on-surface-variant">Email</dt>
+              <dd className="font-medium text-brand-on-surface">{profile.email}</dd>
+              <dt className="text-brand-on-surface-variant">Vai trò</dt>
+              <dd className="font-medium text-brand-on-surface">{profile.role}</dd>
+              <dt className="text-brand-on-surface-variant">Đang hoạt động</dt>
+              <dd className="font-medium text-brand-on-surface">{profile.isActive ? 'Có' : 'Không'}</dd>
             </dl>
           ) : (
-            <p className="text-muted-foreground">Không có dữ liệu hồ sơ</p>
+            <p className="text-brand-on-surface-variant">Không có dữ liệu hồ sơ</p>
           )}
         </CardContent>
       </Card>

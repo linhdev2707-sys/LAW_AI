@@ -15,7 +15,7 @@ const POINTS: DisclaimerPoint[] = [
   {
     icon: 'info',
     title: 'Không thay thế tư vấn pháp lý chuyên nghiệp',
-    body: 'LAW AI cung cấp thông tin tham khảo dựa trên dữ liệu pháp lý và tiền lệ. Nội dung do hệ thống tạo ra KHÔNG cấu thành tư vấn pháp lý, ý kiến luật sư, hoặc khuyến nghị hành động cho vụ việc cụ thể của bạn.',
+    body: 'ILaw cung cấp thông tin tham khảo dựa trên dữ liệu pháp lý và tiền lệ. Nội dung do hệ thống tạo ra KHÔNG cấu thành tư vấn pháp lý, ý kiến luật sư, hoặc khuyến nghị hành động cho vụ việc cụ thể của bạn.',
   },
   {
     icon: 'gavel',
@@ -25,7 +25,7 @@ const POINTS: DisclaimerPoint[] = [
   {
     icon: 'shield',
     title: 'Giới hạn trách nhiệm pháp lý',
-    body: 'Chúng tôi không chịu trách nhiệm đối với bất kỳ thiệt hại nào phát sinh từ việc sử dụng hoặc không thể sử dụng thông tin do LAW AI cung cấp, kể cả trong bối cảnh tố tụng hoặc giao dịch pháp lý.',
+    body: 'Chúng tôi không chịu trách nhiệm đối với bất kỳ thiệt hại nào phát sinh từ việc sử dụng hoặc không thể sử dụng thông tin do ILaw cung cấp, kể cả trong bối cảnh tố tụng hoặc giao dịch pháp lý.',
   },
   {
     icon: 'lock',
@@ -142,7 +142,7 @@ export function DisclaimerGate() {
               id="disclaimer-gate-desc"
               className="mt-1 text-sm leading-relaxed text-brand-on-surface-variant"
             >
-              Trước khi bắt đầu trò chuyện với LAW AI, vui lòng đọc kỹ các điều khoản
+              Trước khi bắt đầu trò chuyện với ILaw, vui lòng đọc kỹ các điều khoản
               dưới đây và xác nhận bạn đã hiểu rõ.
             </p>
           </div>
@@ -238,7 +238,7 @@ export function DisclaimerGate() {
                     đồng ý chấp nhận
                   </span>{' '}
                   toàn bộ điều khoản miễn trừ trách nhiệm nêu trên. Tôi hiểu rằng
-                  LAW AI chỉ là công cụ hỗ trợ nghiên cứu, không thay thế luật
+                  ILaw chỉ là công cụ hỗ trợ nghiên cứu, không thay thế luật
                   sư, và tôi sẽ tự chịu trách nhiệm về các quyết định pháp lý
                   của mình.
                 </span>

@@ -1,10 +1,12 @@
 import { Container } from './container';
 
-const FIRMS = [
-  'STERLING & CROSS',
-  'VANGUARD LEGAL',
-  'CÔNG TY LUẬT ELITE',
-  'JUSTICE GLOBAL',
+const CAPABILITIES = [
+  'Trò chuyện pháp lý',
+  'Tra cứu văn bản AI',
+  'Soạn thảo biểu mẫu',
+  'Phân tích hợp đồng',
+  'Hỗ trợ thủ tục hành chính',
+  'Kết nối luật sư đối tác',
 ];
 
 export function SocialProof() {
@@ -12,7 +14,7 @@ export function SocialProof() {
     <section className="relative z-10 border-y border-brand-outline-variant/10 bg-brand-surface-container-lowest/60 py-stack-lg backdrop-blur-sm">
       <Container>
         <p className="mb-stack-md text-center font-label text-label-md uppercase tracking-[0.2em] text-brand-on-surface-variant/70">
-          Được tin dùng bởi các công ty luật hàng đầu
+          Hỗ trợ đắc lực cho các nhu cầu pháp lý thường ngày
         </p>
       </Container>
 
@@ -30,24 +32,24 @@ export function SocialProof() {
         }}
       >
         <div className="flex w-max animate-marquee items-center gap-stack-lg whitespace-nowrap group-hover:[animation-play-state:paused]">
-          {/* First copy of the firms */}
-          <FirmList />
+          {/* First copy of the capabilities */}
+          <CapabilityList />
           {/* Second copy — same content, offset by -50% via keyframe */}
-          <FirmList aria-hidden />
+          <CapabilityList aria-hidden />
         </div>
       </div>
     </section>
   );
 }
 
-function FirmList({ 'aria-hidden': ariaHidden }: { 'aria-hidden'?: boolean } = {}) {
+function CapabilityList({ 'aria-hidden': ariaHidden }: { 'aria-hidden'?: boolean } = {}) {
   return (
     <ul
       aria-hidden={ariaHidden}
       className="flex shrink-0 items-center gap-stack-lg"
     >
-      {FIRMS.map((firm) => (
-        <li key={firm} className="flex items-center gap-stack-lg">
+      {CAPABILITIES.map((cap) => (
+        <li key={cap} className="flex items-center gap-stack-lg">
           <span
             className="font-headline text-headline-md font-medium tracking-wide"
             style={{
@@ -59,9 +61,9 @@ function FirmList({ 'aria-hidden': ariaHidden }: { 'aria-hidden'?: boolean } = {
               WebkitTextFillColor: 'transparent',
             }}
           >
-            {firm}
+            {cap}
           </span>
-          {/* Decorative dot separator between firms */}
+          {/* Decorative dot separator between capabilities */}
           <span
             aria-hidden
             className="inline-block h-2 w-2 rounded-full bg-gradient-to-br from-indigo-400 via-cyan-400 to-violet-400"

@@ -1,44 +1,50 @@
+'use client';
+
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Container } from './container';
 import { MaterialIcon } from './material-icon';
 
 export function LandingHero() {
+  const { status } = useSession();
+  const chatHref = status === 'authenticated' ? '/chat' : '/login?callbackUrl=/chat';
+
   return (
     <section className="hero-gradient relative flex min-h-screen items-center pt-20">
       <Container className="flex w-full flex-col items-center gap-stack-md py-section-padding text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-brand-tertiary/40 bg-brand-tertiary/10 px-4 py-1.5 backdrop-blur-sm">
           <MaterialIcon name="verified" className="text-[16px] text-brand-tertiary" />
           <span className="font-label text-label-md uppercase tracking-widest text-brand-on-surface">
-            Công nghệ pháp lý thế hệ mới
+            Trợ lý pháp luật thông minh của bạn
           </span>
         </div>
 
-        <h1 className="font-display text-display-lg-mobile leading-tight text-brand-on-surface md:text-display-lg max-w-4xl">
-          Tương lai của{' '}
+        <h1 className="max-w-4xl font-headline text-display-lg-mobile leading-tight text-brand-on-surface md:text-display-lg">
+          Giải đáp vướng mắc{' '}
           <span className="bg-gradient-to-r from-brand-tertiary via-brand-primary to-brand-secondary bg-clip-text font-semibold italic text-transparent">
-            Trí tuệ pháp lý
+            pháp luật dễ dàng
           </span>
         </h1>
 
-        <p className="mx-auto max-w-2xl font-body text-lg text-brand-on-surface-variant md:text-xl md:text-body-lg">
-          Tận dụng sức mạnh của trí tuệ nhân tạo để tối ưu nghiên cứu pháp lý, phân tích tài liệu và
-          quản lý vụ việc với độ chính xác tuyệt đối và tốc độ vượt trội.
+        <p className="mx-auto max-w-2xl font-body text-lg text-brand-on-surface-variant md:text-body-lg md:text-xl">
+          Trò chuyện trực tiếp để tìm hiểu thủ tục, giải thích văn bản, hợp đồng và nhận hỗ trợ giải
+          quyết các vấn đề pháp lý thường ngày chỉ trong vài giây.
         </p>
 
         <div className="mt-4 flex flex-col justify-center gap-gutter pt-unit sm:flex-row">
           <Button
             asChild
-            className="rounded-full bg-gradient-to-r from-brand-primary to-brand-tertiary px-8 py-4 font-label text-label-md font-semibold text-white shadow-lg shadow-brand-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-primary/50"
+            className="font-label rounded-full bg-gradient-to-r from-brand-primary to-brand-tertiary px-8 py-4 text-label-md font-semibold text-white shadow-lg shadow-brand-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-primary/50"
           >
-            <Link href="/register">Dùng thử miễn phí</Link>
+            <Link href={chatHref}>Trò chuyện ngay</Link>
           </Button>
           <Button
             asChild
             variant="ghost"
-            className="rounded-full border border-brand-on-surface/30 bg-white/5 px-8 py-4 font-label text-label-md font-semibold text-brand-on-surface backdrop-blur-sm transition-all duration-300 hover:border-brand-tertiary/60 hover:bg-white/10 hover:text-brand-tertiary"
+            className="font-label rounded-full border border-brand-on-surface/30 bg-white/5 px-8 py-4 text-label-md font-semibold text-brand-on-surface backdrop-blur-sm transition-all duration-300 hover:border-brand-tertiary/60 hover:bg-white/10 hover:text-brand-tertiary"
           >
-            <Link href="#features">Xem demo</Link>
+            <Link href="#features">Tìm hiểu thêm</Link>
           </Button>
         </div>
       </Container>

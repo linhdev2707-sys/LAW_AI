@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { LogOut, User as UserIcon, LayoutDashboard, ChevronDown, MessageSquare, Database } from 'lucide-react';
+import { LogOut, User as UserIcon, LayoutDashboard, ChevronDown, MessageSquare, Database, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@law-ai/shared';
 import { Button } from '@/components/ui/button';
@@ -13,9 +13,11 @@ import { Container } from './container';
 
 export function LandingNavbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session, status } = useSession();
 
   useEffect(() => {
@@ -50,6 +52,7 @@ export function LandingNavbar() {
   const userName = session?.user?.name || session?.user?.email || '';
   const userEmail = session?.user?.email || '';
   const isAdmin = session?.user?.role === UserRole.ADMIN;
+  const chatHref = status === 'authenticated' ? '/chat' : '/login?callbackUrl=/chat';
 
   return (
     <header
@@ -65,42 +68,42 @@ export function LandingNavbar() {
           <Link href="/" className="flex items-center gap-3">
             <Image
               src="/logo.jpg"
-              alt="LAW AI"
-              width={40}
-              height={40}
-              className="h-10 w-10 rounded-md object-contain"
+              alt="ILaw"
+              width={64}
+              height={64}
+              className="h-16 w-16 rounded-md object-contain"
               priority
             />
-            <span className="font-headline text-2xl font-semibold tracking-wide text-brand-on-surface">
-              LAW AI
+            <span className="font-headline text-3xl font-bold tracking-wide text-brand-on-surface">
+              ILaw
             </span>
           </Link>
 
           <div className="hidden items-center gap-stack-lg md:flex">
-            <Link
-              href="#"
-              className="border-b-2 border-brand-tertiary pb-1 font-body text-body-md text-brand-on-surface"
-            >
-              Nền tảng
-            </Link>
-            <Link
-              href="#"
-              className="font-body text-body-md text-brand-on-surface-variant transition-colors hover:text-brand-tertiary"
-            >
-              Giải pháp
-            </Link>
-            <Link
-              href="#"
-              className="font-body text-body-md text-brand-on-surface-variant transition-colors hover:text-brand-tertiary"
-            >
-              Tài nguyên
-            </Link>
-            <Link
-              href="#"
-              className="font-body text-body-md text-brand-on-surface-variant transition-colors hover:text-brand-tertiary"
-            >
-              Về chúng tôi
-            </Link>
+            {[
+              { href: '/', label: 'Nền tảng' },
+              { href: '/solutions', label: 'Giải pháp' },
+              { href: '/pricing', label: 'Bảng giá' },
+              { href: '/about', label: 'Về chúng tôi' },
+            ].map((item) => {
+              const isActive = item.href !== '#' && pathname === item.href;
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`group relative font-body text-body-md transition-colors pb-1 ${
+                    isActive ? 'text-brand-on-surface' : 'text-brand-on-surface-variant hover:text-brand-tertiary'
+                  }`}
+                >
+                  {item.label}
+                  <span
+                    className={`pointer-events-none absolute inset-x-0 -bottom-0.5 h-0.5 origin-left rounded-full bg-brand-tertiary transition-transform duration-300 ${
+                      isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+                    }`}
+                  />
+                </Link>
+              );
+            })}
           </div>
 
           <div className="flex items-center gap-gutter">
@@ -197,26 +200,173 @@ export function LandingNavbar() {
                   )}
                 </div>
             ) : (
-              /* ── Logged-out: 2 CTA buttons ─────────────────────────────── */
-              <>
-                <Button
-                  asChild
-                  variant="ghost"
-                  className="hidden font-label text-label-md text-brand-on-surface-variant hover:bg-white/5 hover:text-brand-on-surface md:inline-flex"
-                >
-                  <Link href="/login">Đăng nhập</Link>
-                </Button>
-                <Button
-                  asChild
-                  className="rounded-full bg-gradient-to-r from-brand-primary to-brand-tertiary px-stack-md py-3 font-label text-label-md font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-primary/40"
-                >
-                  <Link href="/register">Bắt đầu ngay</Link>
-                </Button>
-              </>
+              /* ── Logged-out: single CTA → /chat nếu đã đăng nhập, /login nếu chưa ─ */
+              <Button
+                asChild
+                className="rounded-full bg-gradient-to-r from-brand-primary to-brand-tertiary px-stack-md py-3 font-label text-label-md font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-primary/40"
+              >
+                <Link href={chatHref}>Bắt đầu ngay</Link>
+              </Button>
             )}
+
+            {/* Hamburger button (Mobile only) */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="flex items-center justify-center p-2 rounded-md text-brand-on-surface-variant hover:bg-white/5 hover:text-brand-on-surface md:hidden"
+              aria-label="Mở menu"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
           </div>
         </Container>
       </nav>
+
+      {/* Mobile Menu Drawer */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop overlay */}
+          <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          {/* Drawer content */}
+          <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-brand-surface-container-high/95 p-6 shadow-2xl backdrop-blur-2xl transition-transform duration-300 border-l border-brand-outline-variant/20 flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8">
+              <Link href="/" className="flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
+                <Image
+                  src="/logo.jpg"
+                  alt="ILaw"
+                  width={48}
+                  height={48}
+                  className="h-12 w-12 rounded-md object-contain"
+                />
+                <span className="font-headline text-2xl font-bold tracking-wide text-brand-on-surface">
+                  ILaw
+                </span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-md p-2 text-brand-on-surface-variant hover:bg-white/5 hover:text-brand-on-surface"
+                aria-label="Đóng menu"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Links */}
+            <div className="flex flex-col gap-4 text-lg font-medium">
+              {[
+                { href: '/', label: 'Nền tảng' },
+                { href: '/solutions', label: 'Giải pháp' },
+                { href: '/pricing', label: 'Bảng giá' },
+                { href: '/about', label: 'Về chúng tôi' },
+              ].map((item) => {
+                const isActive = item.href !== '#' && pathname === item.href;
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`relative pl-3 transition-colors ${
+                      isActive
+                        ? 'text-brand-tertiary'
+                        : 'text-brand-on-surface hover:text-brand-tertiary'
+                    }`}
+                  >
+                    {isActive && (
+                      <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-brand-tertiary" />
+                    )}
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Divider */}
+            <div className="my-6 border-t border-brand-outline-variant/10" />
+
+            {/* User / CTA Action Section */}
+            <div className="flex flex-col gap-4 mt-auto">
+              {isLoggedIn ? (
+                <>
+                  {/* User profile details */}
+                  <div className="flex items-center gap-3 px-2 py-3 rounded-xl bg-white/5 mb-2">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-primary to-brand-tertiary text-sm font-semibold text-white shadow-md">
+                      {userInitial}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-brand-on-surface">{userName}</p>
+                      <p className="truncate text-xs text-brand-on-surface-variant">{userEmail}</p>
+                    </div>
+                  </div>
+
+                  {/* Profile Actions */}
+                  <Button
+                    asChild
+                    variant="ghost"
+                    className="justify-start gap-3 h-12 rounded-xl text-brand-on-surface hover:bg-white/5 w-full"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Link href="/chat">
+                      <MessageSquare className="h-5 w-5 text-brand-on-surface-variant" />
+                      Vào chat
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    className="justify-start gap-3 h-12 rounded-xl text-brand-on-surface hover:bg-white/5 w-full"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Link href="/dashboard">
+                      <LayoutDashboard className="h-5 w-5 text-brand-on-surface-variant" />
+                      Bảng điều khiển
+                    </Link>
+                  </Button>
+                  {isAdmin && (
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className="justify-start gap-3 h-12 rounded-xl text-brand-on-surface hover:bg-white/5 w-full"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Link href="/knowledge">
+                        <Database className="h-5 w-5 text-brand-on-surface-variant" />
+                        Quản lý Knowledge
+                      </Link>
+                    </Button>
+                  )}
+
+                  <div className="border-t border-brand-outline-variant/10 my-2 pt-2" />
+
+                  <Button
+                    variant="ghost"
+                    className="justify-start gap-3 h-12 rounded-xl text-red-300 hover:bg-red-500/10 hover:text-red-200 w-full"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      void signOut({ callbackUrl: '/' });
+                    }}
+                  >
+                    <LogOut className="h-5 w-5" />
+                    Đăng xuất
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  asChild
+                  className="w-full h-12 rounded-xl bg-gradient-to-r from-brand-primary to-brand-tertiary text-white shadow-lg shadow-brand-primary/30"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Link href={chatHref}>Bắt đầu ngay</Link>
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

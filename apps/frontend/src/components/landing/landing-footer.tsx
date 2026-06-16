@@ -5,14 +5,14 @@ import { NewsletterForm } from './newsletter-form';
 
 const LEGAL_LINKS = [
   { href: '#', label: 'Chính sách bảo mật' },
-  { href: '#', label: 'Điều khoản dịch vụ' },
+  { href: '/terms', label: 'Điều khoản dịch vụ' },
   { href: '#', label: 'Bảo mật' },
 ];
 
 const SUPPORT_LINKS = [
   { href: '#', label: 'Liên hệ hỗ trợ' },
+  { href: '/pricing', label: 'Bảng giá & Gói dịch vụ' },
   { href: '#', label: 'Tài liệu hướng dẫn' },
-  { href: '#', label: 'Tham chiếu API' },
 ];
 
 export function LandingFooter() {
@@ -24,17 +24,17 @@ export function LandingFooter() {
             <div className="mb-6 flex items-center gap-3">
               <Image
                 src="/logo.jpg"
-                alt="LAW AI"
-                width={32}
-                height={32}
-                className="h-8 w-8 rounded-md object-contain"
+                alt="ILaw"
+                width={64}
+                height={64}
+                className="h-16 w-16 rounded-md object-contain"
               />
               <span className="font-headline text-2xl font-semibold tracking-wide text-brand-on-surface">
-                LAW AI
+                ILaw
               </span>
             </div>
             <p className="font-body text-sm leading-relaxed text-brand-on-surface-variant">
-              © {new Date().getFullYear()} LAW AI. Công nghệ chính xác cho các vụ kiện quan trọng.
+              © {new Date().getFullYear()} ILaw. Bạn đồng hành pháp luật.
             </p>
           </div>
 

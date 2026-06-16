@@ -114,19 +114,19 @@ export function Sidebar({ open, onClose, refreshKey }: SidebarProps) {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-brand-outline-variant/15 p-3">
           <Link
-            href="/dashboard"
+            href="/"
             onClick={onClose}
             className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-semibold transition-colors hover:bg-white/5"
-            title="Quay lại Bảng điều khiển"
+            title="Về trang chủ"
           >
             <Image
               src="/logo.jpg"
-              alt="LAW AI"
-              width={28}
-              height={28}
-              className="h-7 w-7 rounded-md object-contain"
+              alt="ILaw"
+              width={48}
+              height={48}
+              className="h-12 w-12 rounded-md object-contain"
             />
-            <span>LAW AI</span>
+            <span className="text-lg font-bold">ILaw</span>
           </Link>
           <div className="flex items-center gap-1">
             <Link

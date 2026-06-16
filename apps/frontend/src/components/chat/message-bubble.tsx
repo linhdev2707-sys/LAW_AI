@@ -100,7 +100,7 @@ export function MessageBubble({ message, sources }: MessageBubbleProps) {
 
           {/* Action row — only for AI messages */}
           {!isUser && (
-            <div className="flex items-center gap-1 pt-2.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+            <div className="flex items-center gap-1 pt-2.5 opacity-100 md:opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
               <ActionButton onClick={handleCopy} label={copied ? 'Đã sao chép' : 'Sao chép'}>
                 {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
               </ActionButton>

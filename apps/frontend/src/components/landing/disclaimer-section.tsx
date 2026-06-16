@@ -6,7 +6,7 @@ const DISCLAIMER_POINTS = [
     icon: 'info',
     title: 'Không thay thế tư vấn pháp lý chuyên nghiệp',
     description:
-      'LAW AI cung cấp thông tin tham khảo dựa trên dữ liệu pháp lý và tiền lệ. Nội dung do hệ thống tạo ra KHÔNG cấu thành tư vấn pháp lý, ý kiến luật sư, hoặc khuyến nghị hành động cho vụ việc cụ thể của bạn.',
+      'ILaw cung cấp thông tin tham khảo dựa trên dữ liệu pháp lý và tiền lệ. Nội dung do hệ thống tạo ra KHÔNG cấu thành tư vấn pháp lý, ý kiến luật sư, hoặc khuyến nghị hành động cho vụ việc cụ thể của bạn.',
   },
   {
     icon: 'gavel',
@@ -18,7 +18,7 @@ const DISCLAIMER_POINTS = [
     icon: 'verified_user',
     title: 'Giới hạn trách nhiệm pháp lý',
     description:
-      'Chúng tôi không chịu trách nhiệm đối với bất kỳ thiệt hại trực tiếp, gián tiếp, ngẫu nhiên hay hệ quả nào phát sinh từ việc sử dụng hoặc không thể sử dụng thông tin do LAW AI cung cấp, kể cả trong bối cảnh tố tụng hoặc giao dịch pháp lý.',
+      'Chúng tôi không chịu trách nhiệm đối với bất kỳ thiệt hại trực tiếp, gián tiếp, ngẫu nhiên hay hệ quả nào phát sinh từ việc sử dụng hoặc không thể sử dụng thông tin do ILaw cung cấp, kể cả trong bối cảnh tố tụng hoặc giao dịch pháp lý.',
   },
   {
     icon: 'policy',
@@ -52,7 +52,7 @@ export function DisclaimerSection() {
           </h2>
           <div className="beam-gradient h-1 w-24 rounded-full opacity-70" />
           <p className="mt-8 max-w-3xl font-body text-body-md leading-relaxed text-brand-on-surface-variant">
-            Trước khi sử dụng LAW AI, vui lòng đọc kỹ các điều khoản miễn trừ trách nhiệm dưới
+            Trước khi sử dụng ILaw, vui lòng đọc kỹ các điều khoản miễn trừ trách nhiệm dưới
             đây. Bằng việc tiếp tục truy cập và sử dụng dịch vụ, bạn xác nhận đã hiểu và đồng ý
             với những giới hạn được nêu ra.
           </p>
@@ -82,7 +82,7 @@ export function DisclaimerSection() {
 
         <p className="mt-12 text-center font-body text-sm text-brand-on-surface-variant/80">
           Nếu bạn cần tư vấn cho vụ việc cụ thể, hãy liên hệ luật sư được cấp phép hành nghề tại
-          Việt Nam. LAW AI là công cụ hỗ trợ nghiên cứu, không phải dịch vụ hành nghề luật.
+          Việt Nam. ILaw là công cụ hỗ trợ nghiên cứu, không phải dịch vụ hành nghề luật.
         </p>
       </Container>
     </section>

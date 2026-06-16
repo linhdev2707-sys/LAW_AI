@@ -145,20 +145,20 @@ export function AppSidebar({ forceOpen = false, onClose }: AppSidebarProps) {
     {/* Brand */}
     <div className="flex h-14 items-center gap-2 border-b border-brand-outline-variant/15 px-3">
       <Link
-        href="/dashboard"
+        href="/"
         onClick={onClose}
         className="flex items-center gap-2 rounded-md px-1.5 py-1.5 transition-colors hover:bg-white/5"
         title="Về trang chủ"
       >
         <Image
           src="/logo.jpg"
-          alt="LAW AI"
-          width={28}
-          height={28}
-          className="h-7 w-7 shrink-0 rounded-md object-contain"
+          alt="ILaw"
+          width={48}
+          height={48}
+          className="h-12 w-12 shrink-0 rounded-md object-contain"
         />
         {expanded && (
-          <span className="truncate text-sm font-semibold">LAW AI</span>
+          <span className="truncate text-lg font-bold">ILaw</span>
         )}
       </Link>
       <div className="ml-auto flex items-center gap-1">

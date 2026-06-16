@@ -46,10 +46,10 @@ export function EmptyState({ onSelect }: { onSelect?: (text: string) => void }) 
           />
           <Image
             src="/logo.jpg"
-            alt="LAW AI"
-            width={64}
-            height={64}
-            className="h-16 w-16 rounded-2xl object-contain shadow-lg shadow-brand-tertiary/20"
+            alt="ILaw"
+            width={80}
+            height={80}
+            className="h-20 w-20 rounded-2xl object-contain shadow-lg shadow-brand-tertiary/20"
             priority
           />
         </div>

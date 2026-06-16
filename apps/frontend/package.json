@@ -2,7 +2,7 @@
   "name": "@law-ai/frontend",
   "version": "0.1.0",
   "private": true,
-  "description": "LAW AI Frontend - Next.js 14 + Tailwind + shadcn/ui + NextAuth.js",
+  "description": "ILaw Frontend - Next.js 14 + Tailwind + shadcn/ui + NextAuth.js",
   "scripts": {
     "build": "next build",
     "dev": "next dev",
