@@ -56,7 +56,7 @@ export class RagOcrCallbackController {
 
   constructor(private readonly ragService: RagService) {}
 
-  @Post(':id/ocr-complete')
+  @Post('ocr-complete')
   @HttpCode(HttpStatus.OK)
   @UseGuards(OcrCallbackGuard)
   async complete(@Body() body: OcrCompleteDto) {
