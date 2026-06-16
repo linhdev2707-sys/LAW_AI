@@ -88,6 +88,10 @@ export class AuthService {
       role: userWithPassword.role,
       isActive: userWithPassword.isActive,
       emailVerified: userWithPassword.emailVerified,
+      subscriptionPlan: userWithPassword.subscriptionPlan,
+      subscriptionExpiresAt: userWithPassword.subscriptionExpiresAt
+        ? userWithPassword.subscriptionExpiresAt.toISOString()
+        : null,
       createdAt: userWithPassword.createdAt.toISOString(),
       updatedAt: userWithPassword.updatedAt.toISOString(),
     };

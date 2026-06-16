@@ -98,4 +98,23 @@ export default registerAs('app', () => ({
       .map((s) => s.trim())
       .filter(Boolean),
   },
-}));
+
+  // ─── Rate limit (chat) ────────────────────────────────────────────
+  // Sliding-window limit applied to POST /chat/messages and
+  // /chat/messages/stream. Tracked per-userId when authenticated,
+  // falling back to client IP otherwise. `ttl` is in milliseconds
+  // (NestJS @nestjs/throttler convention).
+  rateLimit: {
+    chat: {
+        ttl: intEnv('CHAT_RATE_LIMIT_TTL_MS', 60_000),
+        max: intEnv('CHAT_RATE_LIMIT_MAX', 20),
+      },
+    },
+    payment: {
+      cassoWebhookToken: process.env.CASSO_WEBHOOK_TOKEN || 'casso-secure-token',
+      bankId: process.env.BANK_ID || 'TCB',
+      accountNo: process.env.ACCOUNT_NO || '19039988776601',
+      accountName: process.env.ACCOUNT_NAME || 'CONG TY CONG NGHE ILAW',
+      template: process.env.VIETQR_TEMPLATE || 'qr_only',
+    },
+  }));

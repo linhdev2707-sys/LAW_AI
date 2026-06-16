@@ -7,6 +7,12 @@ export class ApiError extends Error {
     public readonly status: number,
     message: string,
     public readonly errors?: Record<string, string[]>,
+    /**
+     * For 429 responses, the number of seconds the client should wait
+     * before retrying. Mirrors the `Retry-After` response header. The
+     * chat UI uses this to render a countdown and disable the input.
+     */
+    public readonly retryAfter?: number,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -100,11 +106,23 @@ export async function apiFetch<T = unknown>(
   const isJson = contentType.includes('application/json');
 
   if (!res.ok) {
+    const retryAfterHeader = res.headers.get('retry-after');
+    const retryAfter = retryAfterHeader ? Number(retryAfterHeader) : undefined;
     if (isJson) {
       const errBody = await res.json().catch(() => ({}));
-      throw new ApiError(res.status, errBody.message || res.statusText, errBody.errors);
+      throw new ApiError(
+        res.status,
+        errBody.message || res.statusText,
+        errBody.errors,
+        Number.isFinite(retryAfter) ? retryAfter : undefined,
+      );
     }
-    throw new ApiError(res.status, res.statusText);
+    throw new ApiError(
+      res.status,
+      res.statusText,
+      undefined,
+      Number.isFinite(retryAfter) ? retryAfter : undefined,
+    );
   }
 
   if (!isJson) {

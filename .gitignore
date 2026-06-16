@@ -45,3 +45,7 @@ migration.sql
 
 # Vercel
 .vercel
+
+# Cloudflare Wrangler
+.wrangler/
+

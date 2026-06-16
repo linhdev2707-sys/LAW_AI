@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { apiFetch } from '@/lib/api';
 import { useSession } from 'next-auth/react';
 import { LandingNavbar } from '@/components/landing/landing-navbar';
 import { LandingFooter } from '@/components/landing/landing-footer';
@@ -37,44 +38,60 @@ interface PricingPlan {
 
 const PLANS: PricingPlan[] = [
   {
+    id: 'free',
+    name: 'Miễn phí',
+    price: '0',
+    priceVal: 0,
+    period: 'tháng',
+    description: 'Trải nghiệm tìm kiếm và trò chuyện pháp lý cơ bản.',
+    features: [
+      'Mỗi tháng có free 12 câu hỏi (12 câu / 1 tháng)',
+      'Trò chuyện hỏi đáp pháp lý cùng AI',
+      'Tốc độ trả lời tiêu chuẩn',
+    ],
+  },
+  {
     id: 'basic',
     name: 'Cơ bản',
     price: '69.000',
     priceVal: 69000,
     period: 'tháng',
-    description: 'Giải pháp trò chuyện pháp luật cơ bản cho cá nhân.',
+    description: 'Giải pháp nâng cao cơ bản cho nhu cầu cá nhân.',
     features: [
-      'Trò chuyện hỏi đáp pháp lý cùng AI',
+      'Mỗi tháng có thêm 60 câu hỏi lên trên phần Free',
+      'Tổng số câu hỏi: 72 câu / 1 tháng',
+      'Mở tính năng tìm kiếm văn bản (mỗi lần tìm kiếm tính là 1 câu hỏi)',
       'Hỗ trợ chuyên sâu Dân sự & Hình sự',
-      'Giới hạn 100 câu hỏi mỗi tháng',
       'Tốc độ trả lời tiêu chuẩn',
     ],
   },
   {
     id: 'pro',
-    name: 'Pro',
+    name: 'Plus',
     price: '109.000',
     priceVal: 109000,
     period: 'tháng',
-    description: 'Hỗ trợ đắc lực cho soạn thảo, nghiên cứu và phân tích văn bản.',
+    description: 'Tối ưu cho nhu cầu tra cứu và nghiên cứu chuyên sâu hơn.',
     features: [
-      'Không giới hạn số lượt hỏi đáp',
+      'Mỗi tháng có thêm 120 câu hỏi lên trên gói Basic',
+      'Tổng số câu hỏi: 192 câu / 1 tháng',
+      'Toàn bộ tính năng của gói Basic',
       'Bộ lọc AI tra cứu văn bản pháp luật',
       'Trợ lý soạn thảo đơn từ & biểu mẫu mẫu',
-      'Phân tích hợp đồng và phát hiện rủi ro',
       'Ưu tiên xử lý nhanh từ hệ thống AI',
     ],
     isPopular: true,
   },
   {
     id: 'premium',
-    name: 'Cao cấp',
+    name: 'Pro',
     price: '149.000',
     priceVal: 149000,
     period: 'tháng',
-    description: 'Trải nghiệm tối đa, phù hợp cho người có nhu cầu làm việc cường độ cao.',
+    description: 'Không giới hạn năng lực làm việc, phù hợp với cường độ cao.',
     features: [
-      'Toàn bộ tính năng của gói Pro',
+      'Không giới hạn số câu hỏi (No limit)',
+      'Toàn bộ tính năng của gói Plus',
       'Hỗ trợ đính kèm và phân tích tài liệu dung lượng lớn',
       'Truy cập sớm các tính năng AI mới phát triển',
       'Hỗ trợ kỹ thuật VIP 24/7 riêng biệt',
@@ -84,17 +101,97 @@ const PLANS: PricingPlan[] = [
 ];
 
 export default function PricingPage() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [loadingCheckout, setLoadingCheckout] = useState(false);
+  const [transactionCode, setTransactionCode] = useState<string | null>(null);
+  const [transferContent, setTransferContent] = useState<string | null>(null);
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [bankDetails, setBankDetails] = useState<{
+    bankId: string;
+    accountNo: string;
+    accountName: string;
+    amount: number;
+  } | null>(null);
 
-  function handleSelectPlan(plan: PricingPlan) {
-    setSelectedPlan(plan);
-    setPaymentSuccess(false);
-    setConfirming(false);
+  async function handleSelectPlan(plan: PricingPlan) {
+    if (!session) {
+      toast.error('Vui lòng đăng nhập để nâng cấp gói hội viên');
+      return;
+    }
+    setLoadingCheckout(true);
+    try {
+      const res = await apiFetch<{
+        id: string;
+        code: string;
+        plan: string;
+        amount: number;
+        qrUrl: string;
+        bankId: string;
+        accountNo: string;
+        accountName: string;
+        transferContent: string;
+      }>('/api/v1/payments/checkout', {
+        method: 'POST',
+        body: { planId: plan.id },
+      });
+
+      setSelectedPlan(plan);
+      setTransactionCode(res.code);
+      setTransferContent(res.transferContent);
+      setQrUrl(res.qrUrl);
+      setBankDetails({
+        bankId: res.bankId,
+        accountNo: res.accountNo,
+        accountName: res.accountName,
+        amount: res.amount,
+      });
+      setPaymentSuccess(false);
+      setConfirming(false);
+    } catch (err: any) {
+      toast.error(err.message || 'Không thể khởi tạo thanh toán');
+    } finally {
+      setLoadingCheckout(false);
+    }
   }
+
+  useEffect(() => {
+    if (!selectedPlan || !transactionCode || paymentSuccess) return;
+
+    let intervalId: NodeJS.Timeout;
+
+    const checkStatus = async () => {
+      try {
+        const res = await apiFetch<{ code: string; status: string; paidAt: string | null }>(
+          `/api/v1/payments/status/${transactionCode}`,
+        );
+
+        if (res.status === 'completed') {
+          setPaymentSuccess(true);
+          toast.success('Thanh toán thành công!', {
+            description: `Chúc mừng bạn đã nâng cấp thành công gói ${selectedPlan.name}!`,
+          });
+          await update({
+            subscriptionPlan: selectedPlan.id,
+            subscriptionExpiresAt: res.paidAt
+              ? new Date(new Date(res.paidAt).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
+              : new Date().toISOString(),
+          });
+        }
+      } catch (err) {
+        console.error('Lỗi khi kiểm tra trạng thái giao dịch:', err);
+      }
+    };
+
+    intervalId = setInterval(checkStatus, 3000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [selectedPlan, transactionCode, paymentSuccess, update]);
 
   function handleCopy(text: string, type: string) {
     navigator.clipboard.writeText(text);
@@ -103,16 +200,33 @@ export default function PricingPage() {
     setTimeout(() => setCopiedText(null), 2000);
   }
 
-  function handleConfirmPayment() {
+  async function handleConfirmPayment() {
+    if (!transactionCode) return;
     setConfirming(true);
-    // Simulate payment verification process
-    setTimeout(() => {
+    try {
+      const res = await apiFetch<{ code: string; status: string; paidAt: string | null }>(
+        `/api/v1/payments/status/${transactionCode}`,
+      );
+
+      if (res.status === 'completed') {
+        setPaymentSuccess(true);
+        toast.success('Thanh toán thành công!', {
+          description: `Chúc mừng bạn đã nâng cấp thành công gói ${selectedPlan?.name}!`,
+        });
+        await update({
+          subscriptionPlan: selectedPlan?.id,
+          subscriptionExpiresAt: res.paidAt
+            ? new Date(new Date(res.paidAt).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            : new Date().toISOString(),
+        });
+      } else {
+        toast.info('Hệ thống chưa nhận được khoản chuyển. Vui lòng đợi trong giây lát hoặc nhấp kiểm tra lại sau.');
+      }
+    } catch (err: any) {
+      toast.error('Đã có lỗi xảy ra khi kiểm tra trạng thái.');
+    } finally {
       setConfirming(false);
-      setPaymentSuccess(true);
-      toast.success('Thanh toán thành công!', {
-        description: `Chúc mừng bạn đã nâng cấp thành công gói ${selectedPlan?.name}!`,
-      });
-    }, 2000);
+    }
   }
 
   return (
@@ -140,7 +254,7 @@ export default function PricingPage() {
           </div>
 
           {/* Pricing Plans - Full Width */}
-          <div className="mb-12 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="mb-12 grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
             {PLANS.map((plan) => (
               <div
                 key={plan.id}
@@ -166,6 +280,7 @@ export default function PricingPage() {
                         : 'border border-brand-tertiary/30 bg-brand-tertiary/10 text-brand-tertiary'
                     }`}
                   >
+                    {plan.id === 'free' && '🍃'}
                     {plan.id === 'basic' && '🌱'}
                     {plan.id === 'pro' && '⚡'}
                     {plan.id === 'premium' && '👑'}
@@ -214,14 +329,25 @@ export default function PricingPage() {
                 </ul>
 
                 <Button
-                  onClick={() => handleSelectPlan(plan)}
+                  onClick={() => plan.id !== 'free' && handleSelectPlan(plan)}
+                  disabled={
+                    loadingCheckout ||
+                    plan.id === 'free' ||
+                    session?.user?.subscriptionPlan === plan.id
+                  }
                   className={`w-full rounded-xl py-3 text-sm font-bold transition-all ${
                     plan.isPopular
                       ? 'bg-gradient-to-r from-brand-primary to-brand-tertiary text-white shadow-lg shadow-brand-primary/30 hover:shadow-xl hover:shadow-brand-primary/50'
                       : 'border border-brand-outline-variant/30 bg-white/5 text-brand-on-surface hover:bg-brand-tertiary/10 hover:border-brand-tertiary/50 hover:text-brand-tertiary'
-                  }`}
+                  } disabled:opacity-50 disabled:hover:bg-white/5 disabled:hover:text-brand-on-surface disabled:hover:border-brand-outline-variant/30`}
                 >
-                  Chọn gói {plan.name}
+                  {session?.user?.subscriptionPlan === plan.id || (plan.id === 'free' && (!session?.user?.subscriptionPlan || session?.user?.subscriptionPlan === 'free'))
+                    ? 'Gói hiện tại'
+                    : loadingCheckout
+                    ? 'Đang xử lý...'
+                    : plan.id === 'free'
+                    ? 'Gói mặc định'
+                    : `Chọn gói ${plan.name}`}
                 </Button>
               </div>
             ))}
@@ -420,21 +546,16 @@ export default function PricingPage() {
                 </div>
 
                 {/* QR Code Placeholder Box */}
-                <div className="flex flex-col items-center justify-center border border-brand-outline-variant/20 rounded-xl bg-white p-4">
-                  <div className="relative h-44 w-44">
-                    {/* Generates a dynamic clean QR code mockup using an online service or styled representation */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="relative h-80 w-80 overflow-hidden rounded-xl bg-white p-2">
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+                      src={qrUrl || `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(
                         `2|99|00020101021238580010A00000072701240006970422011005273766020208QRIB11010303VND53037045406${selectedPlan.priceVal}5802VN62150811ILAW${selectedPlan.id.toUpperCase()}6304`
                       )}`}
                       alt="VietQR code thanh toan"
                       className="h-full w-full object-contain"
                     />
                   </div>
-                  <p className="mt-2 text-[10px] font-semibold tracking-wider uppercase text-slate-500 flex items-center gap-1">
-                    <QrCode className="h-3 w-3" />
-                    VietQR · Chuyển khoản nhanh 247
-                  </p>
                 </div>
 
                 {/* Transfer Info */}
@@ -442,8 +563,8 @@ export default function PricingPage() {
                   <div className="flex justify-between items-center border-b border-brand-outline-variant/10 pb-2">
                     <span>Ngân hàng</span>
                     <span className="font-semibold text-brand-on-surface flex items-center gap-1">
-                      Techcombank (TCB)
-                      <button onClick={() => handleCopy('Techcombank', 'bank')} className="p-0.5 text-brand-tertiary hover:bg-white/5 rounded">
+                      {bankDetails?.bankId || 'MB'}
+                      <button onClick={() => handleCopy(bankDetails?.bankId || 'MB', 'bank')} className="p-0.5 text-brand-tertiary hover:bg-white/5 rounded">
                         <Copy className="h-3 w-3" />
                       </button>
                     </span>
@@ -451,31 +572,31 @@ export default function PricingPage() {
                   <div className="flex justify-between items-center border-b border-brand-outline-variant/10 pb-2">
                     <span>Số tài khoản</span>
                     <span className="font-semibold text-brand-on-surface flex items-center gap-1 font-mono">
-                      19039988776601
-                      <button onClick={() => handleCopy('19039988776601', 'acc')} className="p-0.5 text-brand-tertiary hover:bg-white/5 rounded">
+                      {bankDetails?.accountNo || '935275401'}
+                      <button onClick={() => handleCopy(bankDetails?.accountNo || '935275401', 'acc')} className="p-0.5 text-brand-tertiary hover:bg-white/5 rounded">
                         <Copy className="h-3 w-3" />
                       </button>
                     </span>
                   </div>
                   <div className="flex justify-between items-center border-b border-brand-outline-variant/10 pb-2">
                     <span>Chủ tài khoản</span>
-                    <span className="font-semibold text-brand-on-surface">CONG TY CONG NGHE ILAW</span>
+                    <span className="font-semibold text-brand-on-surface">{bankDetails?.accountName || 'NGUYEN VAN NHAT LINH'}</span>
                   </div>
                   <div className="flex justify-between items-center border-b border-brand-outline-variant/10 pb-2">
                     <span>Số tiền</span>
                     <span className="font-semibold text-brand-secondary font-mono">
-                      {selectedPlan.price}
+                      {bankDetails?.amount ? bankDetails.amount.toLocaleString('vi-VN') : selectedPlan.price}
                       <span className="ml-1 text-xs text-brand-on-surface-variant">VND</span>
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Nội dung chuyển khoản</span>
                     <span className="font-semibold text-brand-on-surface flex items-center gap-1 font-mono uppercase bg-brand-surface-container-highest px-2 py-0.5 rounded border border-brand-outline-variant/30 text-[11px]">
-                      {`ILAW ${selectedPlan.name.toUpperCase()} ${session?.user?.email ? session.user.email.split('@')[0] : 'GUEST'}`}
+                      {transferContent || transactionCode || `ILAW ${selectedPlan.name.toUpperCase()} ${session?.user?.email ? session.user.email.split('@')[0] : 'GUEST'}`}
                       <button
                         onClick={() =>
                           handleCopy(
-                            `ILAW ${selectedPlan.name.toUpperCase()} ${session?.user?.email ? session.user.email.split('@')[0] : 'GUEST'}`,
+                            transferContent || transactionCode || `ILAW ${selectedPlan.name.toUpperCase()} ${session?.user?.email ? session.user.email.split('@')[0] : 'GUEST'}`,
                             'desc'
                           )
                         }

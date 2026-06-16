@@ -27,7 +27,7 @@ export class AddBucketToRagDocument1700000005000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // bucket_name — NOT NULL with a default so existing rows are valid.
     await queryRunner.query(
-      `ALTER TABLE "rag_documents" ADD COLUMN "bucket_name" varchar(100) NOT NULL DEFAULT 'law-documents'`,
+      `ALTER TABLE "rag_documents" ADD COLUMN IF NOT EXISTS "bucket_name" varchar(100) NOT NULL DEFAULT 'law-documents'`,
     );
     // Drop the default so new rows must provide a value (entity requires it).
     await queryRunner.query(
@@ -36,7 +36,7 @@ export class AddBucketToRagDocument1700000005000 implements MigrationInterface {
 
     // bucket_region — entity has default 'auto'; keep DB default too.
     await queryRunner.query(
-      `ALTER TABLE "rag_documents" ADD COLUMN "bucket_region" varchar(20) NOT NULL DEFAULT 'auto'`,
+      `ALTER TABLE "rag_documents" ADD COLUMN IF NOT EXISTS "bucket_region" varchar(20) NOT NULL DEFAULT 'auto'`,
     );
 
     // Mirror the entity index on bucket_name for filtering.

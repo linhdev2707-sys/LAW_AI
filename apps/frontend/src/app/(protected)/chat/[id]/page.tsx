@@ -22,6 +22,7 @@ export default function ChatConversationPage() {
     load,
     send,
     stop,
+    rateLimit,
   } = useConversationStream();
   const [refreshKey, setRefreshKey] = useState(0);
   // Track the last id we auto-sent a `?q=` prompt for, so re-renders / Strict
@@ -106,6 +107,7 @@ export default function ChatConversationPage() {
             disabled={false}
             loading={streaming}
             placeholder="Nhắn cho ILaw…"
+            rateLimit={rateLimit}
           />
         </>
       )}

@@ -104,6 +104,23 @@ export function LandingNavbar() {
                 </Link>
               );
             })}
+
+            {/* Nút Chat — luôn hiện trên header (cùng style với menu text) */}
+            <Link
+              href={chatHref}
+              className={`group relative pb-1 font-body text-body-md transition-colors ${
+                pathname === '/chat'
+                  ? 'text-brand-on-surface'
+                  : 'text-brand-on-surface-variant hover:text-brand-tertiary'
+              }`}
+            >
+              Chat
+              <span
+                className={`pointer-events-none absolute inset-x-0 -bottom-0.5 h-0.5 origin-left rounded-full bg-brand-tertiary transition-transform duration-300 ${
+                  pathname === '/chat' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+                }`}
+              />
+            </Link>
           </div>
 
           <div className="flex items-center gap-gutter">
@@ -149,14 +166,6 @@ export function LandingNavbar() {
 
                       {/* Menu items */}
                       <div className="p-1.5">
-                        <MenuItem
-                          icon={<MessageSquare className="h-4 w-4" />}
-                          label="Vào chat"
-                          onClick={() => {
-                            setMenuOpen(false);
-                            router.push('/chat');
-                          }}
-                        />
                         <MenuItem
                           icon={<LayoutDashboard className="h-4 w-4" />}
                           label="Bảng điều khiển"
@@ -283,6 +292,15 @@ export function LandingNavbar() {
                   </Link>
                 );
               })}
+
+              {/* Nút Chat — luôn hiện trong menu mobile (cùng style với menu text) */}
+              <Link
+                href={chatHref}
+                onClick={() => setMobileMenuOpen(false)}
+                className="relative self-start pl-3 text-base text-brand-on-surface transition-colors hover:text-brand-tertiary"
+              >
+                Chat
+              </Link>
             </div>
 
             {/* Divider */}
@@ -304,17 +322,6 @@ export function LandingNavbar() {
                   </div>
 
                   {/* Profile Actions */}
-                  <Button
-                    asChild
-                    variant="ghost"
-                    className="justify-start gap-3 h-12 rounded-xl text-brand-on-surface hover:bg-white/5 w-full"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Link href="/chat">
-                      <MessageSquare className="h-5 w-5 text-brand-on-surface-variant" />
-                      Vào chat
-                    </Link>
-                  </Button>
                   <Button
                     asChild
                     variant="ghost"

@@ -7,6 +7,8 @@ import {
   streamChatMessage,
   type StreamSource,
 } from '@/lib/chat-stream';
+import { ApiError } from '@/lib/api';
+import { useRateLimit } from './use-rate-limit';
 
 /**
  * Streaming variant of `useConversation`.
@@ -28,6 +30,7 @@ export function useConversationStream() {
   const [sources, setSources] = useState<Record<string, StreamSource[]>>({});
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const rateLimit = useRateLimit();
   const acRef = useRef<AbortController | null>(null);
   // Synchronous re-entrance guard. The React `streaming` state lags by one
   // render, so a second `send()` call landing in the same microtask (e.g.
@@ -120,21 +123,33 @@ export function useConversationStream() {
         );
         acRef.current = ac;
       } catch (e) {
+        const isApiError = e instanceof ApiError;
         const message = e instanceof Error ? e.message : 'Failed to send';
         setError(message);
+
         // Roll back the optimistic user message + placeholder
         setMessages((prev) =>
           prev.filter(
             (m) => m.id !== assistantId && m.id !== optimisticUser.id,
           ),
         );
-        toast.error('Gửi tin nhắn thất bại', { description: message });
+
+        // 429 — surface a soft ban so the UI can disable the input and
+        // show a countdown. Don't double-toast: the countdown banner is
+        // enough signal.
+        if (isApiError && e.status === 429) {
+          const wait = e.retryAfter ?? 60;
+          rateLimit.trigger(wait);
+        } else {
+          toast.error('Gửi tin nhắn thất bại', { description: message });
+        }
+
         inFlightRef.current = false;
         setStreaming(false);
         return null;
       }
     },
-    [conversationId, streaming],
+    [conversationId, streaming, rateLimit],
   );
 
   return {
@@ -144,6 +159,7 @@ export function useConversationStream() {
     streaming,
     error,
     load,
+    rateLimit,
     send,
     stop,
   };

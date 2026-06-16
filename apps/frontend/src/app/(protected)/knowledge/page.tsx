@@ -92,7 +92,7 @@ export default function KnowledgePage() {
 
   if (sessionStatus === 'loading' || !isAdmin) {
     return (
-      <main className="relative min-h-[60vh] overflow-hidden bg-brand-background text-brand-on-surface-variant">
+      <main className="relative h-full overflow-y-auto bg-brand-background text-brand-on-surface-variant">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(14,165,233,0.10),transparent_60%)]"
@@ -105,7 +105,7 @@ export default function KnowledgePage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-brand-background text-brand-on-surface">
+    <main className="relative h-full overflow-y-auto bg-brand-background text-brand-on-surface">
       {/* Soft cyan glow at the top — matches landing/chat backdrop so the
           page feels like part of the same app, not a separate white screen. */}
       <div

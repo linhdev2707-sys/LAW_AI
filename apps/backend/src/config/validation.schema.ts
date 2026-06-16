@@ -61,4 +61,17 @@ export const validationSchema = Joi.object({
   // Comma-separated list of R2 bucket names the retriever is
   // allowed to search. Empty string = no filter (backward compat).
   RAG_ALLOWED_BUCKETS: Joi.string().allow('').default(''),
+
+  // ─── Rate limit (chat) ────────────────────────────────────────────
+  // Sliding-window size in milliseconds (default: 60s = 60_000).
+  CHAT_RATE_LIMIT_TTL_MS: Joi.number().min(1_000).default(60_000),
+  // Max chat requests per window per user/IP (default: 20).
+  CHAT_RATE_LIMIT_MAX: Joi.number().min(1).default(20),
+
+  // ─── Payment (Casso & VietQR) ──────────────────────────────────────
+  CASSO_WEBHOOK_TOKEN: Joi.string().default('casso-secure-token'),
+  BANK_ID: Joi.string().default('TCB'),
+  ACCOUNT_NO: Joi.string().default('19039988776601'),
+  ACCOUNT_NAME: Joi.string().default('CONG TY CONG NGHE ILAW'),
+  VIETQR_TEMPLATE: Joi.string().default('qr_only'),
 });

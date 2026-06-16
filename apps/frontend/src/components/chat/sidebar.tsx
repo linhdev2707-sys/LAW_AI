@@ -21,6 +21,7 @@ export function Sidebar({ open, onClose, refreshKey }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
+  const isAdmin = session?.user?.role === 'admin';
   const [items, setItems] = useState<IConversationListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -138,15 +139,17 @@ export function Sidebar({ open, onClose, refreshKey }: SidebarProps) {
             >
               <LayoutDashboard className="h-4 w-4" />
             </Link>
-            <Link
-              href="/knowledge"
-              onClick={onClose}
-              className="rounded-md p-1.5 text-brand-on-surface-variant transition-colors hover:bg-white/5 hover:text-brand-on-surface"
-              aria-label="Quản lý Knowledge"
-              title="Quản lý Knowledge"
-            >
-              <Database className="h-4 w-4" />
-            </Link>
+            {isAdmin && (
+              <Link
+                href="/knowledge"
+                onClick={onClose}
+                className="rounded-md p-1.5 text-brand-on-surface-variant transition-colors hover:bg-white/5 hover:text-brand-on-surface"
+                aria-label="Quản lý Knowledge"
+                title="Quản lý Knowledge"
+              >
+                <Database className="h-4 w-4" />
+              </Link>
+            )}
             <button
               type="button"
               className="rounded-md p-1.5 text-brand-on-surface-variant transition-colors hover:bg-white/5 hover:text-brand-on-surface"

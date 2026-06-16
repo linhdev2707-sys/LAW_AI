@@ -16,6 +16,7 @@ import {
   MessageSquare,
   X,
   Users,
+  CreditCard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@law-ai/shared';
@@ -94,19 +95,25 @@ export function AppSidebar({ forceOpen = false, onClose }: AppSidebarProps) {
       icon: <LayoutDashboard className="h-4 w-4" />,
       matches: (p) => p === '/dashboard',
     },
-    {
-      href: '/knowledge',
-      label: 'Knowledge',
-      icon: <Database className="h-4 w-4" />,
-      matches: (p) => p.startsWith('/knowledge'),
-    },
     ...(isAdmin
       ? [
+          {
+            href: '/knowledge',
+            label: 'Knowledge',
+            icon: <Database className="h-4 w-4" />,
+            matches: (p: string) => p.startsWith('/knowledge'),
+          },
           {
             href: '/users',
             label: 'Người dùng',
             icon: <Users className="h-4 w-4" />,
             matches: (p: string) => p.startsWith('/users'),
+          },
+          {
+            href: '/payments',
+            label: 'Thanh toán',
+            icon: <CreditCard className="h-4 w-4" />,
+            matches: (p: string) => p.startsWith('/payments'),
           },
         ]
       : []),

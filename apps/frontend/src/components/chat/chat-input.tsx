@@ -11,6 +11,15 @@ interface ChatInputProps {
   loading?: boolean;
   placeholder?: string;
   maxLength?: number;
+  /**
+   * If provided, the input is force-disabled while `isBlocked` is true
+   * and a countdown banner is shown above the textarea. The hook that
+   * drives this is `useRateLimit` (typically via `useConversationStream`).
+   */
+  rateLimit?: {
+    isBlocked: boolean;
+    secondsRemaining: number;
+  };
 }
 
 const DEFAULT_MAX = 4000;
@@ -22,6 +31,7 @@ export function ChatInput({
   loading,
   placeholder = 'Nhập tin nhắn…',
   maxLength = DEFAULT_MAX,
+  rateLimit,
 }: ChatInputProps) {
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -44,6 +54,7 @@ export function ChatInput({
   function submit() {
     const trimmed = value.trim();
     if (!trimmed || disabled || loading) return;
+    if (rateLimit?.isBlocked) return;
     onSend(trimmed);
     setValue('');
     setAttachedFile(null);
@@ -60,14 +71,37 @@ export function ChatInput({
     setAttachedFile(file);
   }
 
-  const canSend = value.trim().length > 0 && !disabled;
+  const isRateLimited = rateLimit?.isBlocked ?? false;
+  const canSend = value.trim().length > 0 && !disabled && !isRateLimited;
   const remaining = maxLength - value.length;
   const isNearLimit = remaining < 200;
   const isOverLimit = remaining < 0;
+  const effectivePlaceholder = isRateLimited
+    ? `Đang chờ hết giới hạn tốc độ…`
+    : placeholder;
 
   return (
     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand-background via-brand-background/95 to-transparent pt-8">
       <div className="mx-auto max-w-3xl px-4 pb-4 md:px-6">
+        {/* Rate-limit banner — shown above the input while the BE has
+            429'd us. Auto-clears when the countdown reaches 0. */}
+        {isRateLimited && rateLimit && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-2 flex items-center gap-2 rounded-lg border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+          >
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            <span>
+              Bạn đang gửi quá nhanh. Vui lòng đợi{' '}
+              <span className="font-mono font-semibold">
+                {rateLimit.secondsRemaining}s
+              </span>{' '}
+              trước khi gửi tin nhắn tiếp theo.
+            </span>
+          </div>
+        )}
+
         {/* Attached file chip */}
         {attachedFile && (
           <div className="mb-2 flex items-center gap-2 rounded-lg border border-brand-tertiary/30 bg-brand-surface-container px-3 py-2 text-sm text-brand-on-surface">
@@ -108,7 +142,7 @@ export function ChatInput({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={disabled}
+            disabled={disabled || isRateLimited}
             title="Đính kèm tài liệu (sắp ra mắt)"
             aria-label="Đính kèm tài liệu"
             className="ml-2 mb-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-brand-on-surface-variant transition-colors hover:bg-white/5 hover:text-brand-tertiary disabled:opacity-50"
@@ -121,8 +155,8 @@ export function ChatInput({
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKey}
-            placeholder={placeholder}
-            disabled={disabled}
+            placeholder={effectivePlaceholder}
+            disabled={disabled || isRateLimited}
             rows={1}
             maxLength={maxLength + 100 /* allow over so user can see error */}
             className={cn(

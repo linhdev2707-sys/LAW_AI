@@ -24,6 +24,8 @@ export class UserService {
       role: user.role,
       isActive: user.isActive,
       emailVerified: user.emailVerified,
+      subscriptionPlan: user.subscriptionPlan,
+      subscriptionExpiresAt: user.subscriptionExpiresAt ? user.subscriptionExpiresAt.toISOString() : null,
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
     };
@@ -86,7 +88,14 @@ export class UserService {
     if (!user) {
       throw new NotFoundException(`User ${id} not found`);
     }
-    Object.assign(user, dto);
+    
+    const { password, ...rest } = dto;
+    Object.assign(user, rest);
+    
+    if (password) {
+      user.password = await bcrypt.hash(password, 12);
+    }
+    
     const saved = await this.usersRepository.save(user);
     return this.toIUser(saved);
   }

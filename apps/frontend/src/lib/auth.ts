@@ -46,6 +46,8 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.fullName,
           role: user.role,
+          subscriptionPlan: user.subscriptionPlan,
+          subscriptionExpiresAt: user.subscriptionExpiresAt,
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
         } as NextAuthUser;
@@ -78,15 +80,21 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = (user as any).id;
         token.role = (user as any).role;
+        token.subscriptionPlan = (user as any).subscriptionPlan;
+        token.subscriptionExpiresAt = (user as any).subscriptionExpiresAt;
         token.accessToken = (user as any).accessToken;
         token.refreshToken = (user as any).refreshToken;
         return token;
       }
-      // update() called from the client (e.g. after a token refresh) —
+      // update() called from the client (e.g. after a token refresh or payment upgrade) —
       // merge the new values into the existing token, preserving id/role.
       if (trigger === 'update' && session) {
+        if ((session as any).name) token.name = (session as any).name;
         if ((session as any).accessToken) token.accessToken = (session as any).accessToken;
         if ((session as any).refreshToken) token.refreshToken = (session as any).refreshToken;
+        if ((session as any).subscriptionPlan) token.subscriptionPlan = (session as any).subscriptionPlan;
+        if ((session as any).subscriptionExpiresAt) token.subscriptionExpiresAt = (session as any).subscriptionExpiresAt;
+        if ((session as any).role) token.role = (session as any).role;
         return token;
       }
       return token;
@@ -97,6 +105,8 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as any).id = token.id;
         (session.user as any).role = token.role;
+        (session.user as any).subscriptionPlan = token.subscriptionPlan;
+        (session.user as any).subscriptionExpiresAt = token.subscriptionExpiresAt;
       }
       return session;
     },

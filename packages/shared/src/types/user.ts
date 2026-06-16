@@ -7,6 +7,8 @@ export interface IUser {
   role: UserRole;
   isActive: boolean;
   emailVerified: boolean;
+  subscriptionPlan: string;
+  subscriptionExpiresAt: string | null;
   createdAt: string; // ISO string (JSON-serializable)
   updatedAt: string;
 }

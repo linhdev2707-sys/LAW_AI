@@ -32,6 +32,12 @@ export class User {
   @Column({ name: 'email_verified', type: 'boolean', default: false })
   emailVerified: boolean;
 
+  @Column({ name: 'subscription_plan', type: 'varchar', length: 50, default: 'free' })
+  subscriptionPlan: string;
+
+  @Column({ name: 'subscription_expires_at', type: 'timestamptz', nullable: true, default: null })
+  subscriptionExpiresAt: Date | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 

@@ -5,6 +5,8 @@ export interface IJwtPayload {
   sub: string;
   email: string;
   role: UserRole;
+  subscriptionPlan?: string;
+  subscriptionExpiresAt?: string | null;
   iat?: number;
   exp?: number;
 }

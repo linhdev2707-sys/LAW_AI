@@ -87,7 +87,17 @@ export async function streamChatMessage(
     } catch {
       /* ignore */
     }
-    throw new ApiError(res.status, detail);
+    // Surface the server-sent Retry-After hint so the UI can show a
+    // countdown. ThrottlerException defaults to HTTP-date format too;
+    // the guard coerces it to seconds, but fall back to 60s defensively.
+    const retryAfterHeader = res.headers.get('retry-after');
+    const retryAfter = retryAfterHeader ? Number(retryAfterHeader) : NaN;
+    throw new ApiError(
+      res.status,
+      detail,
+      undefined,
+      Number.isFinite(retryAfter) ? retryAfter : 60,
+    );
   }
 
   // Fire-and-forget parse loop. Surface abort/disconnect by just exiting.
