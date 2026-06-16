@@ -35,7 +35,10 @@ ENV NODE_ENV=production
 # pnpm's symlink layout is preserved — when we copy the source tree
 # that `pnpm install` produced in the builder, all workspace links
 # resolve correctly because the relative paths match.
+# `nest build` outputs to /app/apps/backend/dist — we move it to /app/dist
+# so the CMD path stays stable.
 COPY --from=builder /app ./
+RUN mv /app/apps/backend/dist /app/dist
 
 EXPOSE 4000
 
