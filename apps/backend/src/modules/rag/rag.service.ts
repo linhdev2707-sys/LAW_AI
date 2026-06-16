@@ -14,6 +14,7 @@ import { CreateRagDocumentDto } from './dto/create-rag-document.dto';
 export interface IIngestResult {
   id: string;
   chunkCount: number;
+  status: RagDocumentStatus;
 }
 
 function errorMessage(e: unknown): string {
@@ -85,6 +86,170 @@ export class RagService {
   }
 
   /**
+   * Stash a scanned PDF in R2 and create an `ocr_pending` row so the
+   * Cloudflare Worker can pick it up via R2 Event Notification and
+   * stream the OCR result back via the callback endpoint.
+   *
+   * Returns the same shape as the regular ingest path but with
+   * `status: 'ocr_pending'` and `chunkCount: 0` so callers can show a
+   * "processing" UI state.
+   */
+  async enqueueOcr(
+    name: string,
+    buffer: Buffer,
+    bucket: string,
+    userId: string,
+  ): Promise<IIngestResult> {
+    if (!this.r2.isEnabled()) {
+      throw new Error('R2 is required but client is not initialised');
+    }
+    const r2Key = `ocr-inbox/${randomUUID()}.pdf`;
+    try {
+      await this.r2.putObject(bucket, r2Key, buffer, 'application/pdf');
+    } catch (e: unknown) {
+      this.logger.error(`R2 upload failed (bucket=${bucket}, key=${r2Key}): ${errorMessage(e)}`);
+      throw new Error(`R2 upload failed: ${errorMessage(e)}`);
+    }
+
+    const doc = await this.docRepo.save(
+      this.docRepo.create({
+        name: name.trim(),
+        r2Key,
+        mimeType: 'application/pdf',
+        bucketName: bucket.trim(),
+        bucketRegion: 'auto',
+        sizeBytes: buffer.length,
+        chunkCount: 0,
+        status: RagDocumentStatus.OCR_PENDING,
+        createdBy: userId,
+      }),
+    );
+
+    this.logger.log(
+      `Enqueued OCR for doc ${doc.id} (name="${name}", bucket=${bucket}, bytes=${buffer.length})`,
+    );
+
+    return {
+      id: doc.id,
+      chunkCount: 0,
+      status: RagDocumentStatus.OCR_PENDING,
+    };
+  }
+
+  /**
+   * Handle the Worker's callback once OCR finishes. We:
+   *  - look up the document (must still be `ocr_pending`),
+   *  - upload the extracted text to a stable R2 key,
+   *  - chunk + embed + insert chunks in a transaction,
+   *  - flip status to `ready`.
+   *
+   * Idempotency: a second call for the same `documentId` returns 409
+   * instead of double-chunking.
+   */
+  async completeOcr(documentId: string, text: string): Promise<IIngestResult> {
+    const doc = await this.docRepo.findOne({ where: { id: documentId } });
+    if (!doc) {
+      throw new Error(`RagDocument ${documentId} not found`);
+    }
+    if (doc.status !== RagDocumentStatus.OCR_PENDING) {
+      // Don't allow late callbacks to clobber a finished doc, and don't
+      // double-chunk. Callers map this to 409.
+      throw new Error(
+        `RagDocument ${documentId} is in status "${doc.status}", cannot complete OCR`,
+      );
+    }
+
+    const cleaned = text.replace(/\r\n/g, '\n').trim();
+    if (!cleaned) {
+      throw new Error('OCR returned empty text');
+    }
+
+    // Move the artifact from the inbox prefix to the standard `rag/` key
+    // so future downloads / RAG inspection use the same key shape as
+    // sync-ingested documents. We do a server-side copy first (cheap),
+    // then delete the inbox copy. If the copy fails we still continue —
+    // chunking is the source of truth, the inbox key is just staging.
+    const finalKey = `rag/${randomUUID()}.txt`;
+    if (this.r2.isEnabled()) {
+      try {
+        await this.r2.copyObject(doc.bucketName, doc.r2Key, finalKey, 'text/plain');
+        try {
+          await this.r2.deleteObject(doc.bucketName, doc.r2Key);
+        } catch (e: unknown) {
+          this.logger.warn(
+            `Failed to delete OCR inbox object ${doc.bucketName}/${doc.r2Key}: ${errorMessage(e)}`,
+          );
+        }
+        await this.docRepo.update(doc.id, { r2Key: finalKey });
+      } catch (e: unknown) {
+        this.logger.warn(
+          `Failed to copy OCR result to ${finalKey}, keeping inbox key: ${errorMessage(e)}`,
+        );
+      }
+    }
+
+    return this.chunkAndEmbed(doc, cleaned);
+  }
+
+  /**
+   * Shared pipeline used by both `runIngest` and `completeOcr`:
+   *  1) Insert rag_documents (status=pending) → keep id  [skipped — caller passes existing doc]
+   *  2) Chunk + embed in batches
+   *  3) Insert rag_chunks
+   *  4) Update status=ready, chunk_count
+   * If embedding fails we mark status=failed and surface the error in
+   * the `error` column so the admin can retry / inspect.
+   */
+  private async chunkAndEmbed(doc: RagDocument, content: string): Promise<IIngestResult> {
+    try {
+      const chunks = this.chunker.split(content);
+      if (chunks.length === 0) {
+        throw new Error('Document produced zero chunks (empty content?)');
+      }
+
+      const vectors = await this.embeddings.embedBatch(chunks);
+      if (vectors.length !== chunks.length) {
+        throw new Error(
+          `Embedding count mismatch: got ${vectors.length} for ${chunks.length} chunks`,
+        );
+      }
+
+      await this.dataSource.transaction(async (em) => {
+        const chunkRepo = em.getRepository(RagChunk);
+        const docRepo = em.getRepository(RagDocument);
+        const rows = chunks.map((content, idx) =>
+          chunkRepo.create({
+            documentId: doc.id,
+            chunkIndex: idx,
+            content,
+            tokenCount: this.chunker.countTokens(content),
+            embedding: JSON.stringify(vectors[idx]),
+          }),
+        );
+        await chunkRepo.createQueryBuilder().insert().values(rows).execute();
+        await docRepo.update(doc.id, {
+          status: RagDocumentStatus.READY,
+          chunkCount: chunks.length,
+          error: null,
+        });
+      });
+
+      return {
+        id: doc.id,
+        chunkCount: chunks.length,
+        status: RagDocumentStatus.READY,
+      };
+    } catch (e: unknown) {
+      this.logger.error(`Ingest failed for ${doc.id}: ${errorMessage(e)}`);
+      await this.docRepo.update(doc.id, {
+        status: RagDocumentStatus.FAILED,
+        error: errorMessage(e).slice(0, 1000),
+      });
+      throw e;
+    }
+  }
+
+  /**
    * Shared pipeline used by both `ingest` and `ingestBuffer`:
    *  1) PUT raw content to R2 (mandatory — R2 is required by config)
    *  2) Insert rag_documents (status=pending) → keep id
@@ -141,50 +306,9 @@ export class RagService {
       `Ingesting ${sourceKind} doc ${doc.id} (name="${name}", bucket=${bucket}, bytes=${doc.sizeBytes})`,
     );
 
-    try {
-      // 3) Chunk
-      const chunks = this.chunker.split(content);
-      if (chunks.length === 0) {
-        throw new Error('Document produced zero chunks (empty content?)');
-      }
-
-      // 4) Embed
-      const vectors = await this.embeddings.embedBatch(chunks);
-      if (vectors.length !== chunks.length) {
-        throw new Error(
-          `Embedding count mismatch: got ${vectors.length} for ${chunks.length} chunks`,
-        );
-      }
-
-      // 5) Insert chunks + mark ready (in a single transaction)
-      await this.dataSource.transaction(async (em) => {
-        const chunkRepo = em.getRepository(RagChunk);
-        const docRepo = em.getRepository(RagDocument);
-        const rows = chunks.map((content, idx) =>
-          chunkRepo.create({
-            documentId: doc.id,
-            chunkIndex: idx,
-            content,
-            tokenCount: this.chunker.countTokens(content),
-            embedding: JSON.stringify(vectors[idx]),
-          }),
-        );
-        await chunkRepo.createQueryBuilder().insert().values(rows).execute();
-        await docRepo.update(doc.id, {
-          status: RagDocumentStatus.READY,
-          chunkCount: chunks.length,
-        });
-      });
-
-      return { id: doc.id, chunkCount: chunks.length };
-    } catch (e: unknown) {
-      this.logger.error(`Ingest failed for ${doc.id}: ${errorMessage(e)}`);
-      await this.docRepo.update(doc.id, {
-        status: RagDocumentStatus.FAILED,
-        error: errorMessage(e).slice(0, 1000),
-      });
-      throw e;
-    }
+    // 3-5) Reuse the shared chunk+embed path so sync and OCR-completion
+    //      stay in lock-step.
+    return this.chunkAndEmbed(doc, content);
   }
 
   /**

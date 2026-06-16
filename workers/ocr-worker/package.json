@@ -1,0 +1,18 @@
+{
+  "name": "@law-ai/ocr-worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cloudflare Worker that runs OCR on scanned PDFs uploaded to R2",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240909.0",
+    "typescript": "^5.4.5",
+    "wrangler": "^3.78.0"
+  }
+}

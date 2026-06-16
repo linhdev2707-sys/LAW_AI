@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 // Custom Hooks & Components
-import { useRagAdmin } from '@/hooks/use-rag-admin';
+import { useRagAdmin, useOcrStatusPolling } from '@/hooks/use-rag-admin';
 import { DocumentTable } from '@/components/knowledge/document-table';
 import { CreateBucketDialog } from '@/components/knowledge/create-bucket-dialog';
 import { UploadDocumentDialog } from '@/components/knowledge/upload-document-dialog';
@@ -56,6 +56,39 @@ export default function KnowledgePage() {
     onConfirmDelete,
     onCreateBucket,
   } = useRagAdmin(isAdmin);
+
+  // ─── OCR polling ────────────────────────────────────────────────────
+  // Find any document still in `ocr_pending` and poll its status. When
+  // the status flips to `ready` or `failed`, refresh the list so the
+  // user sees the updated row without manually clicking "Làm mới".
+  //
+  // We only poll the FIRST pending doc at a time — the BE serialises
+  // R2 event notifications to the Worker, and a single polling loop is
+  // enough to drive the UI. If multiple scans are uploaded at once,
+  // subsequent ticks (or a manual refresh) will pick up the rest.
+  const pendingDoc = useMemo(
+    () => docs.find((d) => d.status === 'ocr_pending') ?? null,
+    [docs],
+  );
+  const { status: polledStatus, error: pollError } = useOcrStatusPolling(
+    pendingDoc?.id ?? null,
+    !!pendingDoc,
+  );
+
+  useEffect(() => {
+    if (polledStatus && polledStatus !== 'ocr_pending') {
+      // The Worker finished (or failed) — pull the fresh row.
+      void refreshDocs();
+    }
+  }, [polledStatus, refreshDocs]);
+
+  useEffect(() => {
+    if (pollError) {
+      // We don't toast spam — a single console warning is enough.
+      // eslint-disable-next-line no-console
+      console.warn('OCR status polling error:', pollError);
+    }
+  }, [pollError]);
 
   if (sessionStatus === 'loading' || !isAdmin) {
     return (

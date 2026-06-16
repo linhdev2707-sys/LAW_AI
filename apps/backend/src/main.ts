@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { json } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -54,6 +55,20 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
     exposedHeaders: ['Authorization'],
   });
+
+  // Replace the default JSON body parser with one that also exposes the
+  // raw bytes on `req.rawBody`. The OCR callback guard needs the raw
+  // bytes to verify the HMAC signature (Nest's default parser strips them
+  // before the guard can read them). The parsed body is still available
+  // on `req.body` as usual.
+  app.use(
+    json({
+      limit: '5mb',
+      verify: (req: any, _res, buf) => {
+        req.rawBody = Buffer.from(buf);
+      },
+    }),
+  );
 
   // Global prefix
   app.setGlobalPrefix('api/v1', {

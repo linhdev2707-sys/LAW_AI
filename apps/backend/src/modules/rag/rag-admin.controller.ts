@@ -6,12 +6,15 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Logger,
   Param,
   Post,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -25,6 +28,7 @@ import { CreateRagDocumentDto } from './dto/create-rag-document.dto';
 import { RagDocumentIdParamDto } from './dto/rag-document-id.dto';
 import { UploadRagDocumentDto } from './dto/upload-rag-document.dto';
 import { CreateRagBucketDto } from './dto/create-rag-bucket.dto';
+import { extname } from 'path';
 
 @ApiTags('admin-rag')
 @ApiBearerAuth('access-token')
@@ -32,6 +36,8 @@ import { CreateRagBucketDto } from './dto/create-rag-bucket.dto';
 @Roles(UserRole.ADMIN)
 @Controller('admin/rag')
 export class RagAdminController {
+  private readonly logger = new Logger(RagAdminController.name);
+
   constructor(private readonly ragService: RagService) {}
 
   // ─── Bucket management ───────────────────────────────────────────────
@@ -62,15 +68,21 @@ export class RagAdminController {
   }
 
   /**
-   * Multipart upload — supports PDF, DOCX, TXT, MD up to 10 MB.
+   * Multipart upload — supports PDF, DOCX, TXT, MD up to 50 MB.
    * Field layout (multipart/form-data):
    *   - `name`   (string, required) — human label for the document
    *   - `bucket` (string, required) — R2 bucket name (lowercase, hyphens)
    *   - `file`   (binary, required) — the document itself
    *
-   * `memoryStorage()` keeps the bytes in RAM (capped at 10 MB), which is
+   * `memoryStorage()` keeps the bytes in RAM (capped at 50 MB), which is
    * the simplest option and fine for the current size limit. If we later
    * need larger files, switch to disk storage with a tmp dir.
+   *
+   * Scanned PDFs (no extractable text layer) are routed to the OCR
+   * queue: we upload the raw PDF to R2 under `ocr-inbox/`, create a
+   * `rag_documents` row with `status=ocr_pending`, and return 202. The
+   * Cloudflare Worker picks it up via R2 Event Notifications and posts
+   * the extracted text back to the callback endpoint.
    */
   @Post('documents/upload')
   @HttpCode(HttpStatus.CREATED)
@@ -96,18 +108,71 @@ export class RagAdminController {
     @CurrentUser('sub') userId: string,
     @Body() dto: UploadRagDocumentDto,
     @UploadedFile() file: Express.Multer.File | undefined,
+    @Res({ passthrough: true }) res: Response,
   ) {
     if (!file) {
       throw new BadRequestException('Missing `file` field in multipart form');
     }
-    return this.ragService.ingestBuffer(
-      dto.name,
-      file.buffer,
-      file.mimetype || 'application/octet-stream',
-      file.originalname,
-      dto.bucket,
-      userId,
-    );
+    const mimeType = file.mimetype || 'application/octet-stream';
+    try {
+      const result = await this.ragService.ingestBuffer(
+        dto.name,
+        file.buffer,
+        mimeType,
+        file.originalname,
+        dto.bucket,
+        userId,
+      );
+      res.status(HttpStatus.CREATED);
+      return result;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      // If the parser said there's no text layer AND the file is a PDF
+      // (either declared MIME or .pdf extension), push it through the
+      // async OCR pipeline instead of failing the upload.
+      if (
+        msg.includes('no extractable text') &&
+        this.isPdf(mimeType, file.originalname)
+      ) {
+        this.logger.log(
+          `PDF has no text layer — routing to OCR queue: ${file.originalname}`,
+        );
+        const result = await this.ragService.enqueueOcr(
+          dto.name,
+          file.buffer,
+          dto.bucket,
+          userId,
+        );
+        res.status(HttpStatus.ACCEPTED);
+        return result;
+      }
+      throw e;
+    }
+  }
+
+  /**
+   * Lightweight status endpoint for the admin UI to poll after a
+   * scanned-PDF upload. Returns the same fields as the regular
+   * document detail endpoint, trimmed to what the polling UI needs.
+   */
+  @Get('documents/:id/ocr-status')
+  async ocrStatus(@Param() params: RagDocumentIdParamDto) {
+    const doc = await this.ragService.getDocument(params.id);
+    if (!doc) {
+      throw new BadRequestException(`RagDocument ${params.id} not found`);
+    }
+    return {
+      id: doc.id,
+      status: doc.status,
+      chunkCount: doc.chunkCount,
+      error: doc.error,
+    };
+  }
+
+  private isPdf(mimeType: string, filename?: string): boolean {
+    if (mimeType === 'application/pdf') return true;
+    if (!filename) return false;
+    return extname(filename).toLowerCase() === '.pdf';
   }
 
   @Get('documents/:id')

@@ -1,0 +1,67 @@
+name = "law-ai-ocr-worker"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+
+# R2 bucket the Worker reads from. The backend uploads raw PDFs to this
+# bucket under the prefix `ocr-inbox/`. The Worker polls this prefix on
+# a cron schedule and processes any new files. Keep this in sync with
+# the backend's `OCR_R2_BUCKET` env var.
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "law-ai-rag-ocr"
+preview_bucket_name = "law-ai-rag-ocr-dev"
+
+# Workers AI binding — used to call @cf/meta/llama-3.2-11b-vision-instruct
+# for OCR. Enable Workers AI on the account (one-click in the Cloudflare
+# dashboard) before deploying.
+[ai]
+binding = "AI"
+
+# KV namespace used to track which R2 objects have already been OCR'd
+# so we don't re-process them on every cron tick. Create it once with:
+#
+#   wrangler kv:namespace create "OCR_STATE"
+#   wrangler kv:namespace create "OCR_STATE" --preview
+#
+# then paste the resulting `id` values below. The "preview" binding is
+# used by `wrangler dev` and preview deploys.
+#
+# Until you create the namespace, `wrangler dev` will warn but still
+# work — keys will just be in-memory.
+[[kv_namespaces]]
+binding = "OCR_STATE"
+id = "6d71bf49e4c14a978abde911b58f70b0"
+preview_id = "5a1271cde63042ecb2aec722f8671823"
+
+# Cron Trigger — runs the Worker on a schedule. R2 Event Notifications
+# require a paid Workers plan, so we use a cron poll instead. The
+# cadence is a trade-off between latency and cost:
+#   - "*/1 * * * *"  = every minute     (best UX, ~1440 invocations/day)
+#   - "*/2 * * * *"  = every 2 minutes  (~720 invocations/day, still fast)
+#
+# The free Workers plan allows 5 cron triggers per Worker, so we have
+# headroom. Each invocation is cheap (a single R2 list + AI call per
+# pending file), well under the 100k requests/day free limit.
+[triggers]
+crons = ["*/1 * * * *"]
+
+# Non-secret config. Put the HMAC secret in `wrangler secret put` so it
+# doesn't end up in source control.
+#
+#   wrangler secret put OCR_CALLBACK_SECRET
+#   wrangler secret put BACKEND_CALLBACK_URL
+#
+# Example values (override in your environment):
+# BACKEND_CALLBACK_URL = "https://api.law-ai.example.com/api/v1/admin/rag/documents/ocr-complete"
+[vars]
+LOG_LEVEL = "info"
+OCR_MODEL = "@cf/meta/llama-3.2-11b-vision-instruct"
+# Cap how many files we process per cron tick. Most ticks will have 0
+# new files; a burst of uploads (say 10 PDFs at once) is still well
+# under this cap. Keeps a single invocation from going over the 30s
+# Worker CPU limit.
+MAX_FILES_PER_TICK = 10
+# Cap how many pages we OCR per invocation. Long documents are split by
+# the backend into multiple uploads (one per chunk of pages) — we keep
+# this here as a safety belt.
+MAX_PAGES_PER_INVOCATION = 50

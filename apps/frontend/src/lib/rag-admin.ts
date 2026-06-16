@@ -3,6 +3,7 @@ import type {
   IUploadRagDocumentResult,
   IRagDocument,
   IRagBucket,
+  IOcrStatusResult,
   RagDocumentStatus,
 } from '@/types/rag';
 
@@ -78,6 +79,18 @@ export const ragAdminApi = {
     await apiFetch<void>(`/api/v1/admin/rag/documents/${encodeURIComponent(id)}`, {
       method: 'DELETE',
     });
+  },
+
+  /**
+   * Lightweight status endpoint for polling a document that's still in
+   * `ocr_pending` after a scanned-PDF upload. Returns a trimmed view
+   * (no chunks, no R2 keys) — we only need to know when it leaves
+   * the OCR queue.
+   */
+  async getOcrStatus(id: string): Promise<IOcrStatusResult> {
+    return apiFetch<IOcrStatusResult>(
+      `/api/v1/admin/rag/documents/${encodeURIComponent(id)}/ocr-status`,
+    );
   },
 
   // ─── Bucket helpers ───────────────────────────────────────────────────

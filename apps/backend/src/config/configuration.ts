@@ -65,6 +65,17 @@ export default registerAs('app', () => ({
         : ''),
   },
 
+  // ─── OCR (Cloudflare Workers AI) ────────────────────────────────────
+  // When a scanned PDF (no text layer) is uploaded we stash the raw bytes
+  // in R2 and let the Cloudflare Worker run OCR, then POST the extracted
+  // text back to /admin/rag/documents/:id/ocr-complete. The HMAC secret
+  // is shared between the Worker and the backend so the endpoint can
+  // verify the callback hasn't been spoofed.
+  ocr: {
+    callbackSecret: process.env.OCR_CALLBACK_SECRET || '',
+    bucket: process.env.OCR_R2_BUCKET || 'law-ai-rag-ocr',
+  },
+
   // ─── RAG index / retrieval tuning ──────────────────────────────────
   rag: {
     candidateK: intEnv('RAG_CANDIDATE_K', 50),

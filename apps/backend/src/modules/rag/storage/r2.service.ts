@@ -7,6 +7,7 @@ import {
   CreateBucketCommand,
   HeadBucketCommand,
   ListBucketsCommand,
+  CopyObjectCommand,
   BucketLocationConstraint,
 } from '@aws-sdk/client-s3';
 
@@ -115,6 +116,29 @@ export class R2Service implements OnModuleInit {
       new DeleteObjectCommand({
         Bucket: bucket,
         Key: key,
+      }),
+    );
+  }
+
+  /**
+   * Server-side copy an object within the same bucket (S3/R2 semantics).
+   * Used by the OCR completion path to move the extracted text from
+   * `ocr-inbox/{id}.txt` to the standard `rag/{uuid}.txt` key without
+   * re-uploading bytes. The destination is overwritten if it exists.
+   */
+  async copyObject(
+    bucket: string,
+    sourceKey: string,
+    destKey: string,
+    contentType?: string,
+  ): Promise<void> {
+    this.assertReady();
+    await this.client!.send(
+      new CopyObjectCommand({
+        Bucket: bucket,
+        Key: destKey,
+        CopySource: `${encodeURIComponent(bucket)}/${encodeURIComponent(sourceKey)}`,
+        ContentType: contentType,
       }),
     );
   }

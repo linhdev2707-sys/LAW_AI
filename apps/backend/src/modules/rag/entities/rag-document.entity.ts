@@ -11,6 +11,7 @@ import { RagChunk } from './rag-chunk.entity';
 
 export enum RagDocumentStatus {
   PENDING = 'pending',
+  OCR_PENDING = 'ocr_pending',
   READY = 'ready',
   FAILED = 'failed',
 }

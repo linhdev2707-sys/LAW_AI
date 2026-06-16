@@ -102,6 +102,10 @@ export function UploadDocumentDialog({
 
     setUploading(true);
     try {
+      // Tracks whether any file was routed to the async OCR queue. We
+      // show a single "pending OCR" toast in that case and rely on the
+      // caller (knowledge page) to poll for completion.
+      let anyOcrPending = false;
       if (files.length === 1) {
         const file = files[0]!;
         const docName = name.trim() || getDocName(file);
@@ -110,9 +114,19 @@ export function UploadDocumentDialog({
           bucket: bucket.trim(),
           file,
         });
-        toast.success('Đã tải lên tài liệu', {
-          description: `${res.chunkCount} chunk đã được tạo trong bộ tài liệu "${bucket.trim()}".`,
-        });
+        if (res.status === 'ocr_pending') {
+          anyOcrPending = true;
+          toast.info('Đã gửi tài liệu vào hàng đợi OCR', {
+            description:
+              'Tài liệu scan đang được xử lý bằng Cloudflare Workers AI. ' +
+              'Danh sách sẽ tự cập nhật khi hoàn tất.',
+            duration: 6000,
+          });
+        } else {
+          toast.success('Đã tải lên tài liệu', {
+            description: `${res.chunkCount} chunk đã được tạo trong bộ tài liệu "${bucket.trim()}".`,
+          });
+        }
       } else {
         let successCount = 0;
         let errorCount = 0;
@@ -120,12 +134,16 @@ export function UploadDocumentDialog({
           const file = files[i]!;
           const docName = getDocName(file);
           try {
-            await ragAdminApi.upload({
+            const res = await ragAdminApi.upload({
               name: docName,
               bucket: bucket.trim(),
               file,
             });
-            successCount++;
+            if (res.status === 'ocr_pending') {
+              anyOcrPending = true;
+            } else {
+              successCount++;
+            }
           } catch (err) {
             errorCount++;
             // eslint-disable-next-line no-console
@@ -136,6 +154,13 @@ export function UploadDocumentDialog({
         if (successCount > 0) {
           toast.success(`Đã tải lên thành công ${successCount}/${files.length} tài liệu`, {
             description: `Đã lưu trữ trong bộ tài liệu "${bucket.trim()}".`,
+          });
+        }
+        if (anyOcrPending) {
+          toast.info('Một số tài liệu scan đang được OCR', {
+            description:
+              'Cloudflare Workers AI sẽ trích xuất văn bản. Danh sách tự cập nhật khi xong.',
+            duration: 6000,
           });
         }
         if (errorCount > 0) {

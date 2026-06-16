@@ -88,6 +88,69 @@ pnpm db:up
 docker compose up -d
 ```
 
+## ☁️ OCR Worker (Cloudflare)
+
+Worker này xử lý các file PDF scan được upload lên R2 — dùng Cloudflare Workers AI để OCR tiếng Việt rồi gọi callback về backend.
+
+### Cấu trúc
+
+```
+workers/ocr-worker/
+├── package.json       # pnpm workspace member
+├── wrangler.toml      # R2 + AI + KV bindings, cron trigger
+├── src/index.ts       # scheduled() + fetch() handlers
+└── tsconfig.json
+```
+
+### Setup một lần (Cloudflare dashboard + CLI)
+
+```bash
+# 1. Login Cloudflare (mở browser xác thực)
+pnpm --filter @law-ai/ocr-worker exec wrangler login
+
+# 2. Tạo R2 bucket (nếu chưa có)
+#    → Vào dashboard: R2 Object Storage → Create bucket → "law-ai-rag-ocr"
+
+# 3. Tạo KV namespace cho việc track file đã OCR
+pnpm --filter @law-ai/ocr-worker exec wrangler kv:namespace create "OCR_STATE"
+pnpm --filter @law-ai/ocr-worker exec wrangler kv:namespace create "OCR_STATE" --preview
+# → Copy 2 ID trên vào wrangler.toml ([[kv_namespaces]])
+
+# 4. Enable Workers AI
+#    → Dashboard: Workers & Pages → Settings → Workers AI → Enable
+
+# 5. Set secrets cho Worker
+pnpm --filter @law-ai/ocr-worker exec wrangler secret put OCR_CALLBACK_SECRET
+# → paste chuỗi 32+ chars hex (giống giá trị trong backend .env)
+pnpm --filter @law-ai/ocr-worker exec wrangler secret put BACKEND_CALLBACK_URL
+# → paste: https://<backend-domain>/api/v1/admin/rag/documents/ocr-complete
+```
+
+### Deploy
+
+```bash
+pnpm --filter @law-ai/ocr-worker deploy
+```
+
+Sau khi deploy:
+- Worker chạy cron mỗi 1 phút, list R2 `ocr-inbox/`, OCR file mới
+- Backend env phải có `OCR_CALLBACK_SECRET` (cùng giá trị với Worker)
+
+### Dev local
+
+```bash
+pnpm --filter @law-ai/ocr-worker dev
+# → Wrangler sẽ chạy local với R2 + AI binding trỏ về account thật
+# → Test thủ công: POST http://localhost:8787/process body {"key":"ocr-inbox/<uuid>.pdf"}
+```
+
+### Tại sao Cron Trigger (không phải R2 Event Notifications)?
+
+- R2 Event Notifications yêu cầu **Workers Paid plan ($5/tháng)**
+- Cron Triggers có sẵn trong **Workers Free plan** (5 triggers/Worker, đủ dùng)
+- Đánh đổi: thêm 30s-1 phút delay giữa upload và OCR xong — acceptable vì bản thân OCR cũng mất vài chục giây
+- Khi nào nâng cấp: nếu latency quan trọng (>1000 uploads/ngày cần real-time) → cân nhắc mua Workers Paid và chuyển sang Event Notifications
+
 ## 📦 Thêm shadcn component
 
 ```bash

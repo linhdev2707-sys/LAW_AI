@@ -40,6 +40,13 @@ export const validationSchema = Joi.object({
   R2_REGION: Joi.string().default('auto'),
   R2_ENDPOINT: Joi.string().allow('').default(''),
 
+  // ─── OCR (Cloudflare Workers AI) ────────────────────────────────────
+  // The secret is required in production so the callback endpoint can
+  // verify HMAC signatures. We use min(32) to match JWT_SECRET's policy.
+  // Bucket name has a sensible default for local dev.
+  OCR_CALLBACK_SECRET: Joi.string().allow('').min(0).default(''),
+  OCR_R2_BUCKET: Joi.string().default('law-ai-rag-ocr'),
+
   // ─── RAG ───────────────────────────────────────────────────────────
   RAG_CANDIDATE_K: Joi.number().default(50),
   RAG_TOP_K: Joi.number().min(1).max(20).default(5),
