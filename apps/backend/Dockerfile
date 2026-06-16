@@ -13,7 +13,8 @@ COPY apps/backend ./apps/backend
 # Copy shared packages
 COPY packages ./packages
 
-# Install deps (root + workspaces)
+# Install ALL deps (incl. devDependencies) so the build step has access
+# to nest CLI, typescript, etc.
 RUN pnpm install --frozen-lockfile
 
 # Build shared first so @law-ai/shared's dist (types + js) exists for the
@@ -23,25 +24,18 @@ RUN pnpm --filter @law-ai/shared build
 # Build backend
 RUN pnpm --filter @law-ai/backend build
 
-# Use `pnpm deploy` to produce a flat, self-contained node_modules
-# (with @law-ai/shared bundled in) that the runtime image can use
-# without the pnpm loader.
-# Include dev dependencies so the migration runner has access to `dotenv`
-# (needed for best-effort .env loading — production env vars are injected
-# by Railway, but the import is still resolved at runtime).
-RUN pnpm --filter @law-ai/backend deploy /deploy --prod=false
-
 # ---- Production stage ----
 FROM node:22-slim AS runner
-RUN corepack enable
+RUN corepack enable && apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy built dist + the flat node_modules produced by `pnpm deploy`
-COPY --from=builder /app/apps/backend/dist ./dist
-COPY --from=builder /deploy/node_modules ./node_modules
-COPY --from=builder /deploy/package.json ./
+# Copy the whole workspace (with node_modules + dist) into the runner.
+# pnpm's symlink layout is preserved — when we copy the source tree
+# that `pnpm install` produced in the builder, all workspace links
+# resolve correctly because the relative paths match.
+COPY --from=builder /app ./
 
 EXPOSE 4000
 
