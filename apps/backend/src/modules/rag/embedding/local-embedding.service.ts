@@ -64,6 +64,11 @@ export class LocalEmbeddingService implements OnModuleInit {
       // volume so the model survives image rebuilds).
       const cacheDir = process.env.EMBEDDING_CACHE_DIR;
       if (cacheDir) mod.env.cacheDir = cacheDir;
+
+      // Use hf-mirror.com as a fast fallback to prevent network timeouts/blockage on VPS
+      const hfEndpoint = process.env.HF_ENDPOINT || 'https://hf-mirror.com/';
+      mod.env.remoteHost = hfEndpoint;
+
       // Quiet the per-file progress bar in dev logs.
       mod.env.allowLocalModels = true;
 
