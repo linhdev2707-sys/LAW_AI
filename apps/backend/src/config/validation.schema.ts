@@ -39,6 +39,7 @@ export const validationSchema = Joi.object({
   R2_BUCKET_NAME: Joi.string().default('law-ai-rag'),
   R2_REGION: Joi.string().default('auto'),
   R2_ENDPOINT: Joi.string().allow('').default(''),
+  CLOUDFLARE_API_TOKEN: Joi.string().allow('').default(''),
 
   // ─── OCR (Cloudflare Workers AI) ────────────────────────────────────
   // The secret is required in production so the callback endpoint can

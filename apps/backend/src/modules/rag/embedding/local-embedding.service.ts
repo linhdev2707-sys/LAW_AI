@@ -40,14 +40,25 @@ export class LocalEmbeddingService implements OnModuleInit {
   private handle: XenovaHandle | null = null;
   private readonly model: string;
   private readonly dim: number;
+  private readonly cfAccountId: string;
+  private readonly cfApiToken: string;
+  private isCfEnabled = false;
 
   constructor(private readonly config: ConfigService) {
     this.model = this.config.get<string>('app.embedding.model', 'Xenova/bge-m3');
     this.dim = this.config.get<number>('app.embedding.dim', 1024);
+    this.cfAccountId = this.config.get<string>('app.cloudflare.accountId', '');
+    this.cfApiToken = this.config.get<string>('app.cloudflare.apiToken', '');
   }
 
   async onModuleInit(): Promise<void> {
-    this.logger.log(`Loading embedding model "${this.model}" (dim=${this.dim})…`);
+    if (this.cfApiToken && this.cfAccountId) {
+      this.isCfEnabled = true;
+      this.logger.log(`Using Cloudflare Workers AI for embedding model "${this.model}" (dim=${this.dim})`);
+      return;
+    }
+
+    this.logger.log(`Loading local embedding model "${this.model}" (dim=${this.dim})…`);
     const t0 = Date.now();
     try {
       // `@xenova/transformers@2.x` is ESM-only. The backend compiles to
@@ -78,7 +89,7 @@ export class LocalEmbeddingService implements OnModuleInit {
       ]);
       this.handle = { module: mod, model, tokenizer };
       this.logger.log(
-        `Embedding model ready (model=${this.model}, loaded in ${Date.now() - t0}ms)`,
+        `Local embedding model ready (model=${this.model}, loaded in ${Date.now() - t0}ms)`,
       );
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -88,7 +99,7 @@ export class LocalEmbeddingService implements OnModuleInit {
   }
 
   isReady(): boolean {
-    return this.handle !== null;
+    return this.isCfEnabled || this.handle !== null;
   }
 
   getDim(): number {
@@ -101,8 +112,13 @@ export class LocalEmbeddingService implements OnModuleInit {
    * seq-len 512 ≈ 80–120 MB per batch on CPU).
    */
   async embedBatch(texts: string[]): Promise<number[][]> {
-    if (!this.handle) throw new Error('Local embedding not configured');
     if (texts.length === 0) return [];
+
+    if (this.isCfEnabled) {
+      return this.embedBatchCloudflare(texts);
+    }
+
+    if (!this.handle) throw new Error('Local embedding not configured');
 
     const { model, tokenizer } = this.handle;
     const BATCH = 64;
@@ -122,16 +138,6 @@ export class LocalEmbeddingService implements OnModuleInit {
       const attentionMask = inputs.attention_mask as import('@xenova/transformers').Tensor;
 
       // Mean-pool with attention mask, then L2-normalize.
-      //
-      // Why not on `Tensor`? `Tensor` in @xenova/transformers 2.x has
-      // no `.expand()` — only `.view()`, which keeps the element count
-      // fixed. Going from [B, T, 1] to [B, T, H] needs a factor of H
-      // more elements, so it throws "Tensor's size(N) does not match
-      // data length(M)". There's no strided broadcast either, so the
-      // simplest reliable path is to drop to JS arrays for the per-
-      // token math. For batch 64 × seq 512 × hidden 1024 that's ~32M
-      // mul-add ops — well under 50ms on a modern CPU, and only runs
-      // once per ingest batch.
       const hidden = last_hidden_state.tolist() as number[][][]; // [B, T, H]
       const mask2d = attentionMask.tolist() as number[][]; // [B, T]
       for (let b = 0; b < hidden.length; b++) {
@@ -141,10 +147,6 @@ export class LocalEmbeddingService implements OnModuleInit {
         const sum = new Array<number>(dim).fill(0);
         let count = 0;
         for (let t = 0; t < tokens.length; t++) {
-          // `mask` is the attention mask — its backing tensor is int64, so
-          // `tolist()` returns `BigInt`. Coerce to plain `number` here so the
-          // multiply below doesn't throw "Cannot mix BigInt and other types".
-          // (Hidden states are float32 → `number` already.)
           const m = Number(mask[t] ?? 0);
           if (m === 0) continue;
           const tok = tokens[t]!;
@@ -160,6 +162,51 @@ export class LocalEmbeddingService implements OnModuleInit {
         result.push(pooled.map((v) => v / norm));
       }
     }
+    return result;
+  }
+
+  private async embedBatchCloudflare(texts: string[]): Promise<number[][]> {
+    const BATCH = 32;
+    const result: number[][] = [];
+
+    for (let i = 0; i < texts.length; i += BATCH) {
+      const slice = texts.slice(i, i + BATCH);
+      const url = `https://api.cloudflare.com/client/v4/accounts/${this.cfAccountId}/ai/run/@cf/baai/bge-m3`;
+
+      const t0 = Date.now();
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.cfApiToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: slice,
+        }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        this.logger.error(`Cloudflare Workers AI embedding request failed: Status ${response.status} - ${errText}`);
+        throw new Error(`Cloudflare Workers AI embedding failed with status ${response.status}`);
+      }
+
+      const resBody = (await response.json()) as {
+        result?: { data?: number[][] };
+        success: boolean;
+        errors?: any[];
+      };
+
+      if (!resBody.success || !resBody.result?.data) {
+        const errors = JSON.stringify(resBody.errors || []);
+        this.logger.error(`Cloudflare Workers AI error: ${errors}`);
+        throw new Error(`Cloudflare Workers AI failed: ${errors}`);
+      }
+
+      result.push(...resBody.result.data);
+      this.logger.debug(`Embedded batch of ${slice.length} items via Cloudflare in ${Date.now() - t0}ms`);
+    }
+
     return result;
   }
 }

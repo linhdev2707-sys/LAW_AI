@@ -64,6 +64,10 @@ export default registerAs('app', () => ({
         ? `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
         : ''),
   },
+  cloudflare: {
+    accountId: process.env.R2_ACCOUNT_ID || '',
+    apiToken: process.env.CLOUDFLARE_API_TOKEN || '',
+  },
 
   // ─── OCR (Cloudflare Workers AI) ────────────────────────────────────
   // When a scanned PDF (no text layer) is uploaded we stash the raw bytes
