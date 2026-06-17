@@ -61,7 +61,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             >
               <Menu className="h-5 w-5" />
             </button>
-            <span className="text-sm font-semibold">ILaw</span>
+            <span className="text-sm font-semibold">iLaw</span>
           </header>
         )}
 

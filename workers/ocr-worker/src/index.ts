@@ -1,5 +1,5 @@
 /**
- * ILaw — OCR Worker (Cron-Triggered)
+ * iLaw — OCR Worker (Cron-Triggered)
  *
  * Runs on a cron schedule (default: every minute). Each tick:
  *  1. List objects in R2 under the `ocr-inbox/` prefix.

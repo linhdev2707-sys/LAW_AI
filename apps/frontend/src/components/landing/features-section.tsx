@@ -39,7 +39,7 @@ export function FeaturesSection() {
       <Container className="relative">
         <div className="mb-20 flex flex-col items-center text-center">
           <h2 className="mb-6 font-headline text-headline-lg font-medium text-brand-on-surface">
-            ILaw giúp gì cho bạn?
+            iLaw giúp gì cho bạn?
           </h2>
           <div className="beam-gradient h-1 w-24 rounded-full opacity-70" />
         </div>

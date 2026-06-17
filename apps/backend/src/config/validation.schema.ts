@@ -73,6 +73,6 @@ export const validationSchema = Joi.object({
   CASSO_WEBHOOK_TOKEN: Joi.string().default('casso-secure-token'),
   BANK_ID: Joi.string().default('TCB'),
   ACCOUNT_NO: Joi.string().default('19039988776601'),
-  ACCOUNT_NAME: Joi.string().default('CONG TY CONG NGHE ILAW'),
+  ACCOUNT_NAME: Joi.string().default('CONG TY CONG NGHE iLaw'),
   VIETQR_TEMPLATE: Joi.string().default('qr_only'),
 });

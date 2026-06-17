@@ -84,14 +84,14 @@ export function RegisterForm() {
         >
           <Image
             src="/logo.jpg"
-            alt="ILaw"
+            alt="iLaw"
             width={80}
             height={80}
             className="h-20 w-20 rounded-md object-contain"
             priority
           />
           <span className="font-headline text-2xl font-bold tracking-wide text-brand-on-surface">
-            ILaw
+            iLaw
           </span>
         </Link>
 

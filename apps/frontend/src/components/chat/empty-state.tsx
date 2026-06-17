@@ -46,7 +46,7 @@ export function EmptyState({ onSelect }: { onSelect?: (text: string) => void }) 
           />
           <Image
             src="/logo.jpg"
-            alt="ILaw"
+            alt="iLaw"
             width={80}
             height={80}
             className="h-20 w-20 rounded-2xl object-contain shadow-lg shadow-brand-tertiary/20"

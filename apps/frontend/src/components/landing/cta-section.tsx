@@ -28,7 +28,7 @@ export function CtaSection() {
             </h2>
             <p className="mb-8 text-base text-brand-on-surface-variant md:text-lg">
               Từ thủ tục hành chính, giải thích hợp đồng đến vướng mắc thủ tục , pháp lý thường gặp.
-              Trò chuyện ngay với ILaw để nhận câu trả lời nhanh chóng, chính xác.
+              Trò chuyện ngay với iLaw để nhận câu trả lời nhanh chóng, chính xác.
             </p>
 
             {/* Quick benefits */}
@@ -69,7 +69,7 @@ export function CtaSection() {
                     <Sparkles className="h-4 w-4" />
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-brand-on-surface">ILaw AI</p>
+                    <p className="text-sm font-semibold text-brand-on-surface">iLaw AI</p>
                     <p className="flex items-center gap-1 text-[11px] text-brand-tertiary">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                       Đang hoạt động

@@ -2,18 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Container } from './container';
 import { NewsletterForm } from './newsletter-form';
-
-const LEGAL_LINKS = [
-  { href: '#', label: 'Chính sách bảo mật' },
-  { href: '/terms', label: 'Điều khoản dịch vụ' },
-  { href: '#', label: 'Bảo mật' },
-];
-
-const SUPPORT_LINKS = [
-  { href: '#', label: 'Liên hệ hỗ trợ' },
-  { href: '/pricing', label: 'Bảng giá & Gói dịch vụ' },
-  { href: '#', label: 'Tài liệu hướng dẫn' },
-];
+import { LEGAL_LINKS, SUPPORT_LINKS } from '@/data/landing/footer-links';
 
 export function LandingFooter() {
   return (
@@ -24,17 +13,17 @@ export function LandingFooter() {
             <div className="mb-6 flex items-center gap-3">
               <Image
                 src="/logo.jpg"
-                alt="ILaw"
+                alt="iLaw"
                 width={64}
                 height={64}
                 className="h-16 w-16 rounded-md object-contain"
               />
               <span className="font-headline text-2xl font-semibold tracking-wide text-brand-on-surface">
-                ILaw
+                iLaw
               </span>
             </div>
             <p className="font-body text-sm leading-relaxed text-brand-on-surface-variant">
-              © {new Date().getFullYear()} ILaw. Bạn đồng hành pháp luật.
+              © {new Date().getFullYear()} iLaw. Bạn đồng hành pháp luật.
             </p>
           </div>
 

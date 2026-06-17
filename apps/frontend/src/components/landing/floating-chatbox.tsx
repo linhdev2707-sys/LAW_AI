@@ -6,6 +6,7 @@ import { MessageCircle, X, Send, Sparkles, ArrowRight, Minus, AlertCircle, Maxim
 import { useSession } from 'next-auth/react';
 import { cn } from '@/lib/utils';
 import { streamInternalChatMessage, type InternalHistoryMessage } from '@/lib/internal-chat';
+import { SUGGESTIONS } from '@/data/landing/suggestions';
 
 interface Message {
   id: string;
@@ -22,12 +23,6 @@ const INITIAL_MESSAGES: Message[] = [
     content:
       'Xin chào! Tôi là iLaw AI 👋 Hãy thử hỏi tôi bất kỳ câu hỏi pháp lý nào, ví dụ: "Thủ tục đăng ký kết hôn cần giấy tờ gì?"',
   },
-];
-
-const SUGGESTIONS = [
-  'Hợp đồng thuê nhà hết hạn xử lý sao?',
-  'Thủ tục đăng ký kết hôn?',
-  'Quyền của người lao động khi bị sa thải?',
 ];
 
 export function FloatingChatbox() {

@@ -122,12 +122,12 @@ export function Sidebar({ open, onClose, refreshKey }: SidebarProps) {
           >
             <Image
               src="/logo.jpg"
-              alt="ILaw"
+              alt="iLaw"
               width={48}
               height={48}
               className="h-12 w-12 rounded-md object-contain"
             />
-            <span className="text-lg font-bold">ILaw</span>
+            <span className="text-lg font-bold">iLaw</span>
           </Link>
           <div className="flex items-center gap-1">
             <Link

@@ -68,14 +68,14 @@ export function LandingNavbar() {
           <Link href="/" className="flex items-center gap-3">
             <Image
               src="/logo.jpg"
-              alt="ILaw"
+              alt="iLaw"
               width={64}
               height={64}
               className="h-16 w-16 rounded-md object-contain"
               priority
             />
             <span className="font-headline text-3xl font-bold tracking-wide text-brand-on-surface">
-              ILaw
+              iLaw
             </span>
           </Link>
 
@@ -246,13 +246,13 @@ export function LandingNavbar() {
               <Link href="/" className="flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
                 <Image
                   src="/logo.jpg"
-                  alt="ILaw"
+                  alt="iLaw"
                   width={48}
                   height={48}
                   className="h-12 w-12 rounded-md object-contain"
                 />
                 <span className="font-headline text-2xl font-bold tracking-wide text-brand-on-surface">
-                  ILaw
+                  iLaw
                 </span>
               </Link>
               <button

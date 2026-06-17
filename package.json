@@ -2,7 +2,7 @@
   "name": "law-ai",
   "version": "0.1.0",
   "private": true,
-  "description": "ILaw - Turborepo monorepo (Next.js + NestJS + TypeORM + PostgreSQL)",
+  "description": "iLaw - Turborepo monorepo (Next.js + NestJS + TypeORM + PostgreSQL)",
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",

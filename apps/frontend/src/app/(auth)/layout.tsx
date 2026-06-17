@@ -63,14 +63,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
             <Image
               src="/logo.jpg"
-              alt="ILaw"
+              alt="iLaw"
               width={64}
               height={64}
               className="h-16 w-16 rounded-md object-contain"
               priority
             />
             <span className="font-headline text-xl font-bold tracking-wide text-brand-on-surface">
-              ILaw
+              iLaw
             </span>
           </Link>
         </header>
@@ -82,7 +82,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         {/* Bottom strip — trust marks / legal, fixed height */}
         <footer className="shrink-0 pb-4 pt-2 text-center text-xs text-brand-on-surface-variant/60">
-          © {new Date().getFullYear()} ILaw · Mã hoá chuẩn ngân hàng · Tuân thủ GDPR
+          © {new Date().getFullYear()} iLaw · Mã hoá chuẩn ngân hàng · Tuân thủ GDPR
         </footer>
       </div>
     </div>

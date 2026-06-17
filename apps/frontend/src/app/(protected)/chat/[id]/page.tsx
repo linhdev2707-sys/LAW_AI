@@ -106,7 +106,7 @@ export default function ChatConversationPage() {
             onStop={stop}
             disabled={false}
             loading={streaming}
-            placeholder="Nhắn cho ILaw…"
+            placeholder="Nhắn cho iLaw…"
             rateLimit={rateLimit}
           />
         </>

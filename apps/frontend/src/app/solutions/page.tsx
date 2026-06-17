@@ -1,75 +1,19 @@
 import { Metadata } from 'next';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { LandingNavbar } from '@/components/landing/landing-navbar';
 import { LandingFooter } from '@/components/landing/landing-footer';
 import { Container } from '@/components/landing/container';
 import { Button } from '@/components/ui/button';
 import { ChatLink } from '@/components/landing/chat-link';
-import {
-  MessageSquare,
-  FileSearch,
-  PenTool,
-  FileText,
-  ArrowRight,
-  Sparkles,
-  Building2,
-  User,
-  Briefcase,
-} from 'lucide-react';
+
+import { SOLUTIONS } from '@/data/solutions/solutions';
+import { AUDIENCES } from '@/data/solutions/audiences';
 
 export const metadata: Metadata = {
   title: 'Giải pháp | iLaw',
   description:
     'Các giải pháp AI pháp lý của iLaw dành cho cá nhân, doanh nghiệp và luật sư – trò chuyện, tra cứu, soạn thảo và phân tích hợp đồng.',
 };
-
-const SOLUTIONS = [
-  {
-    icon: MessageSquare,
-    title: 'Hỏi đáp pháp luật',
-    desc: 'Trò chuyện với AI để giải đáp mọi thắc mắc pháp lý, từ thủ tục hành chính đến tranh chấp dân sự, hình sự.',
-    color: 'from-brand-primary to-brand-tertiary',
-    audience: 'Cá nhân',
-  },
-  {
-    icon: FileSearch,
-    title: 'Tra cứu văn bản pháp luật',
-    desc: 'Tìm kiếm nhanh điều luật, nghị định, thông tư còn hiệu lực – kèm trích dẫn nguồn chính xác.',
-    color: 'from-brand-tertiary to-brand-primary',
-    audience: 'Cá nhân · Sinh viên',
-  },
-  {
-    icon: PenTool,
-    title: 'Soạn thảo đơn từ & biểu mẫu',
-    desc: 'Tạo đơn kiện, hợp đồng, đơn khiếu nại theo mẫu chuẩn, chỉ cần điền thông tin cơ bản.',
-    color: 'from-emerald-500 to-brand-tertiary',
-    audience: 'Cá nhân · Doanh nghiệp',
-  },
-  {
-    icon: FileText,
-    title: 'Phân tích hợp đồng',
-    desc: 'AI quét hợp đồng, phát hiện điều khoản rủi ro, giải thích bằng ngôn ngữ dễ hiểu.',
-    color: 'from-amber-500 to-brand-primary',
-    audience: 'Doanh nghiệp · Startup',
-  },
-];
-
-const AUDIENCES = [
-  {
-    icon: User,
-    title: 'Cá nhân',
-    desc: 'Người dân cần tìm hiểu quyền lợi, thủ tục pháp lý nhanh chóng.',
-  },
-  {
-    icon: Briefcase,
-    title: 'Doanh nghiệp',
-    desc: 'Hỗ trợ soạn thảo, rà soát hợp đồng và tuân thủ pháp luật.',
-  },
-  {
-    icon: Building2,
-    title: 'Tổ chức · Văn phòng luật',
-    desc: 'Tăng năng suất tra cứu, nghiên cứu hồ sơ cho đội ngũ chuyên môn.',
-  },
-];
 
 export default function SolutionsPage() {
   return (

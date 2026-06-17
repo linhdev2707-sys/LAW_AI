@@ -47,12 +47,12 @@ export function ChatShell({ children, refreshKey }: ChatShellProps) {
           </Button>
           <Image
             src="/logo.jpg"
-            alt="ILaw"
+            alt="iLaw"
             width={48}
             height={48}
             className="h-12 w-12 rounded-md object-contain"
           />
-          <span className="text-lg font-bold text-brand-on-surface">ILaw</span>
+          <span className="text-lg font-bold text-brand-on-surface">iLaw</span>
         </header>
 
         <main className="relative flex flex-1 flex-col overflow-hidden">{children}</main>

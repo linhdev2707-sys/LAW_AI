@@ -63,7 +63,7 @@ export class PaymentService {
     // Load bank configs
     const bankId = this.configService.get<string>('app.payment.bankId', 'TCB');
     const accountNo = this.configService.get<string>('app.payment.accountNo', '19039988776601');
-    const accountName = this.configService.get<string>('app.payment.accountName', 'CONG TY CONG NGHE ILAW');
+    const accountName = this.configService.get<string>('app.payment.accountName', 'CONG TY CONG NGHE iLaw');
     const template = this.configService.get<string>('app.payment.template', 'qr_only');
 
     // Build transfer content with plan suffix

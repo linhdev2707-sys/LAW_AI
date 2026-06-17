@@ -59,7 +59,7 @@ export default function ChatIndexPage() {
           }}
           disabled={false}
           loading={streaming}
-          placeholder="Nhắn cho ILaw…"
+          placeholder="Nhắn cho iLaw…"
           rateLimit={rateLimit}
         />
       </div>

@@ -159,13 +159,13 @@ export function AppSidebar({ forceOpen = false, onClose }: AppSidebarProps) {
       >
         <Image
           src="/logo.jpg"
-          alt="ILaw"
+          alt="iLaw"
           width={48}
           height={48}
           className="h-12 w-12 shrink-0 rounded-md object-contain"
         />
         {expanded && (
-          <span className="truncate text-lg font-bold">ILaw</span>
+          <span className="truncate text-lg font-bold">iLaw</span>
         )}
       </Link>
       <div className="ml-auto flex items-center gap-1">

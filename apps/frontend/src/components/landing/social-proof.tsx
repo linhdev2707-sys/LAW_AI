@@ -1,13 +1,5 @@
 import { Container } from './container';
-
-const CAPABILITIES = [
-  'Trò chuyện pháp lý',
-  'Tra cứu văn bản AI',
-  'Soạn thảo biểu mẫu',
-  'Phân tích hợp đồng',
-  'Hỗ trợ thủ tục hành chính',
-  'Kết nối luật sư đối tác',
-];
+import { CAPABILITIES } from '@/data/landing/capabilities';
 
 export function SocialProof() {
   return (

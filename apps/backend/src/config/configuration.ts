@@ -118,7 +118,7 @@ export default registerAs('app', () => ({
       cassoWebhookToken: process.env.CASSO_WEBHOOK_TOKEN || 'casso-secure-token',
       bankId: process.env.BANK_ID || 'TCB',
       accountNo: process.env.ACCOUNT_NO || '19039988776601',
-      accountName: process.env.ACCOUNT_NAME || 'CONG TY CONG NGHE ILAW',
+      accountName: process.env.ACCOUNT_NAME || 'CONG TY CONG NGHE iLaw',
       template: process.env.VIETQR_TEMPLATE || 'qr_only',
     },
   }));

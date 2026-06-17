@@ -57,10 +57,10 @@ export class ChatService {
     const lower = trimmed.toLowerCase();
     if (!trimmed) return "I didn't catch that — could you rephrase?";
     if (/^(hi|hello|hey|chào|xin chào)\b/i.test(trimmed)) {
-      return "Hello! I'm ILaw, your legal assistant. How can I help you today?";
+      return "Hello! I'm iLaw, your legal assistant. How can I help you today?";
     }
     if (lower.includes('who are you') || lower.includes('bạn là ai')) {
-      return "I'm ILaw, a demo assistant for the ILaw platform. I can help you draft legal questions, summarise documents, or answer general queries.";
+      return "I'm iLaw, a demo assistant for the iLaw platform. I can help you draft legal questions, summarise documents, or answer general queries.";
     }
     if (lower.includes('help') || lower.includes('giúp')) {
       return 'Sure! I can help with: drafting legal questions, summarising text, brainstorming arguments, or explaining concepts.';
