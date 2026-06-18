@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation.schema';
@@ -44,6 +45,11 @@ import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.
         },
       ],
     }),
+    // ScheduleModule powers the RagOcrSweeperService cron (every 5 minutes)
+    // that marks stuck OCR_PENDING documents as FAILED so the admin UI
+    // doesn't sit on "Đang OCR" forever when the worker exhausts its
+    // Workers AI neuron quota or otherwise fails to callback.
+    ScheduleModule.forRoot(),
     AuthModule,
     UserModule,
     ChatModule,

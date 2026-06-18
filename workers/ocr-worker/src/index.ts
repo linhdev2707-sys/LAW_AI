@@ -37,6 +37,13 @@ interface Env {
   BACKEND_CALLBACK_URL: string;
   /** Shared HMAC secret. Set via `wrangler secret put OCR_CALLBACK_SECRET`. */
   OCR_CALLBACK_SECRET: string;
+  /**
+   * OCR.space API key. When set, used as a free-tier fallback when
+   * Workers AI returns 4006 (free-plan daily neuron quota exhausted).
+   * Register a free key at https://ocr.space/ocrapi/freekey — 25k
+   * requests/month, max 1MB / 3 pages per file.
+   */
+  OCRSPACE_API_KEY?: string;
   /** Logging level. */
   LOG_LEVEL?: 'debug' | 'info' | 'warn' | 'error';
   /** Model id. Override in wrangler.toml if you need to swap. */
@@ -214,8 +221,12 @@ async function callOcr(env: Env, pdfBytes: Uint8Array): Promise<string> {
   const model = (env.OCR_MODEL as unknown as string) || '@cf/meta/llama-3.2-11b-vision-instruct';
 
   const jpegs = extractJpegsFromPdf(pdfBytes);
-  
-  const runOcrOnImage = async (imgBase64: string): Promise<string> => {
+
+  /**
+   * Primary path: Workers AI vision model. Throws on quota exhaustion
+   * (4006) so the caller can fall back to OCR.space below.
+   */
+  const runWorkersAi = async (imgBase64: string): Promise<string> => {
     try {
       const response: any = await env.AI.run(model as any, {
         image: [imgBase64],
@@ -239,7 +250,7 @@ async function callOcr(env: Env, pdfBytes: Uint8Array): Promise<string> {
         log('info', 'Model terms of service not accepted yet. Submitting agreement prompt...', { model });
         await env.AI.run(model as any, { prompt: 'agree' });
         log('info', 'Successfully agreed to model terms of service. Retrying page OCR...', { model });
-        
+
         const response: any = await env.AI.run(model as any, {
           image: [imgBase64],
           prompt: OCR_PROMPT_VI,
@@ -261,19 +272,129 @@ async function callOcr(env: Env, pdfBytes: Uint8Array): Promise<string> {
     }
   };
 
+  /**
+   * Detect whether an error from the AI binding is a quota-exhaustion
+   * error (Cloudflare free plan runs out at 10k neurons/day). The error
+   * message contains the literal "4006" and the phrase "daily free
+   * allocation".
+   */
+  const isQuotaExhausted = (e: unknown): boolean => {
+    const msg = e instanceof Error ? e.message : String(e);
+    return msg.includes('4006') && msg.includes('daily free allocation');
+  };
+
+  /**
+   * OCR.space fallback. POSTs the raw PDF bytes as multipart/form-data
+   * to https://api.ocr.space/parse/image. Free tier: 25k req/month,
+   * max 1MB file, max 3 PDF pages. We use engine=2 (best all-round
+   * for printed text) and language=eng; users with Vietnamese-heavy
+   * content can switch to auto via wrangler.toml later.
+   *
+   * The Workers AI failure is caught in the per-page loop below; if a
+   * call throws and isQuotaExhausted, we switch this file over to
+   * OCR.space for the rest of the PDF.
+   */
+  const runOcrSpace = async (): Promise<string> => {
+    if (!env.OCRSPACE_API_KEY) {
+      throw new Error('OCR.space API key not configured (set OCRSPACE_API_KEY secret)');
+    }
+    // Free tier hard cap: 1MB. If the file is larger, OCR.space will
+    // reject it — we surface a clear error so the operator knows to
+    // either upgrade the plan or split the PDF.
+    if (pdfBytes.length > 1024 * 1024) {
+      throw new Error(
+        `PDF size ${pdfBytes.length} bytes exceeds OCR.space free-tier 1MB cap. ` +
+          'Split the PDF or upgrade to PRO PDF.',
+      );
+    }
+    const form = new FormData();
+    form.append('apikey', env.OCRSPACE_API_KEY);
+    form.append('language', 'eng');
+    form.append('OCREngine', '2');
+    form.append('filetype', 'PDF');
+    form.append('isTable', 'true');
+    // BlobPart typing for ArrayBufferView is loose — assert to satisfy TS.
+    form.append('file', new Blob([pdfBytes], { type: 'application/pdf' }), 'document.pdf');
+
+    const res = await fetch('https://api.ocr.space/parse/image', {
+      method: 'POST',
+      body: form,
+    });
+    if (!res.ok) {
+      throw new Error(`OCR.space HTTP ${res.status}`);
+    }
+    const json = (await res.json()) as {
+      OCRExitCode?: number;
+      IsErroredOnProcessing?: boolean;
+      ErrorMessage?: string;
+      ParsedResults?: Array<{ ParsedText?: string }>;
+    };
+    const pages = (json.ParsedResults ?? []).map((p) => p.ParsedText ?? '').filter(Boolean);
+    if (pages.length === 0) {
+      throw new Error(`OCR.space returned no text: ${json.ErrorMessage ?? 'unknown'}`);
+    }
+    // OCR.space exit codes: 1 = full success, 2 = partial success
+    // (e.g. PDF > 3 page free-tier cap), 3 = all failed, 4 = fatal.
+    // We accept 1 and 2: partial text is still useful, and the free-tier
+    // 3-page limit makes "partial" the common case for legal documents.
+    // Only 3+ are treated as failures.
+    if (json.OCRExitCode !== undefined && json.OCRExitCode >= 3) {
+      throw new Error(`OCR.space error: ${json.ErrorMessage ?? 'unknown'}`);
+    }
+    if (json.OCRExitCode === 2) {
+      log(
+        'warn',
+        'OCR.space returned partial result (e.g. PDF exceeds free-tier 3-page cap). ' +
+          'Using the partial text — for full coverage upgrade to PRO PDF or self-host PaddleOCR.',
+        { size: pdfBytes.length, pages: pages.length },
+      );
+    }
+    return pages.join('\n\n');
+  };
+
+  // Stage 1: Workers AI per page.
   if (jpegs.length === 0) {
     log('warn', 'No embedded JPEGs found in PDF. Falling back to passing raw PDF bytes.', { model });
     const rawBase64 = 'data:application/pdf;base64,' + uint8ArrayToBase64(pdfBytes);
-    return await runOcrOnImage(rawBase64);
+    try {
+      return await runWorkersAi(rawBase64);
+    } catch (e) {
+      if (isQuotaExhausted(e)) {
+        log('warn', 'Workers AI quota exhausted; switching this file to OCR.space fallback', {
+          model,
+          size: pdfBytes.length,
+        });
+        return await runOcrSpace();
+      }
+      throw e;
+    }
   }
 
   log('info', `Extracted ${jpegs.length} images from PDF. Running OCR page-by-page.`, { model });
   const results: string[] = [];
+  let switchedToOcrSpace = false;
   for (let i = 0; i < jpegs.length; i++) {
     log('info', `Running OCR on page ${i + 1}/${jpegs.length}...`);
     const imgBase64 = 'data:image/jpeg;base64,' + uint8ArrayToBase64(jpegs[i]);
-    const pageText = await runOcrOnImage(imgBase64);
-    results.push(pageText);
+    try {
+      const pageText = await runWorkersAi(imgBase64);
+      results.push(pageText);
+    } catch (e) {
+      // Mid-file quota exhaustion → bail out of the per-page loop and
+      // retry the whole PDF via OCR.space. This avoids half-baked output.
+      if (isQuotaExhausted(e)) {
+        log('warn', `Workers AI quota exhausted on page ${i + 1}; switching whole file to OCR.space fallback`, {
+          model,
+          size: pdfBytes.length,
+        });
+        switchedToOcrSpace = true;
+        break;
+      }
+      throw e;
+    }
+  }
+  if (switchedToOcrSpace) {
+    return await runOcrSpace();
   }
   return results.join('\n\n');
 }
@@ -284,15 +405,24 @@ async function postCallback(
 ): Promise<Response> {
   const body = JSON.stringify(payload);
   const sig = await hmacSha256Hex(env.OCR_CALLBACK_SECRET, body);
-  const res = await fetch(env.BACKEND_CALLBACK_URL, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-ocr-signature': `sha256=${sig}`,
-    },
-    body,
-  });
-  return res;
+
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+  try {
+    const res = await fetch(env.BACKEND_CALLBACK_URL, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-ocr-signature': `sha256=${sig}`,
+      },
+      body,
+      signal: controller.signal,
+    });
+    return res;
+  } finally {
+    clearTimeout(id);
+  }
 }
 
 /**
@@ -338,6 +468,37 @@ async function processObject(env: Env, key: string, size: number): Promise<void>
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     log('error', 'OCR failed', { documentId, error: msg });
+
+    try {
+      log('info', 'Sending error status to backend...', { documentId });
+      const res = await postCallback(env, { documentId, text: '', error: msg });
+      if (res.ok) {
+        log('info', 'Error status successfully delivered to backend', { documentId });
+        // Since backend knows it failed, we can mark it as processed in KV so we don't retry.
+        // We do this by returning normally (success) without throwing.
+        return;
+      } else {
+        const body = await res.text();
+        log('error', 'Failed to deliver error callback to backend', {
+          documentId,
+          status: res.status,
+          response: body.slice(0, 200),
+        });
+        // If the backend returns 400 (Bad Request), it means the backend rejected the payload
+        // (likely because it is running an older version that does not accept the 'error' field).
+        // We treat this as a permanent failure to avoid an infinite retry loop.
+        if (res.status === 400) {
+          log('warn', 'Backend returned 400 Bad Request. Treating as permanent failure to prevent infinite loop.', { documentId });
+          return;
+        }
+      }
+    } catch (callbackErr) {
+      log('error', 'Exception during error callback delivery', {
+        documentId,
+        error: callbackErr instanceof Error ? callbackErr.message : String(callbackErr),
+      });
+    }
+
     throw e; // bubble up; caller will NOT mark as seen so we retry
   }
 

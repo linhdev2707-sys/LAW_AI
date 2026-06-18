@@ -21,7 +21,7 @@ export function CtaSection() {
           <div className="w-full text-center lg:w-1/2 lg:text-left">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-tertiary/30 bg-brand-tertiary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-brand-tertiary">
               <Sparkles className="h-3.5 w-3.5" />
-              Trợ lý AI pháp lý
+              Trợ lý AI pháp luật
             </div>
             <h2 className="mb-5 font-headline text-3xl font-bold leading-tight text-brand-on-surface sm:text-4xl">
               Giải đáp thắc mắc pháp lý mỗi ngày một cách đơn giản
@@ -86,7 +86,8 @@ export function CtaSection() {
                 {/* User message */}
                 <div className="flex justify-end">
                   <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-gradient-to-r from-brand-primary to-brand-tertiary px-4 py-2.5 text-sm text-white shadow-md">
-                    Hợp đồng thuê nhà hết hạn nhưng chủ nhà không trả lại tiền đặt cọc thì xử lý thế nào?
+                    Hợp đồng thuê nhà hết hạn nhưng chủ nhà không trả lại tiền đặt cọc thì xử lý thế
+                    nào?
                   </div>
                 </div>
 
@@ -97,9 +98,13 @@ export function CtaSection() {
                   </span>
                   <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-brand-outline-variant/15 bg-brand-surface-container-low/80 px-4 py-2.5 text-sm text-brand-on-surface">
                     <p className="mb-2">
-                      Theo Điều 327, 335 Bộ luật Dân sự 2015, bên thuê có quyền yêu cầu hoàn trả tiền đặt cọc khi hợp đồng kết thúc đúng hạn.
+                      Theo Điều 327, 335 Bộ luật Dân sự 2015, bên thuê có quyền yêu cầu hoàn trả
+                      tiền đặt cọc khi hợp đồng kết thúc đúng hạn.
                     </p>
-                    <p>Bạn nên gửi văn bản yêu cầu hoàn cọc trong 30 ngày, nếu chủ nhà vẫn không trả có thể khởi kiện tại Tòa án nhân dân cấp huyện.</p>
+                    <p>
+                      Bạn nên gửi văn bản yêu cầu hoàn cọc trong 30 ngày, nếu chủ nhà vẫn không trả
+                      có thể khởi kiện tại Tòa án nhân dân cấp huyện.
+                    </p>
                   </div>
                 </div>
 

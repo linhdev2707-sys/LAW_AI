@@ -1,7 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
-import type { IChatMessage, IStreamDelta } from './interfaces/chat-completion.types';
+import type {
+  IChatMessage,
+  IStreamDelta,
+  IToolDefinition,
+  IToolStreamDelta,
+} from './interfaces/chat-completion.types';
 
 /**
  * Thin wrapper around DeepSeek's chat-completion API (OpenAI-compatible).
@@ -61,7 +66,11 @@ export class LlmService {
     const stream = await this.client.chat.completions.create(
       {
         model: this.model,
-        messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        // Cast through unknown: IChatMessage's `tool` role requires a
+        // `tool_call_id` that we don't always have at this layer, but
+        // `streamChat` is only ever called with system/user/assistant
+        // messages in practice (see PromptBuilder).
+        messages: messages as unknown as OpenAI.ChatCompletionMessageParam[],
         stream: true,
         max_tokens: this.maxTokens,
         temperature: this.temperature,
@@ -97,11 +106,76 @@ export class LlmService {
 
     const response = await this.client.chat.completions.create({
       model: this.model,
-      messages: messages.map((m) => ({ role: m.role, content: m.content })),
+      // See note in streamChat: cast through unknown to satisfy the
+      // SDK's discriminated-union for tool messages, which we don't
+      // emit from this code path in practice.
+      messages: messages as unknown as OpenAI.ChatCompletionMessageParam[],
       temperature: opts.temperature ?? 0.1,
       max_tokens: opts.maxTokens ?? 100,
     });
 
     return response.choices[0]?.message?.content ?? '';
+  }
+
+  /**
+   * Stream a chat completion with tool-calling support. Yields both
+   * text deltas and tool-call deltas. Tool-call arguments arrive as
+   * partial JSON strings across multiple chunks; consumers should
+   * buffer them by `toolCalls[].index` and JSON.parse once the
+   * upstream signals `finish_reason: 'tool_calls'`.
+   *
+   * Used by the deep-mode `AgentService` to drive the function-calling
+   * agent loop.
+   */
+  async *streamChatTools(
+    messages: IChatMessage[],
+    tools: IToolDefinition[],
+    opts: { signal?: AbortSignal } = {},
+  ): AsyncGenerator<IToolStreamDelta, void, void> {
+    if (!this.client) {
+      throw new Error('DeepSeek client not initialised');
+    }
+
+    const stream = await this.client.chat.completions.create(
+      {
+        model: this.model,
+        // OpenAI SDK accepts tool_call messages but doesn't have a typed
+        // helper; cast through `unknown` keeps the call site terse.
+        messages: messages as unknown as OpenAI.ChatCompletionMessageParam[],
+        tools: tools as unknown as OpenAI.ChatCompletionTool[],
+        stream: true,
+        max_tokens: this.maxTokens,
+        temperature: this.temperature,
+      },
+      { signal: opts.signal },
+    );
+
+    for await (const chunk of stream) {
+      if (opts.signal?.aborted) return;
+      const choice = chunk.choices?.[0];
+      if (!choice) continue;
+
+      const delta = choice.delta ?? {};
+      const out: IToolStreamDelta = {
+        content: delta.content ?? '',
+      };
+
+      // Surface tool_calls deltas when present. The SDK types these as
+      // a partial shape that we re-emit in our own narrower type.
+      if (Array.isArray(delta.tool_calls) && delta.tool_calls.length > 0) {
+        out.toolCalls = delta.tool_calls.map((tc) => ({
+          index: tc.index,
+          id: tc.id,
+          name: tc.function?.name,
+          arguments: tc.function?.arguments,
+        }));
+      }
+
+      if (choice.finish_reason) {
+        out.finishReason = choice.finish_reason;
+      }
+
+      yield out;
+    }
   }
 }

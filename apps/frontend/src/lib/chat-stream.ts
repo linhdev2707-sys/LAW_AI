@@ -1,6 +1,7 @@
 import { getSession } from 'next-auth/react';
 import { env } from './env';
 import { ApiError } from './api';
+import type { ChatMode } from '@law-ai/shared';
 
 /** A single citation surfaced by the RAG retriever. */
 export interface StreamSource {
@@ -14,6 +15,7 @@ export interface StreamSource {
 export interface StreamStart {
   conversationId: string;
   userMessageId: string;
+  mode: ChatMode;
 }
 
 export interface StreamDone {
@@ -25,19 +27,43 @@ export interface StreamError {
 }
 
 /**
- * Where the answer came from. `rag` = grounded in uploaded documents;
- * `general` = LLM fallback when no document matched. The FE shows a
- * badge so users know whether the answer can be trusted as a citation.
+ * Tool call surfaced by the deep-mode agent during streaming. The FE
+ * uses this to show a "Đang tra cứu..." indicator above the placeholder
+ * bubble while the agent is iterating.
  */
-export type AnswerSource = 'rag' | 'general';
+export interface StreamToolCall {
+  tool: string;
+  args: Record<string, unknown>;
+}
+
+/**
+ * Where the answer came from.
+ *  - `rag` = grounded in uploaded documents (fast + deep modes)
+ *  - `general` = LLM fallback when no document matched
+ *  - `lookup` = citation-only mode (no LLM-generated prose)
+ *  - `rag_warning` = deep mode hit the iteration cap
+ */
+export type AnswerSource = 'rag' | 'general' | 'lookup' | 'rag_warning';
 
 export interface StreamMeta {
   kind: AnswerSource;
+  /** Set when kind === 'lookup' — number of chunks returned. */
+  count?: number;
+  /** Set when kind === 'lookup' — the original user query echoed back. */
+  query?: string;
+  /** Set when kind === 'rag_warning' — true if agent loop hit max iterations. */
+  maxIterationsHit?: boolean;
 }
 
 export interface StreamHandlers {
   onStart?: (p: StreamStart) => void;
   onSources?: (p: { sources: StreamSource[] }) => void;
+  /** Lookup-mode per-chunk citation. Distinct from `onSources` (which
+   *  fires once with the full list) so the FE can render chunks as
+   *  they arrive. */
+  onSource?: (p: StreamSource) => void;
+  /** Deep-mode tool call (e.g. rag_search, lookup_article). */
+  onToolCall?: (p: StreamToolCall) => void;
   onMeta?: (p: StreamMeta) => void;
   onDelta?: (p: { content: string }) => void;
   onDone?: (p: StreamDone) => void;
@@ -48,6 +74,9 @@ export interface StreamSendInput {
   content: string;
   conversationId?: string;
   bucketName?: string;
+  /** Chat mode — drives BE dispatcher. Default 'fast' is omitted from
+   *  the request body to keep wire format minimal for the common case. */
+  mode?: ChatMode;
 }
 
 /**
@@ -76,18 +105,19 @@ export async function streamChatMessage(
   };
   if (token) headers.Authorization = `Bearer ${token}`;
 
+  // Only send `mode` when it's not the default — keeps the wire format
+  // minimal for the common case (existing clients default to 'fast').
+  const body: Record<string, unknown> = {
+    content: input.content,
+  };
+  if (input.conversationId) body.conversationId = input.conversationId;
+  if (input.bucketName) body.bucketName = input.bucketName;
+  if (input.mode && input.mode !== 'fast') body.mode = input.mode;
+
   const res = await fetch(`${env.apiUrl}/api/v1/chat/messages/stream`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({
-      content: input.content,
-      ...(input.conversationId
-        ? { conversationId: input.conversationId }
-        : {}),
-      ...(input.bucketName
-        ? { bucketName: input.bucketName }
-        : {}),
-    }),
+    body: JSON.stringify(body),
     signal: ac.signal,
   });
 
@@ -178,6 +208,12 @@ function handleFrame(raw: string, handlers: StreamHandlers): void {
       break;
     case 'sources':
       handlers.onSources?.(payload as { sources: StreamSource[] });
+      break;
+    case 'source':
+      handlers.onSource?.(payload as StreamSource);
+      break;
+    case 'tool_call':
+      handlers.onToolCall?.(payload as StreamToolCall);
       break;
     case 'meta':
       handlers.onMeta?.(payload as StreamMeta);

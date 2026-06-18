@@ -160,7 +160,11 @@ export class RagService {
    * Idempotency: a second call for the same `documentId` returns 409
    * instead of double-chunking.
    */
-  async completeOcr(documentId: string, text: string): Promise<IIngestResult> {
+  async completeOcr(
+    documentId: string,
+    text?: string,
+    error?: string,
+  ): Promise<IIngestResult> {
     const doc = await this.docRepo.findOne({ where: { id: documentId } });
     if (!doc) {
       throw new Error(`RagDocument ${documentId} not found`);
@@ -173,7 +177,33 @@ export class RagService {
       );
     }
 
-    const cleaned = text.replace(/\r\n/g, '\n').trim();
+    if (error) {
+      this.logger.warn(
+        `OCR failed for doc ${documentId} reported by worker: ${error}`,
+      );
+      await this.docRepo.update(doc.id, {
+        status: RagDocumentStatus.FAILED,
+        error: error.slice(0, 1000),
+      });
+
+      if (this.r2.isEnabled()) {
+        try {
+          await this.r2.deleteObject(doc.bucketName, doc.r2Key);
+        } catch (e: unknown) {
+          this.logger.warn(
+            `Failed to delete OCR inbox object ${doc.bucketName}/${doc.r2Key} on failure: ${errorMessage(e)}`,
+          );
+        }
+      }
+
+      return {
+        id: doc.id,
+        chunkCount: 0,
+        status: RagDocumentStatus.FAILED,
+      };
+    }
+
+    const cleaned = text ? text.replace(/\r\n/g, '\n').trim() : '';
     if (!cleaned) {
       throw new Error('OCR returned empty text');
     }

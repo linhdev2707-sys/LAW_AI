@@ -1,11 +1,14 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChatShell } from '@/components/chat/chat-shell';
 import { EmptyState } from '@/components/chat/empty-state';
 import { ChatInput } from '@/components/chat/chat-input';
 import { useConversationStream } from '@/hooks/use-conversation-stream';
 import { useRouter } from 'next/navigation';
+import { isChatMode, type ChatMode } from '@law-ai/shared';
+
+const MODE_STORAGE_KEY = 'chat:mode';
 
 /**
  * The chat index page renders the chat-ready view (greeting + suggestions +
@@ -22,6 +25,28 @@ export default function ChatIndexPage() {
   // Strict Mode double-invokes.
   const navigatedRef = useRef(false);
 
+  /**
+   * Mode picker state — mirror of the page-level chat/[id] page so the
+   * user's last selection is consistent across the index and a
+   * specific conversation. Persisted to localStorage.
+   */
+  const [mode, setMode] = useState<ChatMode>('fast');
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(MODE_STORAGE_KEY);
+      if (isChatMode(stored)) setMode(stored);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(MODE_STORAGE_KEY, mode);
+    } catch {
+      /* ignore */
+    }
+  }, [mode]);
+
   useEffect(() => {
     if (conversationId && !navigatedRef.current) {
       navigatedRef.current = true;
@@ -30,7 +55,7 @@ export default function ChatIndexPage() {
   }, [conversationId, router]);
 
   function handleSelect(prompt: string) {
-    void send(prompt);
+    void send(prompt, mode);
   }
 
   return (
@@ -61,6 +86,8 @@ export default function ChatIndexPage() {
           loading={streaming}
           placeholder="Nhắn cho iLaw…"
           rateLimit={rateLimit}
+          mode={mode}
+          onModeChange={setMode}
         />
       </div>
     </ChatShell>

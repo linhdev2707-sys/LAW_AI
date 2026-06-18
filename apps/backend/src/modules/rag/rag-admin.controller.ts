@@ -24,6 +24,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '@law-ai/shared';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RagService } from './rag.service';
+import { PdfNeedsOcrError } from './parsers/pdf-needs-ocr.error';
 import { CreateRagDocumentDto } from './dto/create-rag-document.dto';
 import { RagDocumentIdParamDto } from './dto/rag-document-id.dto';
 import { UploadRagDocumentDto } from './dto/upload-rag-document.dto';
@@ -127,16 +128,16 @@ export class RagAdminController {
       res.status(HttpStatus.CREATED);
       return result;
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
       // If the parser said there's no text layer AND the file is a PDF
       // (either declared MIME or .pdf extension), push it through the
-      // async OCR pipeline instead of failing the upload.
-      if (
-        msg.includes('no extractable text') &&
-        this.isPdf(mimeType, file.originalname)
-      ) {
+      // async OCR pipeline instead of failing the upload. We use a
+      // typed `instanceof` check rather than substring-matching the
+      // error message — the parser's contract is now expressed through
+      // PdfNeedsOcrError, not through a fragile string.
+      if (e instanceof PdfNeedsOcrError && this.isPdf(mimeType, file.originalname)) {
         this.logger.log(
-          `PDF has no text layer — routing to OCR queue: ${file.originalname}`,
+          `PDF has no recoverable text layer (hasImages=${e.hasImages}) — ` +
+            `routing to OCR queue: ${file.originalname}`,
         );
         const result = await this.ragService.enqueueOcr(
           dto.name,

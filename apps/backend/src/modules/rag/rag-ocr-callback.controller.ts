@@ -29,15 +29,20 @@ class OcrCompleteDto {
   @MinLength(1)
   documentId!: string;
 
-  @ApiProperty({ description: 'Plain-text content extracted by the Worker.' })
+  @ApiPropertyOptional({ description: 'Plain-text content extracted by the Worker.' })
+  @IsOptional()
   @IsString()
-  @MinLength(1)
   @MaxLength(50_000_000)
-  text!: string;
+  text?: string;
 
   @ApiPropertyOptional({ description: 'Number of pages OCR\'d (for logging).' })
   @IsOptional()
   pageCount?: number;
+
+  @ApiPropertyOptional({ description: 'Error message if OCR failed.' })
+  @IsOptional()
+  @IsString()
+  error?: string;
 }
 
 /**
@@ -60,14 +65,27 @@ export class RagOcrCallbackController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(OcrCallbackGuard)
   async complete(@Body() body: OcrCompleteDto) {
-    if (!body.documentId || !body.text) {
-      throw new BadRequestException('documentId and text are required');
+    if (!body.documentId) {
+      throw new BadRequestException('documentId is required');
+    }
+    if (!body.text && !body.error) {
+      throw new BadRequestException('Either text or error must be provided');
     }
     try {
-      const result = await this.ragService.completeOcr(body.documentId, body.text);
-      this.logger.log(
-        `OCR completed for doc ${body.documentId} (chunks=${result.chunkCount})`,
+      const result = await this.ragService.completeOcr(
+        body.documentId,
+        body.text,
+        body.error,
       );
+      if (body.error) {
+        this.logger.warn(
+          `OCR failed for doc ${body.documentId}: ${body.error}`,
+        );
+      } else {
+        this.logger.log(
+          `OCR completed for doc ${body.documentId} (chunks=${result.chunkCount})`,
+        );
+      }
       return result;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);

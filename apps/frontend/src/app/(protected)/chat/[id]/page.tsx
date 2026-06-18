@@ -7,6 +7,9 @@ import { MessageList } from '@/components/chat/message-list';
 import { ChatInput } from '@/components/chat/chat-input';
 import { EmptyState } from '@/components/chat/empty-state';
 import { useConversationStream } from '@/hooks/use-conversation-stream';
+import { isChatMode, type ChatMode } from '@law-ai/shared';
+
+const MODE_STORAGE_KEY = 'chat:mode';
 
 export default function ChatConversationPage() {
   const params = useParams<{ id: string }>();
@@ -25,6 +28,29 @@ export default function ChatConversationPage() {
     rateLimit,
   } = useConversationStream();
   const [refreshKey, setRefreshKey] = useState(0);
+
+  /**
+   * Chat mode picker state. Persisted to localStorage so the user's
+   * last selection survives reloads. Hydrate defensively — the stored
+   * value may be stale or invalid if the enum ever changes.
+   */
+  const [mode, setMode] = useState<ChatMode>('fast');
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(MODE_STORAGE_KEY);
+      if (isChatMode(stored)) setMode(stored);
+    } catch {
+      /* localStorage unavailable — keep default */
+    }
+  }, []);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(MODE_STORAGE_KEY, mode);
+    } catch {
+      /* ignore quota errors */
+    }
+  }, [mode]);
+
   // Track the last id we auto-sent a `?q=` prompt for, so re-renders / Strict
   // Mode double-invokes don't fire the prompt twice.
   const autoSentRef = useRef<string | null>(null);
@@ -52,15 +78,15 @@ export default function ChatConversationPage() {
     // Mark BEFORE calling send() so a second Strict Mode invocation (or any
     // re-entry in the same microtask) short-circuits on the guard above.
     autoSentRef.current = id;
-    void send(prompt);
+    void send(prompt, mode);
     // Strip ?q= in the next tick to avoid browser interrupting the in-flight stream
     setTimeout(() => {
       router.replace(`/chat/${id}`);
     }, 100);
-  }, [id, search, conversationId, streaming, send, router]);
+  }, [id, search, conversationId, streaming, send, router, mode]);
 
   function handleSend(content: string) {
-    void send(content);
+    void send(content, mode);
   }
 
   // Not-found state: show inline message + back link
@@ -108,6 +134,8 @@ export default function ChatConversationPage() {
             loading={streaming}
             placeholder="Nhắn cho iLaw…"
             rateLimit={rateLimit}
+            mode={mode}
+            onModeChange={setMode}
           />
         </>
       )}

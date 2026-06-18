@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { ApiError } from '@/lib/api';
 import { formatBytes, ragAdminApi } from '@/lib/rag-admin';
 
-const ACCEPTED = '.pdf,.docx,.doc,.txt,.md,.markdown';
+const ACCEPTED = '.pdf,.docx,.doc,.txt,.md,.markdown,.json';
 const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
 
 interface UploadDocumentDialogProps {

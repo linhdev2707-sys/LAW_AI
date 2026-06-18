@@ -6,11 +6,19 @@ import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
 import { LlmModule } from '../llm/llm.module';
 import { RagModule } from '../rag/rag.module';
+import { AgentService } from './services/agent.service';
+import { ArticleRegexService } from './services/article-regex.service';
+import { DocumentLookupService } from './services/document-lookup.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Conversation, Message]), LlmModule, RagModule],
   controllers: [ChatController],
-  providers: [ChatService],
+  providers: [
+    ChatService,
+    AgentService,
+    ArticleRegexService,
+    DocumentLookupService,
+  ],
   exports: [ChatService],
 })
 export class ChatModule {}

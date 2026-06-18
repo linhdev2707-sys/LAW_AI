@@ -24,7 +24,14 @@ export const AppDataSource = new DataSource({
   password: process.env.DATABASE_PASSWORD || 'lawai_password',
   database: process.env.DATABASE_NAME || 'law_ai',
   entities: [User, Conversation, Message, RagDocument, RagChunk, Transaction],
-  migrations: [resolve(__dirname, 'database/migrations/[0-9]*-*.{ts,js}')],
+  // Glob pattern is intentionally split into two (one per file extension)
+  // instead of using brace expansion like `[0-9]*-*.{ts,js}`.
+  // TypeORM's DirectoryExportedClassesLoader on Windows does not understand
+  // brace expansion and fails with "The system cannot find the path specified".
+  migrations: [
+    resolve(__dirname, 'database/migrations/*-*.ts'),
+    resolve(__dirname, 'database/migrations/*-*.js'),
+  ],
   synchronize: false,
   logging: ['error', 'warn'],
 });

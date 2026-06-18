@@ -9,6 +9,7 @@ import {
 } from '@/lib/chat-stream';
 import { ApiError } from '@/lib/api';
 import { useRateLimit } from './use-rate-limit';
+import type { ChatMode } from '@law-ai/shared';
 
 /**
  * Streaming variant of `useConversation`.
@@ -63,7 +64,7 @@ export function useConversationStream() {
   }, []);
 
   const send = useCallback(
-    async (content: string) => {
+    async (content: string, mode: ChatMode = 'fast') => {
       // Synchronous guard — see comment on `inFlightRef`.
       if (inFlightRef.current) return null;
       if (streaming) return null;
@@ -83,18 +84,46 @@ export function useConversationStream() {
         role: 'assistant',
         content: '',
         createdAt: new Date().toISOString(),
+        mode,
       };
       setMessages((prev) => [...prev, optimisticUser, assistantPlaceholder]);
 
       try {
         const ac = await streamChatMessage(
-          { content, conversationId: conversationId ?? undefined },
+          { content, conversationId: conversationId ?? undefined, mode },
           {
-            onStart: ({ conversationId: cid }) => {
+            onStart: ({ conversationId: cid, mode: startedMode }) => {
               setConversationId(cid);
+              // Stamp the mode on the placeholder so the badge renders
+              // immediately (before any delta arrives).
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId ? { ...m, mode: startedMode } : m,
+                ),
+              );
             },
             onSources: ({ sources: s }) => {
               setSources((cur) => ({ ...cur, [assistantId]: s }));
+            },
+            onSource: (chunk) => {
+              // Lookup mode streams one source per chunk; merge into the
+              // sources array so the FE can render them inline.
+              setSources((cur) => ({
+                ...cur,
+                [assistantId]: [...(cur[assistantId] ?? []), chunk],
+              }));
+            },
+            onToolCall: ({ tool, args }) => {
+              // Stash the latest tool call on the placeholder so the FE
+              // can show a "Đang tra cứu..." indicator while the agent
+              // is iterating. Replaced on each subsequent tool call.
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId
+                    ? { ...m, pendingToolCall: { tool, args } }
+                    : m,
+                ),
+              );
             },
             onMeta: ({ kind }) => {
               // Stamp the assistant placeholder with where this answer
@@ -115,6 +144,14 @@ export function useConversationStream() {
               );
             },
             onDone: () => {
+              // Clear any in-flight tool-call indicator on completion.
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId
+                    ? { ...m, pendingToolCall: undefined }
+                    : m,
+                ),
+              );
               acRef.current = null;
               inFlightRef.current = false;
               setStreaming(false);

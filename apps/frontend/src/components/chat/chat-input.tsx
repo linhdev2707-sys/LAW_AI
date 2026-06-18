@@ -1,16 +1,25 @@
 'use client';
 
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { Send, Square, Paperclip, AlertCircle } from 'lucide-react';
+import { Send, Square, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ModePicker } from './mode-picker';
+import type { ChatMode } from '@law-ai/shared';
 
 interface ChatInputProps {
-  onSend: (content: string) => void;
+  onSend: (content: string, mode: ChatMode) => void;
   onStop?: () => void;
   disabled?: boolean;
   loading?: boolean;
   placeholder?: string;
   maxLength?: number;
+  /**
+   * Currently selected chat mode. The ChatInput renders a `ModePicker`
+   * so the user can change it before sending. The page owns this state
+   * and persists it across renders / sessions via localStorage.
+   */
+  mode: ChatMode;
+  onModeChange: (mode: ChatMode) => void;
   /**
    * If provided, the input is force-disabled while `isBlocked` is true
    * and a countdown banner is shown above the textarea. The hook that
@@ -31,12 +40,12 @@ export function ChatInput({
   loading,
   placeholder = 'Nhập tin nhắn…',
   maxLength = DEFAULT_MAX,
+  mode,
+  onModeChange,
   rateLimit,
 }: ChatInputProps) {
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [attachedFile, setAttachedFile] = useState<File | null>(null);
 
   // Auto-grow textarea up to a max height.
   useEffect(() => {
@@ -55,9 +64,8 @@ export function ChatInput({
     const trimmed = value.trim();
     if (!trimmed || disabled || loading) return;
     if (rateLimit?.isBlocked) return;
-    onSend(trimmed);
+    onSend(trimmed, mode);
     setValue('');
-    setAttachedFile(null);
   }
 
   function handleKey(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -65,10 +73,6 @@ export function ChatInput({
       e.preventDefault();
       submit();
     }
-  }
-
-  function handlePickFile(file: File | null) {
-    setAttachedFile(file);
   }
 
   const isRateLimited = rateLimit?.isBlocked ?? false;
@@ -102,25 +106,6 @@ export function ChatInput({
           </div>
         )}
 
-        {/* Attached file chip */}
-        {attachedFile && (
-          <div className="mb-2 flex items-center gap-2 rounded-lg border border-brand-tertiary/30 bg-brand-surface-container px-3 py-2 text-sm text-brand-on-surface">
-            <Paperclip className="h-4 w-4 text-brand-tertiary" />
-            <span className="flex-1 truncate">{attachedFile.name}</span>
-            <span className="text-xs text-brand-on-surface-variant">
-              {(attachedFile.size / 1024).toFixed(1)} KB
-            </span>
-            <button
-              type="button"
-              onClick={() => handlePickFile(null)}
-              className="rounded p-0.5 text-brand-on-surface-variant transition-colors hover:bg-white/5 hover:text-brand-on-surface"
-              aria-label="Bỏ đính kèm"
-            >
-              ×
-            </button>
-          </div>
-        )}
-
         <div
           className={cn(
             'relative flex items-end gap-2 rounded-2xl border bg-brand-surface-container shadow-2xl shadow-black/40 transition-colors',
@@ -129,26 +114,14 @@ export function ChatInput({
               : 'border-brand-tertiary/25 focus-within:border-brand-tertiary/60',
           )}
         >
-          {/* Hidden file input (placeholder for future file-upload feature) */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            onChange={(e) => handlePickFile(e.target.files?.[0] ?? null)}
-            accept=".pdf,.doc,.docx,.txt"
+          {/* Mode picker — replaces the (previously disabled) paperclip
+              attachment button. Selecting a mode here only affects the
+              NEXT message; the page owns the state. */}
+          <ModePicker
+            value={mode}
+            onChange={onModeChange}
+            disabled={disabled || loading || isRateLimited}
           />
-
-          {/* Attach button */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={disabled || isRateLimited}
-            title="Đính kèm tài liệu (sắp ra mắt)"
-            aria-label="Đính kèm tài liệu"
-            className="ml-2 mb-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-brand-on-surface-variant transition-colors hover:bg-white/5 hover:text-brand-tertiary disabled:opacity-50"
-          >
-            <Paperclip className="h-4 w-4" />
-          </button>
 
           <textarea
             ref={textareaRef}
@@ -195,16 +168,8 @@ export function ChatInput({
           </div>
         </div>
 
-        {/* Footer row: char counter + tip + disclaimer */}
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-brand-on-surface-variant/60">
-          {/* <div className="flex items-center gap-3">
-            <span className="hidden sm:inline">
-              Nhấn <kbd className="rounded border border-brand-outline-variant/30 bg-white/5 px-1.5 py-0.5 font-mono text-[10px]">Enter</kbd> để gửi, <kbd className="rounded border border-brand-outline-variant/30 bg-white/5 px-1.5 py-0.5 font-mono text-[10px]">Shift + Enter</kbd> để xuống dòng
-            </span>
-            <span className="flex items-center gap-1 sm:hidden">
-              <kbd className="rounded border border-brand-outline-variant/30 bg-white/5 px-1.5 py-0.5 font-mono text-[10px]">Enter</kbd> gửi
-            </span> */}
-          {/* </div> */}
+        {/* Footer row: char counter */}
+        <div className="mt-2 flex flex-wrap items-center justify-end gap-2 px-1 text-xs text-brand-on-surface-variant/60">
           <div className="flex items-center gap-3">
             {isOverLimit && (
               <span className="flex items-center gap-1 text-red-300">

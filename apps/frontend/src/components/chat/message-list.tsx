@@ -38,13 +38,21 @@ export function MessageList({ messages, sources, loading }: MessageListProps) {
         </div>
       ) : (
         <div className="space-y-10 py-10 pb-40">
-          {messages.map((m) => (
-            <MessageBubble
-              key={m.id}
-              message={m}
-              sources={m.role === 'assistant' ? sources?.[m.id] : undefined}
-            />
-          ))}
+          {messages.map((m) => {
+            // Only the LAST assistant message is the live "streaming"
+            // one — earlier ones are persisted. This is how we decide
+            // whether to render the in-flight tool-call indicator.
+            const isLiveAssistant =
+              loading && m.role === 'assistant' && m === messages[messages.length - 1];
+            return (
+              <MessageBubble
+                key={m.id}
+                message={m}
+                sources={m.role === 'assistant' ? sources?.[m.id] : undefined}
+                loading={isLiveAssistant}
+              />
+            );
+          })}
         </div>
       )}
     </div>

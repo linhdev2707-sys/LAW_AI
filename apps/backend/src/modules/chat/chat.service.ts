@@ -8,6 +8,9 @@ import { CreateConversationDto, SendMessageDto } from './dto/chat.dto';
 import { RagService } from '../rag/rag.service';
 import { LlmService } from '../llm/llm.service';
 import { PromptBuilder, IRetrievedSource } from '../llm/prompt.builder';
+import { AgentService, DeepAgentEvent } from './services/agent.service';
+import { DocumentLookupService, LookupEvent } from './services/document-lookup.service';
+import type { IChatMessage } from '../llm/interfaces/chat-completion.types';
 
 function errorMessage(e: unknown): string {
   if (e instanceof Error) return e.message;
@@ -49,6 +52,8 @@ export class ChatService {
     private readonly rag: RagService,
     private readonly llm: LlmService,
     private readonly prompt: PromptBuilder,
+    private readonly agent: AgentService,
+    private readonly documentLookup: DocumentLookupService,
   ) {}
 
   /** Non-streaming reply (kept for backward compat). */
@@ -159,13 +164,23 @@ export class ChatService {
   /**
    * Stream a reply to the client as Server-Sent Events.
    *
-   * Event protocol:
-   *   event: start     data: { conversationId, userMessageId }
-   *   event: sources   data: { sources: ISource[] }
-   *   event: delta     data: { content: string }    // repeated
-   *   event: done      data: { messageId }
-   *   event: error     data: { message }            // on failure
-   *   data: [DONE]                                // terminator
+   * Dispatches on `dto.mode`:
+   *   - `fast`   — single RAG retrieval + DeepSeek streaming chat.
+   *   - `deep`   — agentic RAG with DeepSeek function calling (AgentService).
+   *   - `lookup` — citation-only retrieval, no LLM call (DocumentLookupService).
+   *
+   * Default mode is `fast` (backward compatible).
+   *
+   * Event protocol (common):
+   *   event: start     data: { conversationId, userMessageId, mode }
+   *   event: meta      data: { kind: 'fast' | 'deep' | 'lookup' | 'rag' | 'general' | 'rag_warning', ... }
+   *   event: sources   data: { sources: ISource[] }        (fast/deep final only)
+   *   event: source    data: { index, name, snippet, content }  (lookup, repeated)
+   *   event: tool_call data: { tool, args }                (deep, repeated)
+   *   event: delta     data: { content: string }            (fast/deep final answer, repeated)
+   *   event: done      data: { messageId? }
+   *   event: error     data: { message }                   (on failure)
+   *   data: [DONE]                                          // terminator
    */
   async streamMessage(
     userId: string,
@@ -173,6 +188,8 @@ export class ChatService {
     res: Response,
     req: Request,
   ): Promise<void> {
+    const mode = dto.mode ?? 'fast';
+
     // 1) Resolve / create conversation + persist user message
     const { conversation, userMsg } = await this.persistUserMessage(userId, dto);
 
@@ -182,7 +199,6 @@ export class ChatService {
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
-    // Disable Nest's default response handling for this route
     res.flushHeaders?.();
 
     const writeSse = (event: string, data: unknown): void => {
@@ -190,13 +206,66 @@ export class ChatService {
       res.write(`data: ${JSON.stringify(data)}\n\n`);
     };
 
-    // 3) Announce start
+    // 3) Announce start with mode so FE can render the badge even before
+    //    the assistant message stream begins.
     writeSse('start', {
       conversationId: conversation.id,
       userMessageId: userMsg.id,
+      mode,
     });
 
-    // 4) Retrieve RAG context
+    // 4) Wire abort: stop upstream as soon as the client disconnects
+    const ac = new AbortController();
+    let aborted = false;
+    req.on('close', () => {
+      if (!aborted) {
+        aborted = true;
+        ac.abort();
+        this.logger.log(`Client disconnected for conv ${conversation.id} (mode=${mode})`);
+      }
+    });
+
+    // 5) Dispatch to per-mode handler. Each branch is responsible for
+    //    writing its own events and finally calling `finishWithMessage`
+    //    to persist the assistant message + send `done`.
+    try {
+      switch (mode) {
+        case 'fast':
+          await this.streamFast(conversation, userMsg, dto, writeSse, ac.signal, () => aborted);
+          break;
+        case 'deep':
+          await this.streamDeep(conversation, userMsg, dto, writeSse, ac.signal, () => aborted);
+          break;
+        case 'lookup':
+          await this.streamLookup(conversation, userMsg, dto, writeSse, ac.signal, () => aborted);
+          break;
+      }
+    } catch (e) {
+      if (!aborted) {
+        this.logger.error(`streamMessage failed (mode=${mode}): ${errorMessage(e)}`);
+        writeSse('error', { message: errorMessage(e) || 'Upstream error' });
+      }
+    }
+
+    if (!aborted) {
+      res.write('data: [DONE]\n\n');
+    }
+    res.end();
+  }
+
+  /**
+   * Fast mode: today's behaviour. One retrieval, one streaming LLM call.
+   * Emits `sources`, `meta`, `delta`, then `done`.
+   */
+  private async streamFast(
+    conversation: Conversation,
+    userMsg: Message,
+    dto: SendMessageDto,
+    writeSse: (event: string, data: unknown) => void,
+    signal: AbortSignal,
+    isAborted: () => boolean,
+  ): Promise<void> {
+    // 1) Retrieve RAG context
     let sources: IRetrievedSource[] = [];
     let usedFallback = false;
     try {
@@ -213,31 +282,15 @@ export class ChatService {
       }));
       usedFallback = sources.length === 0;
       writeSse('sources', { sources });
-    } catch (e: unknown) {
+    } catch (e) {
       this.logger.warn(`RAG retrieve failed: ${errorMessage(e)}`);
       writeSse('sources', { sources: [] });
       usedFallback = true;
     }
 
-    // 5) Wire abort: stop upstream as soon as the client disconnects
-    const ac = new AbortController();
-    let aborted = false;
-    req.on('close', () => {
-      if (!aborted) {
-        aborted = true;
-        ac.abort();
-        this.logger.log(`Client disconnected for conv ${conversation.id}`);
-      }
-    });
-
-    // 5b) Tell the FE whether the upcoming answer is grounded in our
-    //     uploaded documents (`rag`) or generated from general legal
-    //     knowledge (`general`). The FE renders a badge so the user
-    //     knows the source — important because `general` answers can
-    //     be wrong, and users have no upload UI of their own.
     writeSse('meta', { kind: usedFallback ? 'general' : 'rag' });
 
-    // 6) Build prompt + stream
+    // 2) Build prompt + stream
     const history = await this.loadHistory(conversation.id, userMsg.id);
     const messages = this.prompt.build({
       sources,
@@ -247,8 +300,8 @@ export class ChatService {
 
     let full = '';
     try {
-      for await (const delta of this.llm.streamChat(messages, { signal: ac.signal })) {
-        if (aborted) break;
+      for await (const delta of this.llm.streamChat(messages, { signal })) {
+        if (isAborted()) break;
         if (delta.content) {
           full += delta.content;
           writeSse('delta', { content: delta.content });
@@ -257,49 +310,203 @@ export class ChatService {
           break;
         }
       }
-    } catch (e: unknown) {
-      if (!aborted) {
+    } catch (e) {
+      if (!isAborted()) {
         this.logger.error(`LLM stream failed: ${errorMessage(e)}`);
         writeSse('error', { message: errorMessage(e) || 'Upstream LLM error' });
       }
-      res.write('data: [DONE]\n\n');
-      res.end();
       return;
     }
 
-    if (aborted) {
-      res.write('data: [DONE]\n\n');
-      res.end();
+    if (isAborted()) return;
+    await this.finishWithMessage(conversation, full, writeSse);
+  }
+
+  /**
+   * Deep mode: agent loop. Emits `tool_call` frames during the loop,
+   * then `meta` + `delta` for the final answer, then `done`.
+   */
+  private async streamDeep(
+    conversation: Conversation,
+    userMsg: Message,
+    dto: SendMessageDto,
+    writeSse: (event: string, data: unknown) => void,
+    signal: AbortSignal,
+    isAborted: () => boolean,
+  ): Promise<void> {
+    const historyMessages: IChatMessage[] = (await this.loadHistory(conversation.id, userMsg.id))
+      .map((h) => ({ role: h.role as 'user' | 'assistant', content: h.content }));
+
+    let full = '';
+    let sources: IRetrievedSource[] = [];
+    let maxIterationsHit = false;
+
+    try {
+      const stream = this.agent.runDeepStream(
+        dto.content,
+        conversation.bucketName,
+        historyMessages,
+        signal,
+      );
+
+      for await (const ev of stream) {
+        if (isAborted()) break;
+
+        switch (ev.kind) {
+          case 'tool_call':
+            writeSse('tool_call', { tool: ev.tool, args: ev.args });
+            break;
+          case 'delta':
+            full += ev.text;
+            writeSse('delta', { content: ev.text });
+            break;
+          case 'parse_error':
+            // Surface but don't break — the agent will see the error
+            // reflected in the next tool observation and self-correct.
+            this.logger.warn(`[AgentService] parse_error raw=${ev.raw.slice(0, 80)}`);
+            break;
+          case 'done': {
+            sources = ev.sources.map((s, i) => ({
+              index: i + 1,
+              name: s.documentName,
+              snippet: s.content.slice(0, 240),
+              content: s.content,
+            }));
+            maxIterationsHit = ev.maxIterationsHit;
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      if (!isAborted()) {
+        this.logger.error(`Deep agent failed: ${errorMessage(e)}`);
+        writeSse('error', { message: errorMessage(e) || 'Deep agent error' });
+      }
       return;
     }
 
-    // 7) Persist assistant message + done event
+    if (isAborted()) return;
+
+    // Emit sources once the loop is done so the FE has citations.
+    writeSse('sources', { sources });
+
+    if (maxIterationsHit) {
+      writeSse('meta', { kind: 'rag_warning', maxIterationsHit: true });
+    } else if (sources.length > 0) {
+      writeSse('meta', { kind: 'rag' });
+    } else {
+      writeSse('meta', { kind: 'general' });
+    }
+
+    await this.finishWithMessage(conversation, full, writeSse);
+  }
+
+  /**
+   * Lookup mode: citation-only. Emits `meta` with kind=`lookup`, then
+   * one `source` event per chunk, then `done`. No LLM call, no `delta`.
+   */
+  private async streamLookup(
+    conversation: Conversation,
+    _userMsg: Message,
+    dto: SendMessageDto,
+    writeSse: (event: string, data: unknown) => void,
+    signal: AbortSignal,
+    isAborted: () => boolean,
+  ): Promise<void> {
+    let totalCount = 0;
+    let introQuery = dto.content.trim();
+    const sources: IRetrievedSource[] = [];
+
+    try {
+      const stream = this.documentLookup.stream(
+        dto.content,
+        conversation.bucketName,
+        signal,
+      );
+
+      for await (const ev of stream) {
+        if (isAborted()) break;
+
+        switch (ev.kind) {
+          case 'lookup_intro':
+            introQuery = ev.query;
+            writeSse('meta', { kind: 'lookup', count: ev.count, query: ev.query });
+            break;
+          case 'source':
+            sources.push({
+              index: ev.chunk.index,
+              name: ev.chunk.documentName,
+              snippet: ev.chunk.content.slice(0, 240),
+              content: ev.chunk.content,
+            });
+            writeSse('source', {
+              index: ev.chunk.index,
+              name: ev.chunk.documentName,
+              snippet: ev.chunk.content.slice(0, 240),
+              content: ev.chunk.content,
+            });
+            break;
+          case 'meta':
+            totalCount = ev.count;
+            break;
+          case 'done':
+            totalCount = ev.count;
+            break;
+        }
+      }
+    } catch (e) {
+      if (!isAborted()) {
+        this.logger.error(`DocumentLookup failed: ${errorMessage(e)}`);
+        writeSse('error', { message: errorMessage(e) || 'Lookup error' });
+      }
+      return;
+    }
+
+    if (isAborted()) return;
+
+    // Persist the assistant "answer" as a brief synthesis line so the
+    // thread reads naturally on reload. The real payload is in `source`
+    // events already delivered.
+    const summary =
+      totalCount === 0
+        ? `Không tìm thấy đoạn văn bản nào liên quan đến "${introQuery}".`
+        : `Tìm thấy ${totalCount} đoạn văn bản liên quan đến "${introQuery}".`;
+
+    writeSse('delta', { content: summary });
+    await this.finishWithMessage(conversation, summary, writeSse);
+  }
+
+  // ─── helpers ──────────────────────────────────────────────────────
+
+  /**
+   * Persist the assistant message + emit `done`. Shared by all three
+   * mode branches.
+   */
+  private async finishWithMessage(
+    conversation: Conversation,
+    content: string,
+    writeSse: (event: string, data: unknown) => void,
+  ): Promise<void> {
     try {
       const assistantMsg = await this.msgRepo.save(
         this.msgRepo.create({
           conversationId: conversation.id,
           role: 'assistant',
-          content: full,
+          content,
         }),
       );
       await this.convRepo.update({ id: conversation.id }, { updatedAt: new Date() });
       writeSse('done', { messageId: assistantMsg.id });
-    } catch (e: unknown) {
+    } catch (e) {
       this.logger.error(`Persist assistant message failed: ${errorMessage(e)}`);
       writeSse('error', { message: 'Failed to persist assistant message' });
     }
-
-    res.write('data: [DONE]\n\n');
-    res.end();
   }
-
-  // ─── helpers ──────────────────────────────────────────────────────
 
   private async classifyBucketForQuery(query: string): Promise<string | undefined> {
     try {
       const activeBuckets = await this.rag.listActiveBuckets();
       if (activeBuckets.length <= 1) {
-        // If there's 0 or 1 active buckets, no routing is needed/possible.
         return activeBuckets[0];
       }
 

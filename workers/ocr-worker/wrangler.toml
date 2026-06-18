@@ -50,6 +50,7 @@ crons = ["*/1 * * * *"]
 #
 #   wrangler secret put OCR_CALLBACK_SECRET
 #   wrangler secret put BACKEND_CALLBACK_URL
+#   wrangler secret put OCRSPACE_API_KEY      # optional, for free-tier fallback
 #
 # Example values (override in your environment):
 # BACKEND_CALLBACK_URL = "https://api.law-ai.example.com/api/v1/admin/rag/documents/ocr-complete"

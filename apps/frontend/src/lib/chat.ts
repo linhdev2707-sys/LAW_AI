@@ -1,4 +1,5 @@
 import { apiFetch } from './api';
+import type { ChatMode } from '@law-ai/shared';
 
 export type Role = 'user' | 'assistant' | 'system';
 
@@ -8,12 +9,24 @@ export interface IMessage {
   content: string;
   createdAt: string;
   /**
+   * For assistant messages: which chat mode produced the answer. Drives
+   * the small badge above the bubble ("Nhanh" / "Suy nghĩ sâu" /
+   * "Tra cứu văn bản"). Set from the SSE `start` event on the wire.
+   */
+  mode?: ChatMode;
+  /**
    * For assistant messages: where the answer came from. `rag` = grounded
    * in uploaded documents (citation possible). `general` = LLM fallback
    * when no document matched (general-knowledge, may be wrong). Used by
    * `MessageBubble` to render a source-of-truth badge.
    */
-  answerSource?: 'rag' | 'general';
+  answerSource?: 'rag' | 'general' | 'lookup' | 'rag_warning';
+  /**
+   * Live indicator while a deep-mode agent call is iterating. Set by
+   * `onToolCall`, cleared on `onDone`. Rendered as a small inline line
+   * above the placeholder bubble ("🔎 Đang tra cứu: rag_search(...)").
+   */
+  pendingToolCall?: { tool: string; args: Record<string, unknown> };
 }
 
 export interface IConversationListItem {

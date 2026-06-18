@@ -110,15 +110,27 @@ export default registerAs('app', () => ({
   // (NestJS @nestjs/throttler convention).
   rateLimit: {
     chat: {
-        ttl: intEnv('CHAT_RATE_LIMIT_TTL_MS', 60_000),
-        max: intEnv('CHAT_RATE_LIMIT_MAX', 20),
-      },
+      ttl: intEnv('CHAT_RATE_LIMIT_TTL_MS', 60_000),
+      max: intEnv('CHAT_RATE_LIMIT_MAX', 20),
     },
-    payment: {
-      cassoWebhookToken: process.env.CASSO_WEBHOOK_TOKEN || 'casso-secure-token',
-      bankId: process.env.BANK_ID || 'TCB',
-      accountNo: process.env.ACCOUNT_NO || '19039988776601',
-      accountName: process.env.ACCOUNT_NAME || 'CONG TY CONG NGHE iLaw',
-      template: process.env.VIETQR_TEMPLATE || 'qr_only',
-    },
-  }));
+  },
+  payment: {
+    cassoWebhookToken: process.env.CASSO_WEBHOOK_TOKEN || 'casso-secure-token',
+    bankId: process.env.BANK_ID || 'TCB',
+    accountNo: process.env.ACCOUNT_NO || '19039988776601',
+    accountName: process.env.ACCOUNT_NAME || 'CONG TY CONG NGHE iLaw',
+    template: process.env.VIETQR_TEMPLATE || 'qr_only',
+  },
+
+  // ─── Chat modes (deep agent tuning) ────────────────────────────────
+  // Per-mode flags and limits. Currently only `deep` mode has tunables;
+  // `fast` and `lookup` use the existing RAG config above.
+  chat: {
+    /** Master switch for the deep (agentic) mode. Set false to 503 on
+     *  any deep-mode request without removing the FE picker. */
+    deepEnabled: process.env.CHAT_DEEP_ENABLED !== 'false',
+    /** Cap on tool-call iterations before the loop force-exits. Keeps
+     *  DeepSeek token spend bounded per user message. */
+    agentMaxIterations: intEnv('CHAT_AGENT_MAX_ITERATIONS', 5),
+  },
+}));
