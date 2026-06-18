@@ -21,6 +21,14 @@ export function useRagAdmin(isAdmin: boolean) {
   const [pendingDelete, setPendingDelete] = useState<IRagDocument | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Bulk-delete UI state. We use a `Set` so toggling/clearing is O(1).
+  // A separate `bulkDeleting` flag keeps the action bar button disabled
+  // while the request is in flight — `deleting` is reserved for the
+  // single-doc delete dialog.
+  const [pendingBulkDelete, setPendingBulkDelete] = useState<Set<string> | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
   const [showCreateBucket, setShowCreateBucket] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
 
@@ -76,6 +84,73 @@ export function useRagAdmin(isAdmin: boolean) {
     }
   }
 
+  // ─── Bulk select / delete ──────────────────────────────────────────────
+
+  /**
+   * Toggle a single doc id in the selection set. Returns the new Set so
+   * the caller (the table) can re-render without waiting for the next
+   * render cycle.
+   */
+  const toggleSelected = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  /**
+   * Set the selection wholesale — used by the header "select all"
+   * checkbox. Passing an empty array clears the selection.
+   */
+  const setSelectedMany = useCallback((ids: string[]) => {
+    setSelectedIds(new Set(ids));
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  /**
+   * Bulk delete the docs whose ids are in `pendingBulkDelete`. We make
+   * a single POST and report per-id outcomes so the user knows exactly
+   * which docs (if any) failed.
+   */
+  async function onConfirmBulkDelete() {
+    if (!pendingBulkDelete || pendingBulkDelete.size === 0 || bulkDeleting) return;
+    setBulkDeleting(true);
+    const ids = Array.from(pendingBulkDelete);
+    try {
+      const results = await ragAdminApi.bulkDelete(ids);
+      const ok = results.filter((r) => r.ok);
+      const failed = results.filter((r) => !r.ok);
+
+      if (failed.length === 0) {
+        toast.success(`Đã xoá ${ok.length} tài liệu`);
+      } else {
+        toast.warning(
+          `Đã xoá ${ok.length}/${results.length} tài liệu — ${failed.length} thất bại`,
+          { description: failed[0]?.error ?? 'Vui lòng thử lại.' },
+        );
+      }
+      // Drop the deleted ids from the selection so the action bar
+      // disappears cleanly even if a partial failure left some docs.
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        ok.forEach((r) => next.delete(r.id));
+        return next;
+      });
+      setPendingBulkDelete(null);
+      await refreshDocs();
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : 'Xoá hàng loạt thất bại';
+      toast.error('Xoá hàng loạt thất bại', { description: msg });
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
   async function onCreateBucket(name: string) {
     if (!BUCKET_NAME_REGEX.test(name)) {
       toast.error('Tên bucket không hợp lệ', {
@@ -109,6 +184,14 @@ export function useRagAdmin(isAdmin: boolean) {
     pendingDelete,
     setPendingDelete,
     deleting,
+    selectedIds,
+    toggleSelected,
+    setSelectedMany,
+    clearSelection,
+    pendingBulkDelete,
+    setPendingBulkDelete,
+    bulkDeleting,
+    onConfirmBulkDelete,
     showCreateBucket,
     setShowCreateBucket,
     showUploadDialog,

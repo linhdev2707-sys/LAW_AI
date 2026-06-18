@@ -36,7 +36,6 @@ export function FloatingChatbox() {
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll xuống cuối khi có tin nhắn mới / streaming
   useEffect(() => {
     if (open && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;

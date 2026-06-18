@@ -7,6 +7,13 @@ export interface IMessage {
   role: Role;
   content: string;
   createdAt: string;
+  /**
+   * For assistant messages: where the answer came from. `rag` = grounded
+   * in uploaded documents (citation possible). `general` = LLM fallback
+   * when no document matched (general-knowledge, may be wrong). Used by
+   * `MessageBubble` to render a source-of-truth badge.
+   */
+  answerSource?: 'rag' | 'general';
 }
 
 export interface IConversationListItem {

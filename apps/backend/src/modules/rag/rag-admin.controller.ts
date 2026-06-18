@@ -28,6 +28,7 @@ import { CreateRagDocumentDto } from './dto/create-rag-document.dto';
 import { RagDocumentIdParamDto } from './dto/rag-document-id.dto';
 import { UploadRagDocumentDto } from './dto/upload-rag-document.dto';
 import { CreateRagBucketDto } from './dto/create-rag-bucket.dto';
+import { BulkDeleteDocumentsDto } from './dto/bulk-delete-documents.dto';
 import { extname } from 'path';
 
 @ApiTags('admin-rag')
@@ -184,5 +185,19 @@ export class RagAdminController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param() params: RagDocumentIdParamDto) {
     await this.ragService.deleteDocument(params.id);
+  }
+
+  /**
+   * Bulk delete. POST instead of DELETE because some HTTP intermediaries
+   * strip bodies from DELETE — and we need up to 100 ids in the body.
+   *
+   * Returns a per-id outcome so the FE can surface partial failures
+   * (e.g. "9/10 đã xoá, 1 thất bại"). Successful deletes return
+   * `ok: true`; failures include the error message.
+   */
+  @Post('documents/bulk-delete')
+  @HttpCode(HttpStatus.OK)
+  async bulkRemove(@Body() dto: BulkDeleteDocumentsDto) {
+    return this.ragService.deleteDocuments(dto.ids);
   }
 }

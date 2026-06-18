@@ -24,9 +24,21 @@ export interface StreamError {
   message: string;
 }
 
+/**
+ * Where the answer came from. `rag` = grounded in uploaded documents;
+ * `general` = LLM fallback when no document matched. The FE shows a
+ * badge so users know whether the answer can be trusted as a citation.
+ */
+export type AnswerSource = 'rag' | 'general';
+
+export interface StreamMeta {
+  kind: AnswerSource;
+}
+
 export interface StreamHandlers {
   onStart?: (p: StreamStart) => void;
   onSources?: (p: { sources: StreamSource[] }) => void;
+  onMeta?: (p: StreamMeta) => void;
   onDelta?: (p: { content: string }) => void;
   onDone?: (p: StreamDone) => void;
   onError?: (p: StreamError) => void;
@@ -166,6 +178,9 @@ function handleFrame(raw: string, handlers: StreamHandlers): void {
       break;
     case 'sources':
       handlers.onSources?.(payload as { sources: StreamSource[] });
+      break;
+    case 'meta':
+      handlers.onMeta?.(payload as StreamMeta);
       break;
     case 'delta':
       handlers.onDelta?.(payload as { content: string });

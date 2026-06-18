@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bot, User, Check, Copy, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Bot, User, Check, Copy, ThumbsUp, ThumbsDown, BookOpen, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { IMessage } from '@/lib/chat';
 import type { StreamSource } from '@/lib/chat-stream';
@@ -95,6 +95,14 @@ export function MessageBubble({ message, sources }: MessageBubbleProps) {
             </div>
           )}
 
+          {/* Source-of-truth badge — only for AI messages, and only once
+              the streaming metadata has arrived. Renders nothing while
+              the request is still in flight to avoid a flash of "rag"
+              that would later switch to "general". */}
+          {!isUser && message.answerSource && (
+            <AnswerSourceBadge kind={message.answerSource} />
+          )}
+
           {/* Sources row — only for AI messages */}
           {!isUser && sources && <SourcesRow sources={sources} />}
 
@@ -155,6 +163,37 @@ function ActionButton({
     >
       {children}
     </button>
+  );
+}
+
+/**
+ * Tiny pill that tells the user whether the AI's answer came from the
+ * uploaded documents (trustworthy, citation present) or from the LLM's
+ * general legal knowledge (informative, but may be wrong on specifics).
+ *
+ * Only renders for assistant messages — the `message.answerSource` is
+ * unset for user messages and for assistant messages still streaming.
+ */
+function AnswerSourceBadge({ kind }: { kind: 'rag' | 'general' }) {
+  if (kind === 'rag') {
+    return (
+      <div
+        className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-200"
+        title="Câu trả lời dựa trên tài liệu đã tải lên, có trích dẫn nguồn."
+      >
+        <BookOpen className="h-3 w-3" />
+        Trả lời từ tài liệu
+      </div>
+    );
+  }
+  return (
+    <div
+      className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-200"
+      title="Tài liệu hiện không có thông tin này. Câu trả lời dựa trên kiến thức pháp lý phổ thông của mô hình, có thể chưa chính xác. Vui lòng kiểm chứng."
+    >
+      <Sparkles className="h-3 w-3" />
+      Trả lời tham khảo chung
+    </div>
   );
 }
 

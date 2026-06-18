@@ -9,6 +9,7 @@ import {
   FileText,
   Loader2,
   Plus,
+  Trash2,
   UploadCloud,
 } from 'lucide-react';
 import { UserRole } from '@law-ai/shared';
@@ -48,6 +49,14 @@ export default function KnowledgePage() {
     pendingDelete,
     setPendingDelete,
     deleting,
+    selectedIds,
+    toggleSelected,
+    setSelectedMany,
+    clearSelection,
+    pendingBulkDelete,
+    setPendingBulkDelete,
+    bulkDeleting,
+    onConfirmBulkDelete,
     showCreateBucket,
     setShowCreateBucket,
     showUploadDialog,
@@ -57,15 +66,6 @@ export default function KnowledgePage() {
     onCreateBucket,
   } = useRagAdmin(isAdmin);
 
-  // ─── OCR polling ────────────────────────────────────────────────────
-  // Find any document still in `ocr_pending` and poll its status. When
-  // the status flips to `ready` or `failed`, refresh the list so the
-  // user sees the updated row without manually clicking "Làm mới".
-  //
-  // We only poll the FIRST pending doc at a time — the BE serialises
-  // R2 event notifications to the Worker, and a single polling loop is
-  // enough to drive the UI. If multiple scans are uploaded at once,
-  // subsequent ticks (or a manual refresh) will pick up the rest.
   const pendingDoc = useMemo(
     () => docs.find((d) => d.status === 'ocr_pending') ?? null,
     [docs],
@@ -77,15 +77,12 @@ export default function KnowledgePage() {
 
   useEffect(() => {
     if (polledStatus && polledStatus !== 'ocr_pending') {
-      // The Worker finished (or failed) — pull the fresh row.
       void refreshDocs();
     }
   }, [polledStatus, refreshDocs]);
 
   useEffect(() => {
     if (pollError) {
-      // We don't toast spam — a single console warning is enough.
-      // eslint-disable-next-line no-console
       console.warn('OCR status polling error:', pollError);
     }
   }, [pollError]);
@@ -106,8 +103,6 @@ export default function KnowledgePage() {
 
   return (
     <main className="relative h-full overflow-y-auto bg-brand-background text-brand-on-surface">
-      {/* Soft cyan glow at the top — matches landing/chat backdrop so the
-          page feels like part of the same app, not a separate white screen. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(34,211,238,0.10),transparent_60%)]"
@@ -199,7 +194,56 @@ export default function KnowledgePage() {
                 </button>
               </div>
             ) : (
-              <DocumentTable docs={docs} onDeleteClick={setPendingDelete} />
+              <>
+                {/* Bulk action bar — only renders when ≥1 row is selected.
+                    Sits flush above the table so it reads as a single
+                    unit with the table card. */}
+                {selectedIds.size > 0 && (
+                  <div
+                    role="region"
+                    aria-label="Hành động hàng loạt"
+                    className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand-tertiary/30 bg-brand-tertiary/10 px-4 py-2.5 text-sm"
+                  >
+                    <div className="flex items-center gap-2 text-brand-on-surface">
+                      <span className="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-md bg-brand-tertiary/30 px-1.5 text-xs font-bold text-brand-on-surface">
+                        {selectedIds.size}
+                      </span>
+                      <span>
+                        đã chọn{' '}
+                        <span className="text-brand-on-surface-variant">
+                          / {docs.length} tài liệu
+                        </span>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={clearSelection}
+                        disabled={bulkDeleting}
+                        className="rounded-md px-3 py-1.5 text-xs font-medium text-brand-on-surface-variant transition-colors hover:bg-white/5 hover:text-brand-on-surface disabled:opacity-50"
+                      >
+                        Bỏ chọn
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPendingBulkDelete(new Set(selectedIds))}
+                        disabled={bulkDeleting}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-red-400/40 bg-red-500/15 px-3 py-1.5 text-xs font-semibold text-red-200 transition-colors hover:bg-red-500/25 disabled:opacity-50"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Xoá đã chọn
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <DocumentTable
+                  docs={docs}
+                  selectedIds={selectedIds}
+                  onToggleSelected={toggleSelected}
+                  onToggleAll={(ids) => setSelectedMany(ids)}
+                  onDeleteClick={setPendingDelete}
+                />
+              </>
             )}
           </div>
         </div>
@@ -218,6 +262,21 @@ export default function KnowledgePage() {
         variant="danger"
         loading={deleting}
         onConfirm={onConfirmDelete}
+      />
+
+      <ConfirmDialog
+        open={!!pendingBulkDelete}
+        onOpenChange={(open) => !open && setPendingBulkDelete(null)}
+        title="Xoá hàng loạt tài liệu?"
+        description={
+          pendingBulkDelete
+            ? `${pendingBulkDelete.size} tài liệu đã chọn sẽ bị xoá vĩnh viễn cùng toàn bộ chunks và file trong R2. Bucket được giữ lại. Hành động này không thể hoàn tác.`
+            : ''
+        }
+        confirmLabel={`Xoá ${pendingBulkDelete?.size ?? 0} tài liệu`}
+        variant="danger"
+        loading={bulkDeleting}
+        onConfirm={onConfirmBulkDelete}
       />
 
       <CreateBucketDialog

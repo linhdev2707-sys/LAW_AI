@@ -43,6 +43,8 @@ interface Env {
   OCR_MODEL?: string;
   /** Cap files processed per cron tick. */
   MAX_FILES_PER_TICK?: string;
+  /** Sleep between consecutive OCR calls in the same tick (ms). */
+  INTER_FILE_DELAY_MS?: string;
   /** Safety cap on pages per invocation. */
   MAX_PAGES_PER_INVOCATION?: string;
 }
@@ -117,31 +119,163 @@ function documentIdFromKey(key: string): string | null {
   return m ? m[1] : null;
 }
 
-async function callOcr(env: Env, pdfBase64: string): Promise<string> {
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(
+      null,
+      Array.from(bytes.subarray(i, i + chunk)) as unknown as number[],
+    );
+  }
+  return btoa(binary);
+}
+
+function extractJpegsFromPdf(pdfBytes: Uint8Array): Uint8Array[] {
+  const jpegs: Uint8Array[] = [];
+  
+  const dctPattern = new TextEncoder().encode('/DCTDecode');
+  const streamPattern = new TextEncoder().encode('stream');
+  const endstreamPattern = new TextEncoder().encode('endstream');
+  
+  function findPattern(arr: Uint8Array, pattern: Uint8Array, start = 0): number {
+    const max = arr.length - pattern.length;
+    for (let i = start; i <= max; i++) {
+      let match = true;
+      for (let j = 0; j < pattern.length; j++) {
+        if (arr[i + j] !== pattern[j]) {
+          match = false;
+          break;
+        }
+      }
+      if (match) return i;
+    }
+    return -1;
+  }
+  
+  let pos = 0;
+  while (true) {
+    const dctIndex = findPattern(pdfBytes, dctPattern, pos);
+    if (dctIndex === -1) break;
+    
+    const streamIndex = findPattern(pdfBytes, streamPattern, dctIndex);
+    if (streamIndex === -1) {
+      pos = dctIndex + 1;
+      continue;
+    }
+    
+    let streamStart = streamIndex + 6;
+    if (pdfBytes[streamStart] === 13) { // \r
+      streamStart++;
+    }
+    if (pdfBytes[streamStart] === 10) { // \n
+      streamStart++;
+    }
+    
+    const endstreamIndex = findPattern(pdfBytes, endstreamPattern, streamStart);
+    if (endstreamIndex === -1) {
+      pos = streamStart;
+      continue;
+    }
+    
+    const streamData = pdfBytes.subarray(streamStart, endstreamIndex);
+    
+    let jpegStart = -1;
+    for (let i = 0; i < streamData.length - 2; i++) {
+      if (streamData[i] === 0xFF && streamData[i+1] === 0xD8 && streamData[i+2] === 0xFF) {
+        jpegStart = i;
+        break;
+      }
+    }
+    
+    let jpegEnd = -1;
+    if (jpegStart !== -1) {
+      for (let i = streamData.length - 2; i >= jpegStart; i--) {
+        if (streamData[i] === 0xFF && streamData[i+1] === 0xD9) {
+          jpegEnd = i + 2;
+          break;
+        }
+      }
+    }
+    
+    if (jpegStart !== -1 && jpegEnd !== -1) {
+      jpegs.push(streamData.subarray(jpegStart, jpegEnd));
+    } else {
+      jpegs.push(streamData);
+    }
+    
+    pos = endstreamIndex + 9;
+  }
+  
+  return jpegs;
+}
+
+async function callOcr(env: Env, pdfBytes: Uint8Array): Promise<string> {
   const model = (env.OCR_MODEL as unknown as string) || '@cf/meta/llama-3.2-11b-vision-instruct';
 
-  // The vision-instruct model accepts an `image` array of data URLs or
-  // base64 strings and a `prompt`. We pass the whole PDF as a single
-  // image (the model will OCR it page by page internally).
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const response: any = await env.AI.run(model as any, {
-    image: [pdfBase64],
-    prompt: OCR_PROMPT_VI,
-    max_tokens: 4096,
-  });
+  const jpegs = extractJpegsFromPdf(pdfBytes);
+  
+  const runOcrOnImage = async (imgBase64: string): Promise<string> => {
+    try {
+      const response: any = await env.AI.run(model as any, {
+        image: [imgBase64],
+        prompt: OCR_PROMPT_VI,
+        max_tokens: 4096,
+      });
 
-  // The model returns either `{ description, response }` or plain text
-  // depending on the binding. Normalise both shapes.
-  let text: string | undefined;
-  if (typeof response === 'string') {
-    text = response;
-  } else if (response && typeof response === 'object') {
-    text = response.description ?? response.response ?? response.text;
+      let text: string | undefined;
+      if (typeof response === 'string') {
+        text = response;
+      } else if (response && typeof response === 'object') {
+        text = response.description ?? response.response ?? response.text;
+      }
+      if (!text) {
+        throw new Error('AI returned empty response');
+      }
+      return text.trim();
+    } catch (e: any) {
+      const errMsg = e instanceof Error ? e.message : String(e);
+      if (errMsg.includes("prompt 'agree'") || errMsg.includes('5016') || errMsg.includes('agree')) {
+        log('info', 'Model terms of service not accepted yet. Submitting agreement prompt...', { model });
+        await env.AI.run(model as any, { prompt: 'agree' });
+        log('info', 'Successfully agreed to model terms of service. Retrying page OCR...', { model });
+        
+        const response: any = await env.AI.run(model as any, {
+          image: [imgBase64],
+          prompt: OCR_PROMPT_VI,
+          max_tokens: 4096,
+        });
+
+        let text: string | undefined;
+        if (typeof response === 'string') {
+          text = response;
+        } else if (response && typeof response === 'object') {
+          text = response.description ?? response.response ?? response.text;
+        }
+        if (!text) {
+          throw new Error('AI returned empty response on retry');
+        }
+        return text.trim();
+      }
+      throw e;
+    }
+  };
+
+  if (jpegs.length === 0) {
+    log('warn', 'No embedded JPEGs found in PDF. Falling back to passing raw PDF bytes.', { model });
+    const rawBase64 = 'data:application/pdf;base64,' + uint8ArrayToBase64(pdfBytes);
+    return await runOcrOnImage(rawBase64);
   }
-  if (!text) {
-    throw new Error('AI returned empty response');
+
+  log('info', `Extracted ${jpegs.length} images from PDF. Running OCR page-by-page.`, { model });
+  const results: string[] = [];
+  for (let i = 0; i < jpegs.length; i++) {
+    log('info', `Running OCR on page ${i + 1}/${jpegs.length}...`);
+    const imgBase64 = 'data:image/jpeg;base64,' + uint8ArrayToBase64(jpegs[i]);
+    const pageText = await runOcrOnImage(imgBase64);
+    results.push(pageText);
   }
-  return text.trim();
+  return results.join('\n\n');
 }
 
 async function postCallback(
@@ -184,9 +318,9 @@ async function processObject(env: Env, key: string, size: number): Promise<void>
       throw new Error(`R2 object not found: ${key}`);
     }
     const buf = await obj.arrayBuffer();
-    const base64 = arrayBufferToBase64(buf);
+    const pdfBytes = new Uint8Array(buf);
 
-    const text = await callOcr(env, base64);
+    const text = await callOcr(env, pdfBytes);
     if (!text) {
       throw new Error('OCR returned empty text');
     }
@@ -246,6 +380,11 @@ export default {
     let skipped = 0;
     let failed = 0;
 
+    // Throttle consecutive OCR calls so we don't blow past the Workers
+    // free-plan CPU/time limit on a 10-file burst. INTER_FILE_DELAY_MS
+    // is set via wrangler.toml — 1500ms by default.
+    const interFileDelayMs = parseInt(env.INTER_FILE_DELAY_MS || '1500', 10);
+
     for (const obj of candidates) {
       const seen = await env.OCR_STATE.get(`seen:${obj.key}`);
       if (seen) {
@@ -264,6 +403,12 @@ export default {
         // and on the backend's "delete failed document" path to
         // eventually clean up the inbox key.
         failed++;
+      }
+      // Pace the next call. We sleep even after failures so a stuck
+      // upstream doesn't get hammered — failed files roll over to
+      // the next tick anyway.
+      if (interFileDelayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, interFileDelayMs));
       }
     }
 

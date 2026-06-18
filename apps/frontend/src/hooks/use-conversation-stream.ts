@@ -96,6 +96,15 @@ export function useConversationStream() {
             onSources: ({ sources: s }) => {
               setSources((cur) => ({ ...cur, [assistantId]: s }));
             },
+            onMeta: ({ kind }) => {
+              // Stamp the assistant placeholder with where this answer
+              // came from so `MessageBubble` can render the right badge.
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId ? { ...m, answerSource: kind } : m,
+                ),
+              );
+            },
             onDelta: ({ content: chunk }) => {
               setMessages((prev) =>
                 prev.map((m) =>

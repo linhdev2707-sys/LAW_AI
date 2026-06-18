@@ -21,9 +21,9 @@ interface PlanCardProps {
 export function PlanCard({ plan, isCurrent, loading, onSelect }: PlanCardProps) {
   return (
     <div
-      className={`glass-card relative flex flex-col rounded-2xl p-7 transition-all duration-300 ${
+      className={`glass-card relative flex h-full flex-col rounded-2xl p-7 transition-all duration-300 ${
         plan.isPopular
-          ? 'border-2 border-brand-primary bg-gradient-to-b from-brand-primary/10 to-brand-surface-container-high/80 shadow-2xl shadow-brand-primary/20 md:-translate-y-4 md:scale-[1.02]'
+          ? 'border-2 border-brand-primary bg-gradient-to-b from-brand-primary/10 to-brand-surface-container-high/80 shadow-2xl shadow-brand-primary/20'
           : 'border border-brand-outline-variant/20 bg-brand-surface-container-low/40 hover:-translate-y-1 hover:border-brand-tertiary/40'
       }`}
     >

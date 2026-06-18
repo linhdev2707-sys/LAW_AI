@@ -163,11 +163,11 @@ export default function PricingPage() {
         {/* Ambient background glow */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(14,165,233,0.08),transparent_60%)]" />
 
-        <Container className="relative z-10">
+        <Container className="relative z-10 max-w-[1600px]">
           <PricingHeader />
 
           {/* Pricing Plans grid */}
-          <div className="mb-12 grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
+          <div className="mb-12 grid grid-cols-1 items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {PLANS.map((plan) => (
               <PlanCard
                 key={plan.id}

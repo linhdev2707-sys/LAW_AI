@@ -82,6 +82,21 @@ export const ragAdminApi = {
   },
 
   /**
+   * Bulk delete. POST so the body survives intermediaries that strip
+   * DELETE bodies. Returns a per-id outcome so the caller can surface
+   * partial failures (e.g. one doc belongs to a different bucket and
+   * R2 delete failed).
+   */
+  async bulkDelete(
+    ids: string[],
+  ): Promise<{ id: string; ok: boolean; error?: string }[]> {
+    return apiFetch<{ id: string; ok: boolean; error?: string }[]>(
+      '/api/v1/admin/rag/documents/bulk-delete',
+      { method: 'POST', body: { ids } },
+    );
+  },
+
+  /**
    * Lightweight status endpoint for polling a document that's still in
    * `ocr_pending` after a scanned-PDF upload. Returns a trimmed view
    * (no chunks, no R2 keys) — we only need to know when it leaves

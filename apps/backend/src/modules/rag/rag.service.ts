@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
@@ -37,6 +38,7 @@ export class RagService {
     private readonly r2: R2Service,
     private readonly parser: DocumentParserService,
     private readonly dataSource: DataSource,
+    private readonly config: ConfigService,
   ) {}
 
   /**
@@ -103,11 +105,23 @@ export class RagService {
     if (!this.r2.isEnabled()) {
       throw new Error('R2 is required but client is not initialised');
     }
+    // The OCR Worker reads from a *dedicated* bucket (default
+    // `law-ai-rag-ocr`), separate from the regular RAG bucket
+    // (`law-ai-rag`). We must write the inbox PDF to the bucket the
+    // Worker is actually watching, otherwise the cron tick sees zero
+    // objects and the document stays in `ocr_pending` forever. The
+    // `bucket` arg from the controller is the user's RAG bucket and
+    // is only used downstream when we copy the extracted text — not
+    // here.
+    const ocrBucket =
+      this.config.get<string>('app.ocr.bucket', '') ||
+      process.env.OCR_R2_BUCKET ||
+      'law-ai-rag-ocr';
     const r2Key = `ocr-inbox/${randomUUID()}.pdf`;
     try {
-      await this.r2.putObject(bucket, r2Key, buffer, 'application/pdf');
+      await this.r2.putObject(ocrBucket, r2Key, buffer, 'application/pdf');
     } catch (e: unknown) {
-      this.logger.error(`R2 upload failed (bucket=${bucket}, key=${r2Key}): ${errorMessage(e)}`);
+      this.logger.error(`R2 upload failed (bucket=${ocrBucket}, key=${r2Key}): ${errorMessage(e)}`);
       throw new Error(`R2 upload failed: ${errorMessage(e)}`);
     }
 
@@ -116,7 +130,7 @@ export class RagService {
         name: name.trim(),
         r2Key,
         mimeType: 'application/pdf',
-        bucketName: bucket.trim(),
+        bucketName: ocrBucket,
         bucketRegion: 'auto',
         sizeBytes: buffer.length,
         chunkCount: 0,
@@ -126,7 +140,7 @@ export class RagService {
     );
 
     this.logger.log(
-      `Enqueued OCR for doc ${doc.id} (name="${name}", bucket=${bucket}, bytes=${buffer.length})`,
+      `Enqueued OCR for doc ${doc.id} (name="${name}", ocrBucket=${ocrBucket}, bytes=${buffer.length})`,
     );
 
     return {
@@ -352,6 +366,35 @@ export class RagService {
       }
     }
     await this.docRepo.delete({ id });
+  }
+
+  /**
+   * Bulk delete — runs deletes sequentially so a failure on one doc
+   * doesn't blow up the whole batch and leave the caller with no info
+   * about what was/wasn't removed. Returns a per-id outcome so the FE
+   * can surface partial failures in a toast.
+   *
+   * We DO NOT wrap this in a transaction: R2 deletes are best-effort
+   * outside the DB anyway (a failure there is logged and swallowed),
+   * and a single Postgres transaction holding row locks across N
+   * documents would just create contention for no real gain.
+   */
+  async deleteDocuments(
+    ids: string[],
+  ): Promise<{ id: string; ok: boolean; error?: string }[]> {
+    const results: { id: string; ok: boolean; error?: string }[] = [];
+    for (const id of ids) {
+      try {
+        await this.deleteDocument(id);
+        results.push({ id, ok: true });
+      } catch (e: unknown) {
+        results.push({ id, ok: false, error: errorMessage(e) });
+      }
+    }
+    this.logger.log(
+      `Bulk delete: ${results.filter((r) => r.ok).length}/${results.length} succeeded`,
+    );
+    return results;
   }
 
   // ─── Bucket helpers (thin pass-through to R2Service) ─────────────────

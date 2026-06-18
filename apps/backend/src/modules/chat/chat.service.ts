@@ -198,6 +198,7 @@ export class ChatService {
 
     // 4) Retrieve RAG context
     let sources: IRetrievedSource[] = [];
+    let usedFallback = false;
     try {
       let searchBucket = conversation.bucketName;
       if (!searchBucket) {
@@ -210,10 +211,12 @@ export class ChatService {
         snippet: s.content.slice(0, 240),
         content: s.content,
       }));
+      usedFallback = sources.length === 0;
       writeSse('sources', { sources });
     } catch (e: unknown) {
       this.logger.warn(`RAG retrieve failed: ${errorMessage(e)}`);
       writeSse('sources', { sources: [] });
+      usedFallback = true;
     }
 
     // 5) Wire abort: stop upstream as soon as the client disconnects
@@ -226,6 +229,13 @@ export class ChatService {
         this.logger.log(`Client disconnected for conv ${conversation.id}`);
       }
     });
+
+    // 5b) Tell the FE whether the upcoming answer is grounded in our
+    //     uploaded documents (`rag`) or generated from general legal
+    //     knowledge (`general`). The FE renders a badge so the user
+    //     knows the source — important because `general` answers can
+    //     be wrong, and users have no upload UI of their own.
+    writeSse('meta', { kind: usedFallback ? 'general' : 'rag' });
 
     // 6) Build prompt + stream
     const history = await this.loadHistory(conversation.id, userMsg.id);
