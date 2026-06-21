@@ -13,6 +13,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { HealthModule } from './modules/health/health.module';
 import { LlmModule } from './modules/llm/llm.module';
 import { RagModule } from './modules/rag/rag.module';
+import { KgModule } from './modules/kg/kg.module';
 import { InternalChatModule } from './modules/internal-chat/internal-chat.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.guard';
@@ -56,6 +57,7 @@ import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.
     HealthModule,
     LlmModule,
     RagModule,
+    KgModule,
     InternalChatModule,
     PaymentModule,
   ],

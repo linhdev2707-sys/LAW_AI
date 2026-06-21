@@ -32,4 +32,13 @@ export class CreateRagDocumentDto {
     message: 'bucket must match R2 naming rules (lowercase, digits, hyphens, 3-63 chars)',
   })
   bucket!: string;
+
+  @ApiPropertyOptional({
+    description: 'Source URL the document was crawled from (if any).',
+    example: 'https://thuvienphapluat.vn/van-ban/Bo-luat/Bo-luat-Dan-su-2015-296215.aspx',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  sourceUrl?: string;
 }

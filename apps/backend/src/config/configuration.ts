@@ -51,6 +51,45 @@ export default registerAs('app', () => ({
     embeddingDim: intEnv('OPENAI_EMBEDDING_DIM', 1536),
   },
 
+  // ─── Embedding backend (Phase 1) ────────────────────────────────────
+  // LegalEmbeddingService picks this up. Default = local Xenova bge-m3.
+  // Set backend=cloudflare to use Workers AI (no model download).
+  embedding: {
+    backend: process.env.EMBEDDING_BACKEND || 'local',     // 'local' | 'cloudflare'
+    model: process.env.EMBEDDING_MODEL || 'Xenova/bge-m3',
+    dim: intEnv('EMBEDDING_DIM', 1024),
+    /** BGE-* (non-M3) recommends "Represent this sentence for searching
+     *  relevant passages:" prefix on queries / "passage:" prefix on
+     *  documents. bge-m3 doesn't need it; default off. */
+    useBgePrefix: process.env.EMBEDDING_USE_PREFIX === 'true',
+  },
+
+  // ─── Reranker (Phase 2) ─────────────────────────────────────────────
+  // Cross-encoder reranker. Bumps Recall@5 by 15-25 points on legal
+  // benchmarks. Disabled by default to avoid the ~600 MB model download
+  // on first boot; flip RERANKER_ENABLED=true to turn on.
+  reranker: {
+    enabled: process.env.RERANKER_ENABLED === 'true',
+    backend: process.env.RERANKER_BACKEND || 'local',     // 'local' | 'cohere'
+    model: process.env.RERANKER_MODEL || 'Xenova/bge-reranker-v2-m3',
+    maxLength: intEnv('RERANKER_MAX_LENGTH', 512),
+  },
+
+  // ─── Cohere (rerank API) ────────────────────────────────────────────
+  cohere: {
+    apiKey: process.env.COHERE_API_KEY || '',
+  },
+
+  // ─── Knowledge Graph (Phase 4) ──────────────────────────────────────
+  // Optional. When all three are set, KgService connects to Neo4j and
+  // enables cross-document reference queries. When unset, KgService
+  // runs in stub mode (all methods return empty results).
+  neo4j: {
+    uri: process.env.NEO4J_URI || '',
+    user: process.env.NEO4J_USER || 'neo4j',
+    password: process.env.NEO4J_PASSWORD || '',
+  },
+
   // ─── Cloudflare R2 (S3-compatible) ──────────────────────────────────
   r2: {
     accountId: process.env.R2_ACCOUNT_ID || '',
@@ -86,13 +125,19 @@ export default registerAs('app', () => ({
     topK: intEnv('RAG_TOP_K', 5),
     fusionK: intEnv('RAG_FUSION_K', 60),
     historyTurns: intEnv('RAG_HISTORY_TURNS', 10),
-    chunkSize: intEnv('RAG_CHUNK_SIZE', 512),
+    chunkSize: intEnv('RAG_CHUNK_SIZE', 480),
     chunkOverlap: intEnv('RAG_CHUNK_OVERLAP', 50),
+    /** Hard cap before the hierarchical chunker is forced to split a
+     *  Khoản at the Điểm boundary. Default 720 tokens. */
+    hardChunkSize: intEnv('RAG_HARD_CHUNK_SIZE', 720),
+    /** Use DeepSeek to enrich legal metadata for docs the regex pass
+     *  can't fully classify. Adds ~1-2s per document. */
+    enricherUseLlm: process.env.RAG_ENRICHER_USE_LLM !== 'false',
     // Drop chunks whose cosine similarity with the query is below this
     // threshold. BGE-M3 multilingual vectors typically sit in [-0.2, 0.9];
-    // 0.35 is a reasonable floor for "loosely related" content. Set to 0
+    // 0.30 is a reasonable floor for "loosely related" content. Set to 0
     // to disable.
-    minCosineScore: floatEnv('RAG_MIN_COSINE_SCORE', 0.35),
+    minCosineScore: floatEnv('RAG_MIN_COSINE_SCORE', 0.30),
     // Optional whitelist of bucket names the retriever is allowed to
     // search. Empty array = no filter (backward compatible). Used to
     // prevent chat from pulling chunks from corpora that were ingested
@@ -132,5 +177,10 @@ export default registerAs('app', () => ({
     /** Cap on tool-call iterations before the loop force-exits. Keeps
      *  DeepSeek token spend bounded per user message. */
     agentMaxIterations: intEnv('CHAT_AGENT_MAX_ITERATIONS', 5),
+    /** How many top chunks each tool call returns. */
+    agentTopK: intEnv('CHAT_AGENT_TOP_K', 5),
+    /** Soft cap on tokens in the assembled system prompt (sources block).
+     *  Prevents OOM on the LLM side for huge retrieval sets. */
+    maxContextTokens: intEnv('CHAT_MAX_CONTEXT_TOKENS', 6000),
   },
 }));

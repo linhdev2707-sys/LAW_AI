@@ -5,11 +5,15 @@ import { RagChunk } from './entities/rag-chunk.entity';
 import { RagService } from './rag.service';
 import { RagAdminController } from './rag-admin.controller';
 import { RagOcrCallbackController } from './rag-ocr-callback.controller';
-import { ChunkerService } from './chunking/chunker.service';
-import { LocalEmbeddingService } from './embedding/local-embedding.service';
+import { LegalHierarchicalChunkerService } from './chunking/legal-hierarchical-chunker.service';
+import { LegalEmbeddingService } from './embedding/legal-embedding.service';
 import { RetrieverService } from './retrieval/retriever.service';
+import { BgeRerankerService } from './retrieval/bge-reranker.service';
 import { R2Service } from './storage/r2.service';
 import { DocumentParserService } from './parsers/document-parser.service';
+import { LegalStructureParser } from './parsers/legal-structure.parser';
+import { MetadataEnricherService } from './parsers/metadata-enricher.service';
+import { ReferenceExtractorService } from './parsers/reference-extractor.service';
 import { OcrCallbackGuard } from './guards/ocr-callback.guard';
 import { RagOcrSweeperService } from './rag-ocr-sweeper.service';
 
@@ -18,21 +22,23 @@ import { RagOcrSweeperService } from './rag-ocr-sweeper.service';
   controllers: [RagAdminController, RagOcrCallbackController],
   providers: [
     RagService,
-    ChunkerService,
-    LocalEmbeddingService,
+    LegalHierarchicalChunkerService,
+    LegalEmbeddingService,
+    BgeRerankerService,
     RetrieverService,
     R2Service,
     DocumentParserService,
+    LegalStructureParser,
+    MetadataEnricherService,
+    ReferenceExtractorService,
     OcrCallbackGuard,
-    // Cron that sweeps OCR_PENDING docs older than 30 min → FAILED.
     RagOcrSweeperService,
   ],
   exports: [
     RagService,
-    // Exposed for ChatModule's AgentService (deep-mode function-calling
-    // tools). Other services like DocumentLookupService in the same module
-    // don't need this — only consumers outside RagModule do.
     RetrieverService,
+    LegalStructureParser,
+    ReferenceExtractorService,
   ],
 })
 export class RagModule {}

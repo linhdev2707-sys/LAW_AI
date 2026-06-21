@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { StructuredLoggerInterceptor } from './common/interceptors/structured-logger.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -85,9 +86,11 @@ async function bootstrap() {
     }),
   );
 
-  // Global filter + interceptor
+  // Global filter + interceptors
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new TransformInterceptor());
+  // StructuredLoggerInterceptor runs FIRST so it can time the whole
+  // request including the TransformInterceptor wrapping.
+  app.useGlobalInterceptors(new StructuredLoggerInterceptor(), new TransformInterceptor());
 
   // Swagger
   const swaggerConfig = new DocumentBuilder()

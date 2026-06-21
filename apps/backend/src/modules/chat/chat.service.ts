@@ -273,7 +273,7 @@ export class ChatService {
       if (!searchBucket) {
         searchBucket = await this.classifyBucketForQuery(dto.content);
       }
-      const retrieved = await this.rag.retrieve(dto.content, searchBucket);
+      const retrieved = await this.rag.retrieve(dto.content, searchBucket ? { bucketName: searchBucket } : undefined);
       sources = retrieved.map((s) => ({
         index: s.index,
         name: s.documentName,
@@ -356,6 +356,9 @@ export class ChatService {
           case 'tool_call':
             writeSse('tool_call', { tool: ev.tool, args: ev.args });
             break;
+          case 'tool_result':
+            writeSse('tool_result', { tool: ev.tool, summary: ev.summary });
+            break;
           case 'delta':
             full += ev.text;
             writeSse('delta', { content: ev.text });
@@ -365,13 +368,27 @@ export class ChatService {
             // reflected in the next tool observation and self-correct.
             this.logger.warn(`[AgentService] parse_error raw=${ev.raw.slice(0, 80)}`);
             break;
-          case 'done': {
+          case 'sources':
+            // The agent emits a `sources` event before `done` with the
+            // accumulated citation refs. We surface it as the SSE `sources`
+            // event so the FE can render the row once.
             sources = ev.sources.map((s, i) => ({
               index: i + 1,
               name: s.documentName,
               snippet: s.content.slice(0, 240),
               content: s.content,
             }));
+            break;
+          case 'done': {
+            // Done may also carry the final sources list (defensive).
+            if (sources.length === 0) {
+              sources = ev.sources.map((s, i) => ({
+                index: i + 1,
+                name: s.documentName,
+                snippet: s.content.slice(0, 240),
+                content: s.content,
+              }));
+            }
             maxIterationsHit = ev.maxIterationsHit;
             break;
           }

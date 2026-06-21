@@ -8,6 +8,7 @@ import {
   HeadBucketCommand,
   ListBucketsCommand,
   CopyObjectCommand,
+  GetObjectCommand,
   BucketLocationConstraint,
 } from '@aws-sdk/client-s3';
 
@@ -118,6 +119,34 @@ export class R2Service implements OnModuleInit {
         Key: key,
       }),
     );
+  }
+
+  /**
+   * Download an object's bytes. Returns a Node Buffer. Used by the
+   * reindex script to re-ingest a previously uploaded file.
+   */
+  async getObjectBuffer(bucket: string, key: string): Promise<Buffer> {
+    this.assertReady();
+    const res = await this.client!.send(
+      new GetObjectCommand({ Bucket: bucket, Key: key }),
+    );
+    if (!res.Body) throw new Error(`R2 GetObject returned empty body: ${bucket}/${key}`);
+    // The SDK returns a web stream on Node 18+; collect into a Buffer.
+    const stream = res.Body as unknown as AsyncIterable<Uint8Array>;
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of stream) {
+      chunks.push(chunk);
+    }
+    return Buffer.concat(chunks);
+  }
+
+  /**
+   * Convenience: get an object as UTF-8 text. For binary blobs (PDF, DOCX)
+   * the caller should use `getObjectBuffer` and run a parser.
+   */
+  async getObjectText(bucket: string, key: string): Promise<string> {
+    const buf = await this.getObjectBuffer(bucket, key);
+    return buf.toString('utf8');
   }
 
   /**
