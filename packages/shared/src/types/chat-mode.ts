@@ -25,19 +25,16 @@ export type ChatMode = typeof CHAT_MODES[number];
  */
 export const CHAT_MODE_LABELS: Record<
   ChatMode,
-  { label: string; description: string }
+  { label: string; }
 > = {
   fast: {
-    label: 'Nhanh',
-    description: 'Tra cứu nhanh và trả lời trực tiếp',
+    label: 'Nhanh'
   },
   deep: {
-    label: 'Suy nghĩ sâu',
-    description: 'Agent đọc nhiều nguồn, suy luận nhiều bước',
+    label: 'Suy nghĩ sâu'
   },
   lookup: {
-    label: 'Tra cứu văn bản',
-    description: 'Chỉ trả về trích dẫn, không sinh câu trả lời',
+    label: 'Tra cứu văn bản'
   },
 };
 

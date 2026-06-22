@@ -16,9 +16,16 @@ import { MetadataEnricherService } from './parsers/metadata-enricher.service';
 import { ReferenceExtractorService } from './parsers/reference-extractor.service';
 import { OcrCallbackGuard } from './guards/ocr-callback.guard';
 import { RagOcrSweeperService } from './rag-ocr-sweeper.service';
+import { LlmModule } from '../llm/llm.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RagDocument, RagChunk])],
+  imports: [
+    TypeOrmModule.forFeature([RagDocument, RagChunk]),
+    // LlmModule is imported so MetadataEnricherService can @Optional()
+    // inject LlmService. If LLM isn't configured the enricher silently
+    // falls back to regex-only metadata extraction.
+    LlmModule,
+  ],
   controllers: [RagAdminController, RagOcrCallbackController],
   providers: [
     RagService,

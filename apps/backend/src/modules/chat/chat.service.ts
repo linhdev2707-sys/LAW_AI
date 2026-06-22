@@ -10,6 +10,11 @@ import { LlmService } from '../llm/llm.service';
 import { PromptBuilder, IRetrievedSource } from '../llm/prompt.builder';
 import { AgentService, DeepAgentEvent } from './services/agent.service';
 import { DocumentLookupService, LookupEvent } from './services/document-lookup.service';
+import {
+  QuotaService,
+  QuotaExceededError,
+} from '../payment/quota.service';
+import { PlanNotAllowedError } from '../payment/plan-catalog';
 import type { IChatMessage } from '../llm/interfaces/chat-completion.types';
 
 function errorMessage(e: unknown): string {
@@ -54,6 +59,7 @@ export class ChatService {
     private readonly prompt: PromptBuilder,
     private readonly agent: AgentService,
     private readonly documentLookup: DocumentLookupService,
+    private readonly quota: QuotaService,
   ) {}
 
   /** Non-streaming reply (kept for backward compat). */
@@ -193,6 +199,45 @@ export class ChatService {
     // 1) Resolve / create conversation + persist user message
     const { conversation, userMsg } = await this.persistUserMessage(userId, dto);
 
+    // 1b) Quota enforcement. Runs BEFORE we commit to SSE headers so
+    //     a quota error can be returned as a normal HTTP 4xx. After
+    //     the increment we still keep the user message persisted (it
+    //     counts against quota even if the LLM later errors).
+    try {
+      const quota = await this.quota.checkAndIncrement(userId, mode);
+      // Surface the post-increment usage so the FE can show the pill.
+      // (Sent as a normal JSON response via res.locals, then attached
+      // to the first SSE event below.)
+      res.setHeader(
+        'X-Quota-Used',
+        String(quota.used),
+      );
+      res.setHeader(
+        'X-Quota-Limit',
+        String(quota.limit),
+      );
+      res.setHeader('X-Quota-Plan', quota.plan.id);
+    } catch (e) {
+      if (
+        e instanceof QuotaExceededError ||
+        e instanceof PlanNotAllowedError
+      ) {
+        // Map domain errors to HTTP responses and roll back the
+        // user-message we just persisted (it never executed).
+        const status = e instanceof PlanNotAllowedError ? 403 : 429;
+        res.statusCode = status;
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        res.end(JSON.stringify({
+          error: (e as { code?: string }).code,
+          message: (e as Error).message,
+        }));
+        // Best-effort cleanup of the user message we just wrote.
+        try { await this.msgRepo.delete({ id: userMsg.id }); } catch { /* ignore */ }
+        return;
+      }
+      throw e;
+    }
+
     // 2) Set SSE headers
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
@@ -279,6 +324,7 @@ export class ChatService {
         name: s.documentName,
         snippet: s.content.slice(0, 240),
         content: s.content,
+        score: s.score,
       }));
       usedFallback = sources.length === 0;
       writeSse('sources', { sources });
@@ -290,12 +336,40 @@ export class ChatService {
 
     writeSse('meta', { kind: usedFallback ? 'general' : 'rag' });
 
+    // 1b) 3-tier guard based on retrieval quality:
+    //
+    //   Tier 3 (no sources):  HARD refusal — never call LLM, it will
+    //                         hallucinate. Show fixed message.
+    //
+    //   Tier 2 (low score):  PARTIAL answer — call LLM but prepend a
+    //                         warning so it doesn't pretend certainty.
+    //
+    //   Tier 1 (good score):  NORMAL — let LLM answer with citations.
+    //
+    // Score thresholds are intentionally conservative; the reranker
+    // output is a calibrated probability so 0.4+ is usually solid.
+    const LOW_SCORE_THRESHOLD = 0.4;
+    const topScore = sources.length > 0
+      ? Math.max(...sources.map((s) => s.score ?? 0))
+      : 0;
+
+    if (sources.length === 0 && !usedFallback) {
+      // Tier 3
+      const refusal = 'Tôi không tìm thấy thông tin này trong kho tài liệu pháp luật của hệ thống. Vui lòng tải thêm tài liệu hoặc diễn đạt câu hỏi khác cụ thể hơn.';
+      writeSse('delta', { content: refusal });
+      await this.finishWithMessage(conversation, refusal, writeSse);
+      return;
+    }
+
+    const isLowConfidence = topScore < LOW_SCORE_THRESHOLD && !usedFallback;
+
     // 2) Build prompt + stream
     const history = await this.loadHistory(conversation.id, userMsg.id);
     const messages = this.prompt.build({
       sources,
       history,
       userContent: dto.content,
+      lowConfidence: isLowConfidence,
     });
 
     let full = '';

@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { ChatShell } from '@/components/chat/chat-shell';
 import { EmptyState } from '@/components/chat/empty-state';
 import { ChatInput } from '@/components/chat/chat-input';
-import { useConversationStream } from '@/hooks/use-conversation-stream';
+import { MessageList } from '@/components/chat/message-list';
+import { useChatStream } from '@/hooks/chat-stream-context';
 import { useRouter } from 'next/navigation';
 import { isChatMode, type ChatMode } from '@law-ai/shared';
 
@@ -19,8 +20,8 @@ const MODE_STORAGE_KEY = 'chat:mode';
  */
 export default function ChatIndexPage() {
   const router = useRouter();
-  const { conversationId, send, streaming, messages, error, rateLimit } =
-    useConversationStream();
+  const { conversationId, send, streaming, stop, messages, sources, error, rateLimit } =
+    useChatStream();
   // Track if WE triggered the navigation, so the effect doesn't fight
   // Strict Mode double-invokes.
   const navigatedRef = useRef(false);
@@ -50,7 +51,28 @@ export default function ChatIndexPage() {
   useEffect(() => {
     if (conversationId && !navigatedRef.current) {
       navigatedRef.current = true;
-      router.replace(`/chat/${conversationId}`);
+      // Use window.history.replaceState instead of router.replace to
+      // update the URL WITHOUT triggering a Next.js navigation. A
+      // navigation here would cause App Router to swap the `ChatIndexPage`
+      // tree for `ChatConversationPage`, and even though the `ChatStreamProvider`
+      // is mounted in the shared layout, the `useChatStream` consumers
+      // (the page components themselves) re-subscribe and the in-flight
+      // SSE stream + optimistic messages can be torn down on the first
+      // delta event. Direct history mutation is a workaround: it
+      // updates the address bar (so the URL is stable and refreshable)
+      // without React re-rendering the page tree.
+      if (typeof window !== 'undefined') {
+        try {
+          window.history.replaceState(
+            window.history.state,
+            '',
+            `/chat/${conversationId}`,
+          );
+        } catch {
+          /* SSR or restricted env — fall back to router.replace */
+          router.replace(`/chat/${conversationId}`);
+        }
+      }
     }
   }, [conversationId, router]);
 
@@ -71,17 +93,17 @@ export default function ChatIndexPage() {
           {messages.length === 0 ? (
             <EmptyState onSelect={handleSelect} />
           ) : (
-            <div className="flex items-center justify-center px-4 py-10 text-sm text-brand-on-surface-variant">
-              Đang mở cuộc trò chuyện…
-            </div>
+            <MessageList
+              messages={messages}
+              sources={sources}
+              loading={streaming}
+            />
           )}
         </div>
 
         <ChatInput
           onSend={handleSelect}
-          onStop={() => {
-            /* no-op on the index page */
-          }}
+          onStop={stop}
           disabled={false}
           loading={streaming}
           placeholder="Nhắn cho iLaw…"

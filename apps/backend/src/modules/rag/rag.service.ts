@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -31,7 +31,7 @@ function errorMessage(e: unknown): string {
 }
 
 @Injectable()
-export class RagService {
+export class RagService implements OnModuleInit {
   private readonly logger = new Logger(RagService.name);
 
   constructor(
@@ -48,6 +48,14 @@ export class RagService {
     private readonly dataSource: DataSource,
     private readonly config: ConfigService,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    // Detect once: does rag_chunks have the pgvector `embedding_vec` column?
+    // If yes, the retriever will use native HNSW cosine; otherwise it
+    // falls back to JSON-cosine over the `embedding` TEXT column. This
+    // lets the system run on plain Postgres without the pgvector package.
+    await this.retriever.detectCapabilities();
+  }
 
   // ─── Public API ─────────────────────────────────────────────────────
 

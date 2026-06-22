@@ -50,7 +50,17 @@ export class MetadataEnricherService {
   ];
 
   private readonly NUMBER_RE = /Số[:\s]+([0-9]+\/[0-9]+\/[A-ZĐ0-9-]+)/i;
-  private readonly LAW_NAME_RE = /(Bộ\s+luật|Luật|Nghị\s+định|Thông\s+tư|Quyết\s+định|Nghị\s+quyết|Pháp\s+lệnh)\s+([^\n\.]{3,200})/;
+  /**
+   * Capture the law name. The character class is intentionally narrow:
+   *   - exclude whitespace boundaries (\n, .)
+   *   - exclude semicolons (;) and colons (:) which commonly appear
+   *     after the title in real-world OCR text (e.g.
+   *     "Luật Tổ chức Chính phủ ngày 25 tháng 12 năm 2001;")
+   *   - exclude the dash/hyphen sequence which signals "về việc..."
+   *     and other trailing clauses
+   * The `+` is non-greedy so we stop at the first terminator.
+   */
+  private readonly LAW_NAME_RE = /(Bộ\s+luật|Luật|Nghị\s+định|Thông\s+tư|Quyết\s+định|Nghị\s+quyết|Pháp\s+lệnh)\s+([^\n.;:]{3,200}?)(?=\s+(?:năm|số|về|ngày|;|:|$))/i;
 
   private readonly DATE_RE =
     /(ngày\s+)?(\d{1,2})\s*(tháng\s+(\d{1,2})\s*)?(năm\s+(\d{4}))?|(\d{1,2}\/\d{1,2}\/\d{4})/gi;
@@ -76,7 +86,14 @@ export class MetadataEnricherService {
       return regex;
     }
 
-    if (!this.useLlm) return regex;
+    // LLM pass is only attempted when:
+    //  1) the config flag enables it
+    //  2) the LlmService was actually injected (RagModule must import
+    //     LlmModule for this). If either is false we silently fall back
+    //     to the regex result — no error, no warning spam in the logs.
+    if (!this.useLlm || !this.llm) {
+      return regex;
+    }
 
     try {
       const llm = await this.llmPass(input.documentName, text, regex);
@@ -105,7 +122,7 @@ export class MetadataEnricherService {
 
     const nameMatch = text.match(this.LAW_NAME_RE);
     const lawName = nameMatch
-      ? `${nameMatch[1]?.trim()} ${nameMatch[2]?.trim()}`.replace(/\s+/g, ' ').trim()
+      ? `${nameMatch[1]?.trim()} ${nameMatch[2]?.trim()}`.replace(/\s+/g, ' ').trim().replace(/[;:,]+$/, '')
       : null;
 
     const header = text.slice(0, 1500);
@@ -181,7 +198,10 @@ Hãy bổ sung các trường còn thiếu hoặc sai. Trả về JSON đúng sc
 }`;
 
     const raw = await this.callLlmJson(sys, usr);
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const parsed = safeJsonParse(raw);
+    if (!parsed) {
+      throw new Error('LLM returned non-JSON output even after stripping markdown');
+    }
     return {
       documentType: (parsed.documentType as RagDocumentType) ?? seed.documentType,
       lawName: (parsed.lawName as string) ?? seed.lawName,
@@ -211,7 +231,7 @@ Hãy bổ sung các trường còn thiếu hoặc sai. Trả về JSON đúng sc
     )) {
       if (delta.content) text += delta.content;
     }
-    return text;
+    return stripMarkdownJson(text);
   }
 
   // ─── Date helpers ────────────────────────────────────────────────────
@@ -242,5 +262,55 @@ Hãy bổ sung các trường còn thiếu hoặc sai. Trả về JSON đúng sc
     }
     const d = new Date(cleaned);
     return isNaN(d.getTime()) ? null : d;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Module-level helpers (no `this` — pure functions, easy to unit test)
+// ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Strip markdown code fences from LLM output. DeepSeek frequently
+ * wraps JSON in:
+ *   ```json
+ *   { ... }
+ *   ```
+ * We try to extract the first {...} or [...] block; if that fails we
+ * fall back to the original text so the caller can decide.
+ */
+export function stripMarkdownJson(raw: string): string {
+  if (!raw) return raw;
+  let s = raw.trim();
+
+  // 1) Remove leading/trailing ``` fences
+  const fenceAll = /^```(?:json)?\s*([\s\S]*?)\s*```\s*$/i;
+  const m = s.match(fenceAll);
+  if (m) s = m[1]!.trim();
+
+  // 2) If the string still contains markdown fences somewhere (LLM
+  //    sometimes emits prose + a code block), grab the first {...} or [...]
+  if (!s.startsWith('{') && !s.startsWith('[')) {
+    const obj = s.match(/\{[\s\S]*\}/);
+    const arr = s.match(/\[[\s\S]*\]/);
+    if (obj) s = obj[0];
+    else if (arr) s = arr[0];
+  }
+
+  return s.trim();
+}
+
+/**
+ * Parse a string that may contain markdown-wrapped JSON. Returns the
+ * parsed value or `null` if parsing fails. Never throws.
+ */
+export function safeJsonParse(raw: string): Record<string, unknown> | null {
+  if (!raw) return null;
+  const cleaned = stripMarkdownJson(raw);
+  try {
+    const v = JSON.parse(cleaned);
+    if (v && typeof v === 'object' && !Array.isArray(v)) return v as Record<string, unknown>;
+    return null;
+  } catch {
+    return null;
   }
 }

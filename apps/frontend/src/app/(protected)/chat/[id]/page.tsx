@@ -6,7 +6,7 @@ import { ChatShell } from '@/components/chat/chat-shell';
 import { MessageList } from '@/components/chat/message-list';
 import { ChatInput } from '@/components/chat/chat-input';
 import { EmptyState } from '@/components/chat/empty-state';
-import { useConversationStream } from '@/hooks/use-conversation-stream';
+import { useChatStream } from '@/hooks/chat-stream-context';
 import { isChatMode, type ChatMode } from '@law-ai/shared';
 
 const MODE_STORAGE_KEY = 'chat:mode';
@@ -26,7 +26,7 @@ export default function ChatConversationPage() {
     send,
     stop,
     rateLimit,
-  } = useConversationStream();
+  } = useChatStream();
   const [refreshKey, setRefreshKey] = useState(0);
 
   /**

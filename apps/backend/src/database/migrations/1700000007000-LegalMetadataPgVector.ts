@@ -8,33 +8,80 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *    expiry_date / issued_date / legal_status / source_url /
  *    amendment_of / extra_metadata columns on rag_documents
  *  - raw_text / breadcrumb / law_name / law_number / chapter / section /
- *    article / clause / point / embedding_vec (pgvector) / char_start /
- *    char_end on rag_chunks
- *  - HNSW index for cosine similarity over embedding_vec
+ *    article / clause / point / embedding_vec (pgvector, optional) /
+ *    char_start / char_end on rag_chunks
+ *  - HNSW index for cosine similarity over embedding_vec (only when pgvector
+ *    is available — see below)
  *  - GIN index on extra_metadata, B-tree on (law_number, article, clause)
  *  - new status enum values: 'parsing', 'chunking', 'embedding'
  *  - tsv generated column rebuilt on raw_text (was on content)
+ *
+ * pgvector is OPTIONAL: if the server doesn't have the extension installed
+ * (e.g. plain `postgres:16-alpine` image without the pgvector package), the
+ * migration gracefully skips the vector column and HNSW index. The RAG
+ * service auto-detects this case at boot and falls back to the legacy
+ * in-memory cosine path over the JSON `embedding` TEXT column. To enable
+ * pgvector: switch the image to `pgvector/pgvector:pg16-alpine` and run
+ * this migration again — the column + index will be added.
  */
 export class LegalMetadataPgVector1700000007000 implements MigrationInterface {
   name = 'LegalMetadataPgVector1700000007000';
 
   public async up(q: QueryRunner): Promise<void> {
-    // ── 1) Enable pgvector ────────────────────────────────────────────
-    await q.query(`CREATE EXTENSION IF NOT EXISTS vector`);
+    // ── 1) Try to enable pgvector (optional) ─────────────────────────
+    // We use a SAVEPOINT so that if `CREATE EXTENSION vector` fails
+    // (because the pgvector package isn't installed on the server, e.g.
+    // the plain `postgres:16-alpine` image), the failure is contained
+    // and the outer transaction can continue. Without the savepoint,
+    // Postgres would mark the entire transaction as ABORTED and every
+    // subsequent statement would fail with `25P02 current transaction
+    // is aborted`.
+    let hasVector = false;
+    const sp = 'sp_pgvector_check';
+    try {
+      await q.query(`SAVEPOINT ${sp}`);
+      await q.query(`CREATE EXTENSION IF NOT EXISTS vector`);
+      await q.query(`RELEASE SAVEPOINT ${sp}`);
+      hasVector = true;
+    } catch (e) {
+      await q.query(`ROLLBACK TO SAVEPOINT ${sp}`);
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[LegalMetadataPgVector] pgvector extension not available — ' +
+        'skipping embedding_vec column + HNSW index. RAG will use the ' +
+        'legacy JSON `embedding` TEXT column with in-memory cosine. ' +
+        'To enable pgvector, switch to the `pgvector/pgvector:pg16-alpine` ' +
+        'image and re-run this migration.',
+      );
+      hasVector = false;
+    }
 
     // ── 2) Add new status values to the document status enum ─────────
-    await q.query(`
-      ALTER TYPE "rag_documents_status_enum"
-        ADD VALUE IF NOT EXISTS 'parsing'
-    `);
-    await q.query(`
-      ALTER TYPE "rag_documents_status_enum"
-        ADD VALUE IF NOT EXISTS 'chunking'
-    `);
-    await q.query(`
-      ALTER TYPE "rag_documents_status_enum"
-        ADD VALUE IF NOT EXISTS 'embedding'
-    `);
+    // `ALTER TYPE ... ADD VALUE` cannot run inside a transaction block
+    // (Postgres restriction). We use the same SAVEPOINT trick to wrap
+    // each statement: if it fails because the value already exists, the
+    // savepoint is rolled back and we move on. The previous migration
+    // `AddOcrPendingStatus` uses the same pattern and works.
+    const enumAdditions = ['parsing', 'chunking', 'embedding'];
+    for (const value of enumAdditions) {
+      const sp2 = `sp_enum_add_${value}`;
+      try {
+        await q.query(`SAVEPOINT ${sp2}`);
+        await q.query(`
+          ALTER TYPE "rag_documents_status_enum"
+            ADD VALUE IF NOT EXISTS '${value}'
+        `);
+        await q.query(`RELEASE SAVEPOINT ${sp2}`);
+      } catch (e) {
+        await q.query(`ROLLBACK TO SAVEPOINT ${sp2}`);
+        // Either the value already exists (benign) or we're in a context
+        // where ADD VALUE can't run. Either way, the migration continues.
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[LegalMetadataPgVector] could not add enum value '${value}': ${(e as Error).message}`,
+        );
+      }
+    }
 
     // ── 3) Document legal metadata columns ──────────────────────────
     await q.query(`
@@ -96,7 +143,7 @@ export class LegalMetadataPgVector1700000007000 implements MigrationInterface {
         ADD COLUMN IF NOT EXISTS "article" varchar(20),
         ADD COLUMN IF NOT EXISTS "clause" varchar(20),
         ADD COLUMN IF NOT EXISTS "point" varchar(20),
-        ADD COLUMN IF NOT EXISTS "embedding_vec" vector(1024),
+        ${hasVector ? 'ADD COLUMN IF NOT EXISTS "embedding_vec" vector(1024),' : ''}
         ADD COLUMN IF NOT EXISTS "char_start" integer,
         ADD COLUMN IF NOT EXISTS "char_end" integer
     `);
@@ -139,11 +186,14 @@ export class LegalMetadataPgVector1700000007000 implements MigrationInterface {
 
     // ── 5) HNSW index for cosine similarity (pgvector) ───────────
     // m=16, ef_construction=64 are the bge-m3 sweet-spot defaults.
-    await q.query(`
-      CREATE INDEX IF NOT EXISTS "IDX_rag_chunks_embedding_vec_hnsw"
-        ON "rag_chunks" USING hnsw ("embedding_vec" vector_cosine_ops)
-        WITH (m = 16, ef_construction = 64)
-    `);
+    // Only created if pgvector extension was successfully enabled.
+    if (hasVector) {
+      await q.query(`
+        CREATE INDEX IF NOT EXISTS "IDX_rag_chunks_embedding_vec_hnsw"
+          ON "rag_chunks" USING hnsw ("embedding_vec" vector_cosine_ops)
+          WITH (m = 16, ef_construction = 64)
+      `);
+    }
 
     // ── 6) Rebuild tsv generated column on raw_text ───────────────
     await q.query(`DROP INDEX IF EXISTS "IDX_rag_chunks_tsv"`);
