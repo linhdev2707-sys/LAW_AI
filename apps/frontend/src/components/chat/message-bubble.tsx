@@ -211,7 +211,7 @@ function ModeBadge({ mode }: { mode: ChatMode }) {
         'mb-1.5 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium',
         MODE_BADGE_STYLE[mode],
       )}
-      title={CHAT_MODE_LABELS[mode].description}
+      title={CHAT_MODE_LABELS[mode].label}
     >
       <Icon className="h-3 w-3" />
       {CHAT_MODE_LABELS[mode].label}

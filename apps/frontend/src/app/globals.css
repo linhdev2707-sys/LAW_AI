@@ -26,7 +26,10 @@
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
 
-    /* Font variables to bypass build-time Google Fonts fetching */
+    /* Font fallbacks. next/font injects the actual self-hosted
+       family names via these same variables on <html> in layout.tsx,
+       but the literal name here keeps things sane if the JS bundle
+       hasn't hydrated yet (e.g. first paint). */
     --font-inter: 'Inter', sans-serif;
     --font-playfair: 'Playfair Display', serif;
   }

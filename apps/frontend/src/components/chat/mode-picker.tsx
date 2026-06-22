@@ -35,7 +35,7 @@ export function ModePicker({ value, onChange, disabled }: ModePickerProps) {
           type="button"
           disabled={disabled}
           aria-label={`Chọn chế độ chat: ${CHAT_MODE_LABELS[value].label}`}
-          title={`Chế độ: ${CHAT_MODE_LABELS[value].label} — ${CHAT_MODE_LABELS[value].description}`}
+          title={`Chế độ: ${CHAT_MODE_LABELS[value].label}`}
           className={cn(
             'ml-2 mb-2 flex h-9 w-9 items-center justify-center rounded-lg',
             'text-brand-on-surface-variant transition-colors',
@@ -87,9 +87,6 @@ export function ModePicker({ value, onChange, disabled }: ModePickerProps) {
                     {isSelected && (
                       <Check className="h-3.5 w-3.5 text-brand-tertiary" />
                     )}
-                  </div>
-                  <div className="mt-0.5 text-xs text-brand-on-surface-variant">
-                    {CHAT_MODE_LABELS[m].description}
                   </div>
                 </div>
               </DropdownMenu.Item>

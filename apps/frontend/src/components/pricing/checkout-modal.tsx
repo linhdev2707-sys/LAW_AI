@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { X, Copy, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -174,10 +175,16 @@ function PaymentView({
       {/* QR Code */}
       <div className="flex flex-col items-center justify-center">
         <div className="relative h-80 w-80 overflow-hidden rounded-xl bg-white p-2">
-          <img
+          <Image
             src={qrUrl}
             alt="VietQR code thanh toan"
-            className="h-full w-full object-contain"
+            fill
+            sizes="320px"
+            // QR code is generated binary — next/image optimization
+            // (AVIF/WebP, srcset) cannot help and would just round-trip
+            // through the optimizer. Pass through.
+            unoptimized
+            className="object-contain"
           />
         </div>
       </div>

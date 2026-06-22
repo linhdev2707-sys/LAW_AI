@@ -25,7 +25,7 @@ export type ChatMode = typeof CHAT_MODES[number];
  */
 export const CHAT_MODE_LABELS: Record<
   ChatMode,
-  { label: string; }
+  { label: string }
 > = {
   fast: {
     label: 'Nhanh'
