@@ -5,7 +5,18 @@ services:
     # search. The plain `postgres:16-alpine` image has no `vector` package,
     # so the migration gracefully skipped and the RAG service fell back to
     # in-memory cosine over JSON `embedding` TEXT.
-    image: pgvector/pgvector:pg16-alpine
+    # pgvector-enabled image — LegalMetadataPgVector migration will create
+    # the `embedding_vec` column + HNSW index on rag_chunks for fast ANN
+    # search. The plain `postgres:16-alpine` image has no `vector` package,
+    # so the migration gracefully skipped and the RAG service fell back to
+    # in-memory cosine over JSON `embedding` TEXT.
+    #
+    # Note: pgvector/pgvector is published only on Debian-based tags
+    # (bookworm / trixie) — there is no `-alpine` variant upstream.
+    # Use the unversioned `pg16` tag to track the latest Debian build
+    # for PG16, or pin a specific version like `0.8.3-pg16` for
+    # reproducibility.
+    image: pgvector/pgvector:pg16
     container_name: law-ai-postgres
     restart: unless-stopped
     # We do NOT expose port 5432 to the public internet for security.
