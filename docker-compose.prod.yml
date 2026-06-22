@@ -1,8 +1,11 @@
-version: '3.8'
-
 services:
   postgres:
-    image: postgres:16-alpine
+    # pgvector-enabled image — LegalMetadataPgVector migration will create
+    # the `embedding_vec` column + HNSW index on rag_chunks for fast ANN
+    # search. The plain `postgres:16-alpine` image has no `vector` package,
+    # so the migration gracefully skipped and the RAG service fell back to
+    # in-memory cosine over JSON `embedding` TEXT.
+    image: pgvector/pgvector:pg16-alpine
     container_name: law-ai-postgres
     restart: unless-stopped
     # We do NOT expose port 5432 to the public internet for security.
