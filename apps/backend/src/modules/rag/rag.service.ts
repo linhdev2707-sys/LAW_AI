@@ -1,8 +1,9 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, ConflictException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
+import { extname } from 'path';
 import {
   RagDocument, RagDocumentStatus, RagDocumentType, RagLegalStatus,
 } from './entities/rag-document.entity';
@@ -17,6 +18,7 @@ import { ReferenceExtractorService, IExtractedReference } from './parsers/refere
 import { LegalStructureParser } from './parsers/legal-structure.parser';
 import { CreateRagDocumentDto } from './dto/create-rag-document.dto';
 import { bulkInsertChunks } from './rag-chunk-insert.helper';
+import { PdfNeedsOcrError } from './parsers/pdf-needs-ocr.error';
 
 export interface IIngestResult {
   id: string;
@@ -73,28 +75,87 @@ export class RagService implements OnModuleInit {
     name: string, buffer: Buffer, mimeType: string,
     filename: string | undefined, bucket: string, userId: string,
   ): Promise<IIngestResult> {
-    const content = await this.parser.extractText(buffer, mimeType, filename);
+    const sha256 = createHash('sha256').update(buffer).digest('hex');
+    await this.checkManifestDuplicate(bucket, sha256);
+
     const resolvedMime = this.resolveMimeFromBuffer(mimeType, filename);
-    return this.runIngest({
-      name: name.trim(), content, mimeType: resolvedMime, bucket: bucket.trim(),
+    const isImage = resolvedMime.startsWith('image/');
+
+    let content = '';
+    let isOcr = false;
+
+    if (isImage) {
+      isOcr = true;
+    } else if (resolvedMime === 'application/pdf') {
+      try {
+        content = await this.parser.extractText(buffer, resolvedMime, filename);
+      } catch (e) {
+        if (e instanceof PdfNeedsOcrError) {
+          isOcr = true;
+        } else {
+          throw e;
+        }
+      }
+    } else {
+      content = await this.parser.extractText(buffer, resolvedMime, filename);
+    }
+
+    if (isOcr) {
+      const ocrFilename = filename || 'document.pdf';
+      this.logger.log(`Calling FastAPI OCR Service directly for file ${ocrFilename}...`);
+      content = await this.callFastApiOcr(buffer, ocrFilename);
+    }
+
+    const result = await this.runIngest({
+      name: name.trim(),
+      content,
+      mimeType: isOcr ? 'application/json' : resolvedMime,
+      bucket: bucket.trim(),
     }, userId);
+
+    await this.updateManifest(bucket, sha256, {
+      name: name.trim(),
+      uploadedAt: new Date().toISOString(),
+      docId: result.id,
+      status: 'ingested',
+    });
+
+    return result;
   }
 
-  async enqueueOcr(name: string, buffer: Buffer, bucket: string, userId: string): Promise<IIngestResult> {
+  async enqueueOcr(
+    name: string, buffer: Buffer, bucket: string, userId: string, filename?: string
+  ): Promise<IIngestResult> {
     if (!this.r2.isEnabled()) throw new Error('R2 is required but client is not initialised');
     const ocrBucket = this.config.get<string>('app.ocr.bucket', '') || process.env.OCR_R2_BUCKET || 'law-ai-rag-ocr';
-    const r2Key = `ocr-inbox/${randomUUID()}.pdf`;
+
+    const sha256 = createHash('sha256').update(buffer).digest('hex');
+    await this.checkManifestDuplicate(bucket, sha256);
+
+    const ext = filename ? extname(filename).toLowerCase() : '.pdf';
+    const isImage = ['.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif', '.webp'].includes(ext);
+    const ocrMimeType = isImage ? this.resolveMimeFromBuffer('image/png', filename) : 'application/pdf';
+    const r2Key = `ocr-inbox/${randomUUID()}${ext}`;
+
     try {
-      await this.r2.putObject(ocrBucket, r2Key, buffer, 'application/pdf');
+      await this.r2.putObject(ocrBucket, r2Key, buffer, ocrMimeType);
     } catch (e: unknown) {
       throw new Error(`R2 upload failed: ${errorMessage(e)}`);
     }
     const doc = await this.docRepo.save(this.docRepo.create({
-      name: name.trim(), r2Key, mimeType: 'application/pdf',
+      name: name.trim(), r2Key, mimeType: ocrMimeType,
       bucketName: ocrBucket, bucketRegion: 'auto',
       sizeBytes: buffer.length, chunkCount: 0,
       status: RagDocumentStatus.OCR_PENDING, createdBy: userId,
     }));
+
+    await this.updateManifest(bucket, sha256, {
+      name: name.trim(),
+      uploadedAt: new Date().toISOString(),
+      docId: doc.id,
+      status: 'ocr_pending',
+    });
+
     return { id: doc.id, chunkCount: 0, status: RagDocumentStatus.OCR_PENDING };
   }
 
@@ -114,14 +175,19 @@ export class RagService implements OnModuleInit {
     const cleaned = text ? text.replace(/\r\n/g, '\n').trim() : '';
     if (!cleaned) throw new Error('OCR returned empty text');
 
-    const finalKey = `rag/${randomUUID()}.txt`;
+    const finalKey = `rag/${randomUUID()}.json`;
     if (this.r2.isEnabled()) {
       try {
-        await this.r2.copyObject(doc.bucketName, doc.r2Key, finalKey, 'text/plain');
+        const jsonContent = JSON.stringify({
+          documentId: doc.id,
+          name: doc.name,
+          text: cleaned,
+        }, null, 2);
+        await this.r2.putObject(doc.bucketName, finalKey, jsonContent, 'application/json');
         try { await this.r2.deleteObject(doc.bucketName, doc.r2Key); } catch { /* best-effort */ }
-        await this.docRepo.update(doc.id, { r2Key: finalKey });
+        await this.docRepo.update(doc.id, { r2Key: finalKey, mimeType: 'application/json' });
       } catch (e: unknown) {
-        this.logger.warn(`Failed to copy OCR result to ${finalKey}: ${errorMessage(e)}`);
+        this.logger.warn(`Failed to save OCR JSON result to ${finalKey}: ${errorMessage(e)}`);
       }
     }
     return this.runIngestOnExisting(doc, cleaned);
@@ -174,13 +240,26 @@ export class RagService implements OnModuleInit {
     const { name, content, mimeType, bucket, sourceUrl } = input;
     if (!this.r2.isEnabled()) throw new Error('R2 is required but client is not initialised');
 
-    const r2Key = `rag/${randomUUID()}.txt`;
-    try { await this.r2.putObject(bucket, r2Key, content, mimeType); }
+    const docId = randomUUID();
+    const isJson = mimeType === 'application/json';
+    const r2Key = `rag/${docId}${isJson ? '.json' : '.txt'}`;
+
+    let r2Body = content;
+    if (isJson) {
+      r2Body = JSON.stringify({
+        documentId: docId,
+        name,
+        text: content,
+      }, null, 2);
+    }
+
+    try { await this.r2.putObject(bucket, r2Key, r2Body, mimeType); }
     catch (e: unknown) { throw new Error(`R2 upload failed: ${errorMessage(e)}`); }
 
     const doc = await this.docRepo.save(this.docRepo.create({
+      id: docId,
       name, r2Key, mimeType, bucketName: bucket, bucketRegion: 'auto',
-      sizeBytes: Buffer.byteLength(content, 'utf8'),
+      sizeBytes: Buffer.byteLength(r2Body, 'utf8'),
       chunkCount: 0, status: RagDocumentStatus.PENDING, createdBy: userId,
       sourceUrl: sourceUrl ?? null,
     }));
@@ -295,6 +374,79 @@ export class RagService implements OnModuleInit {
     if (ext === '.docx') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     if (ext === '.doc') return 'application/msword';
     if (ext === '.md' || ext === '.markdown') return 'text/markdown';
+    if (ext === '.html' || ext === '.htm') return 'text/html';
+    if (ext === '.png') return 'image/png';
+    if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
+    if (ext === '.tiff') return 'image/tiff';
+    if (ext === '.bmp') return 'image/bmp';
+    if (ext === '.gif') return 'image/gif';
+    if (ext === '.webp') return 'image/webp';
     return 'text/plain';
+  }
+
+  private async checkManifestDuplicate(bucket: string, sha256: string): Promise<void> {
+    if (!this.r2.isEnabled()) return;
+    try {
+      const manifestText = await this.r2.getObjectText(bucket, 'manifest.json');
+      const manifest = JSON.parse(manifestText);
+      if (manifest && manifest[sha256]) {
+        throw new ConflictException(
+          `Document content already exists in VectorDB (manifest hash match: ${sha256})`
+        );
+      }
+    } catch (e) {
+      const errName = (e as any)?.name || (e as any)?.code || '';
+      if (errName !== 'NoSuchKey' && errName !== 'NotFound' && !(e instanceof ConflictException)) {
+        this.logger.warn(`Failed to read manifest.json: ${errorMessage(e)}`);
+      }
+      if (e instanceof ConflictException) throw e;
+    }
+  }
+
+  private async updateManifest(bucket: string, sha256: string, data: any): Promise<void> {
+    if (!this.r2.isEnabled()) return;
+    let manifest: Record<string, any> = {};
+    try {
+      const manifestText = await this.r2.getObjectText(bucket, 'manifest.json');
+      manifest = JSON.parse(manifestText);
+    } catch (e) {
+      // ignore
+    }
+    manifest[sha256] = data;
+    try {
+      await this.r2.putObject(bucket, 'manifest.json', JSON.stringify(manifest, null, 2), 'application/json');
+    } catch (e) {
+      this.logger.error(`Failed to update manifest.json in bucket ${bucket}: ${errorMessage(e)}`);
+    }
+  }
+
+  private async callFastApiOcr(buffer: Buffer, filename: string): Promise<string> {
+    const serviceUrl = this.config.get<string>('app.ocr.serviceUrl', '') || process.env.OCR_SERVICE_URL || 'http://127.0.0.1:8000/ocr';
+
+    const formData = new FormData();
+    const blob = new Blob([buffer], { type: 'application/octet-stream' });
+    formData.append('file', blob, filename);
+
+    try {
+      const res = await fetch(serviceUrl, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`FastAPI OCR returned HTTP ${res.status}: ${errorText}`);
+      }
+
+      const response = (await res.json()) as { success: boolean; text: string; detail?: string };
+      if (!response.success || !response.text) {
+        throw new Error(`OCR failed: ${response.detail || 'unknown error'}`);
+      }
+
+      return response.text;
+    } catch (e) {
+      this.logger.error(`Failed to call FastAPI OCR service: ${errorMessage(e)}`);
+      throw new Error(`OCR Service Error: ${errorMessage(e)}`);
+    }
   }
 }

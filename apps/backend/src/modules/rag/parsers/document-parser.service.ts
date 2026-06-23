@@ -81,6 +81,9 @@ export class DocumentParserService {
         case 'text/plain':
           text = buffer.toString('utf8');
           break;
+        case 'text/html':
+          text = this.fromHtml(buffer);
+          break;
         case 'application/json':
           text = this.fromJson(buffer);
           break;
@@ -136,6 +139,9 @@ export class DocumentParserService {
         return 'text/markdown';
       case '.txt':
         return 'text/plain';
+      case '.html':
+      case '.htm':
+        return 'text/html';
       case '.json':
         return 'application/json';
       default:
@@ -391,6 +397,17 @@ export class DocumentParserService {
       throw new Error(`Invalid JSON: ${(e as Error).message}`);
     }
 
+    // If it is an OCR JSON result, return the text field directly
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      !Array.isArray(parsed) &&
+      'text' in parsed &&
+      'documentId' in parsed
+    ) {
+      return String((parsed as Record<string, unknown>).text || '');
+    }
+
     // Walk the value tree and produce a list of "path.to.key: value"
     // lines. Objects and arrays are recursed; primitives are formatted
     // as-is. Strings get quoted so trailing/leading whitespace is
@@ -430,5 +447,21 @@ export class DocumentParserService {
     };
     walk(parsed, '');
     return lines.join('\n');
+  }
+
+  private fromHtml(buffer: Buffer): string {
+    const raw = buffer.toString('utf8');
+    // Simple tag stripping to get plain text.
+    // Replace tags with space/newlines so words don't run together.
+    let cleaned = raw
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // remove scripts
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')   // remove styles
+      .replace(/<[^>]+>/g, ' ')                        // remove HTML tags
+      .replace(/&nbsp;/g, ' ')                         // decode basic entities
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"');
+    return cleaned;
   }
 }

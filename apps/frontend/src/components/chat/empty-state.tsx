@@ -1,26 +1,27 @@
 'use client';
 
 import Image from 'next/image';
+import { useCurrentUser } from '../../hooks/use-current-user';
 import { Sparkles, FileText, Scale, BookOpen, FileSignature } from 'lucide-react';
 
 type Suggestion = { icon: 'sparkles' | 'file' | 'scale' | 'book' | 'signature'; text: string };
 
 const SUGGESTIONS: Suggestion[] = [
   {
-    icon: 'sparkles',
-    text: 'Soạn thảo thỏa thuận bảo mật (NDA) cho một startup công nghệ',
-  },
-  {
     icon: 'scale',
-    text: 'Giải thích sự khác biệt giữa trách nhiệm dân sự và trách nhiệm hình sự tại Việt Nam',
+    text: 'Tra cứu pháp luật Việt Nam',
   },
   {
     icon: 'book',
-    text: 'Tóm tắt các điều khoản quan trọng của một hợp đồng lao động điển hình',
+    text: 'Tóm tắt & phân tích hợp đồng',
   },
   {
     icon: 'file',
-    text: 'Tôi cần kiểm tra những gì trước khi ký hợp đồng thuê nhà?',
+    text: 'Hỗ trợ soạn thảo văn bản',
+  },
+  {
+    icon: 'sparkles',
+    text: 'Đánh giá rủi ro tài liệu',
   },
 ];
 
@@ -33,7 +34,9 @@ const ICONS: Record<Suggestion['icon'], React.ComponentType<{ className?: string
 };
 
 export function EmptyState({ onSelect }: { onSelect?: (text: string) => void }) {
+  const { user } = useCurrentUser();
   const greeting = getGreeting();
+  const userName = user?.name ? `, ${user.name}` : '';
   return (
     <div className="flex h-full flex-col items-center justify-center px-4 py-10 text-brand-on-surface">
       {/* Greeting block */}
@@ -54,15 +57,15 @@ export function EmptyState({ onSelect }: { onSelect?: (text: string) => void }) 
           />
         </div>
         <h1 className="font-headline text-2xl font-semibold md:text-3xl">
-          {greeting}!
+          {greeting}{userName}!
         </h1>
         <p className="mt-2 max-w-md text-sm text-brand-on-surface-variant">
-          Tôi là trợ lý pháp lý AI của bạn. Hỏi tôi bất kỳ điều gì về luật pháp, hợp đồng, hay thủ tục pháp lý tại Việt Nam.
+          Tôi có thể giúp gì cho bạn hôm nay?
         </p>
       </div>
 
       {/* Suggestion grid */}
-      <div className="w-full max-w-2xl">
+      {/* <div className="w-full max-w-2xl">
         <p className="mb-3 text-xs font-medium uppercase tracking-wider text-brand-on-surface-variant/70">
           Gợi ý câu hỏi
         </p>
@@ -83,13 +86,12 @@ export function EmptyState({ onSelect }: { onSelect?: (text: string) => void }) 
               </button>
             );
           })}
-        </div>
+        </div> */}
 
         {/* Helper hint */}
-        <p className="mt-6 text-center text-xs text-brand-on-surface-variant/50">
+        {/* <p className="mt-6 text-center text-xs text-brand-on-surface-variant/50">
           Mẹo: nhấn <kbd className="rounded border border-brand-outline-variant/30 bg-white/5 px-1.5 py-0.5 font-mono text-[10px]">Enter</kbd> để gửi, <kbd className="rounded border border-brand-outline-variant/30 bg-white/5 px-1.5 py-0.5 font-mono text-[10px]">Shift + Enter</kbd> để xuống dòng
-        </p>
-      </div>
+        </p> */}
     </div>
   );
 }

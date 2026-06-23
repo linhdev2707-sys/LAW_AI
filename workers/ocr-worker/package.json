@@ -5,7 +5,7 @@
   "description": "Cloudflare Worker that runs OCR on scanned PDFs uploaded to R2",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --remote",
     "deploy": "wrangler deploy",
     "tail": "wrangler tail",
     "type-check": "tsc --noEmit"

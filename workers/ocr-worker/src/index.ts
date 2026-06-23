@@ -29,25 +29,16 @@
 interface Env {
   /** R2 binding (bucket = law-ai-rag-ocr). */
   R2: R2Bucket;
-  /** Workers AI binding. */
-  AI: Ai;
   /** KV namespace tracking which R2 objects have been processed. */
   OCR_STATE: KVNamespace;
   /** Backend callback URL, e.g. https://api.law-ai.example.com/api/v1/admin/rag/documents/ocr-complete */
   BACKEND_CALLBACK_URL: string;
   /** Shared HMAC secret. Set via `wrangler secret put OCR_CALLBACK_SECRET`. */
   OCR_CALLBACK_SECRET: string;
-  /**
-   * OCR.space API key. When set, used as a free-tier fallback when
-   * Workers AI returns 4006 (free-plan daily neuron quota exhausted).
-   * Register a free key at https://ocr.space/ocrapi/freekey — 25k
-   * requests/month, max 1MB / 3 pages per file.
-   */
-  OCRSPACE_API_KEY?: string;
+  /** FastAPI OCR Service URL, e.g., http://127.0.0.1:8000/ocr */
+  OCR_SERVICE_URL?: string;
   /** Logging level. */
   LOG_LEVEL?: 'debug' | 'info' | 'warn' | 'error';
-  /** Model id. Override in wrangler.toml if you need to swap. */
-  OCR_MODEL?: string;
   /** Cap files processed per cron tick. */
   MAX_FILES_PER_TICK?: string;
   /** Sleep between consecutive OCR calls in the same tick (ms). */
@@ -55,23 +46,6 @@ interface Env {
   /** Safety cap on pages per invocation. */
   MAX_PAGES_PER_INVOCATION?: string;
 }
-
-/**
- * Vietnamese OCR prompt. We keep this short but explicit:
- *  - declare the language (the model is multilingual but explicit is
- *    better),
- *  - forbid surrounding commentary so the model returns just the text,
- *  - tell it to preserve paragraph breaks.
- */
-const OCR_PROMPT_VI = [
-  'Bạn là một hệ thống OCR chuyên trích xuất văn bản từ tài liệu PDF tiếng Việt.',
-  'Nhiệm vụ: trích xuất TOÀN BỘ văn bản có trong tài liệu PDF được cung cấp, giữ nguyên thứ tự và cấu trúc đoạn văn.',
-  'Yêu cầu:',
-  '- Giữ nguyên dấu thanh tiếng Việt đầy đủ.',
-  '- Giữ nguyên số điều, số khoản, dấu gạch đầu dòng, tiêu đề đề mục.',
-  '- Phân tách các trang bằng một dòng trống.',
-  '- Chỉ trả về văn bản thuần túy. KHÔNG thêm lời dẫn, KHÔNG thêm giải thích, KHÔNG dùng markdown.',
-].join('\n');
 
 /** How long to keep "processed" markers in KV. R2 lifecycle handles
  *  the actual PDF bytes; KV just needs to remember "seen" long enough
@@ -121,282 +95,35 @@ async function hmacSha256Hex(secret: string, data: string): Promise<string> {
 }
 
 function documentIdFromKey(key: string): string | null {
-  // We accept `ocr-inbox/{uuid}.pdf` and `ocr-inbox/{uuid}.PDF`.
-  const m = key.match(/^ocr-inbox\/([0-9a-fA-F-]{36})\.pdf$/i);
+  // We accept `ocr-inbox/{uuid}.{ext}` for PDF and images.
+  const m = key.match(/^ocr-inbox\/([0-9a-fA-F-]{36})\.(pdf|png|jpg|jpeg|tiff|bmp|gif|webp)$/i);
   return m ? m[1] : null;
 }
 
-function uint8ArrayToBase64(bytes: Uint8Array): string {
-  let binary = '';
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode.apply(
-      null,
-      Array.from(bytes.subarray(i, i + chunk)) as unknown as number[],
-    );
-  }
-  return btoa(binary);
-}
+async function callOcr(env: Env, pdfBytes: Uint8Array, filename: string): Promise<string> {
+  const serviceUrl = env.OCR_SERVICE_URL || 'http://127.0.0.1:8000/ocr';
+  log('info', `Calling external OCR service at ${serviceUrl} for file ${filename}...`);
 
-function extractJpegsFromPdf(pdfBytes: Uint8Array): Uint8Array[] {
-  const jpegs: Uint8Array[] = [];
-  
-  const dctPattern = new TextEncoder().encode('/DCTDecode');
-  const streamPattern = new TextEncoder().encode('stream');
-  const endstreamPattern = new TextEncoder().encode('endstream');
-  
-  function findPattern(arr: Uint8Array, pattern: Uint8Array, start = 0): number {
-    const max = arr.length - pattern.length;
-    for (let i = start; i <= max; i++) {
-      let match = true;
-      for (let j = 0; j < pattern.length; j++) {
-        if (arr[i + j] !== pattern[j]) {
-          match = false;
-          break;
-        }
-      }
-      if (match) return i;
-    }
-    return -1;
-  }
-  
-  let pos = 0;
-  while (true) {
-    const dctIndex = findPattern(pdfBytes, dctPattern, pos);
-    if (dctIndex === -1) break;
-    
-    const streamIndex = findPattern(pdfBytes, streamPattern, dctIndex);
-    if (streamIndex === -1) {
-      pos = dctIndex + 1;
-      continue;
-    }
-    
-    let streamStart = streamIndex + 6;
-    if (pdfBytes[streamStart] === 13) { // \r
-      streamStart++;
-    }
-    if (pdfBytes[streamStart] === 10) { // \n
-      streamStart++;
-    }
-    
-    const endstreamIndex = findPattern(pdfBytes, endstreamPattern, streamStart);
-    if (endstreamIndex === -1) {
-      pos = streamStart;
-      continue;
-    }
-    
-    const streamData = pdfBytes.subarray(streamStart, endstreamIndex);
-    
-    let jpegStart = -1;
-    for (let i = 0; i < streamData.length - 2; i++) {
-      if (streamData[i] === 0xFF && streamData[i+1] === 0xD8 && streamData[i+2] === 0xFF) {
-        jpegStart = i;
-        break;
-      }
-    }
-    
-    let jpegEnd = -1;
-    if (jpegStart !== -1) {
-      for (let i = streamData.length - 2; i >= jpegStart; i--) {
-        if (streamData[i] === 0xFF && streamData[i+1] === 0xD9) {
-          jpegEnd = i + 2;
-          break;
-        }
-      }
-    }
-    
-    if (jpegStart !== -1 && jpegEnd !== -1) {
-      jpegs.push(streamData.subarray(jpegStart, jpegEnd));
-    } else {
-      jpegs.push(streamData);
-    }
-    
-    pos = endstreamIndex + 9;
-  }
-  
-  return jpegs;
-}
+  const form = new FormData();
+  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  form.append('file', blob, filename);
 
-async function callOcr(env: Env, pdfBytes: Uint8Array): Promise<string> {
-  const model = (env.OCR_MODEL as unknown as string) || '@cf/meta/llama-3.2-11b-vision-instruct';
+  const res = await fetch(serviceUrl, {
+    method: 'POST',
+    body: form,
+  });
 
-  const jpegs = extractJpegsFromPdf(pdfBytes);
-
-  /**
-   * Primary path: Workers AI vision model. Throws on quota exhaustion
-   * (4006) so the caller can fall back to OCR.space below.
-   */
-  const runWorkersAi = async (imgBase64: string): Promise<string> => {
-    try {
-      const response: any = await env.AI.run(model as any, {
-        image: [imgBase64],
-        prompt: OCR_PROMPT_VI,
-        max_tokens: 4096,
-      });
-
-      let text: string | undefined;
-      if (typeof response === 'string') {
-        text = response;
-      } else if (response && typeof response === 'object') {
-        text = response.description ?? response.response ?? response.text;
-      }
-      if (!text) {
-        throw new Error('AI returned empty response');
-      }
-      return text.trim();
-    } catch (e: any) {
-      const errMsg = e instanceof Error ? e.message : String(e);
-      if (errMsg.includes("prompt 'agree'") || errMsg.includes('5016') || errMsg.includes('agree')) {
-        log('info', 'Model terms of service not accepted yet. Submitting agreement prompt...', { model });
-        await env.AI.run(model as any, { prompt: 'agree' });
-        log('info', 'Successfully agreed to model terms of service. Retrying page OCR...', { model });
-
-        const response: any = await env.AI.run(model as any, {
-          image: [imgBase64],
-          prompt: OCR_PROMPT_VI,
-          max_tokens: 4096,
-        });
-
-        let text: string | undefined;
-        if (typeof response === 'string') {
-          text = response;
-        } else if (response && typeof response === 'object') {
-          text = response.description ?? response.response ?? response.text;
-        }
-        if (!text) {
-          throw new Error('AI returned empty response on retry');
-        }
-        return text.trim();
-      }
-      throw e;
-    }
-  };
-
-  /**
-   * Detect whether an error from the AI binding is a quota-exhaustion
-   * error (Cloudflare free plan runs out at 10k neurons/day). The error
-   * message contains the literal "4006" and the phrase "daily free
-   * allocation".
-   */
-  const isQuotaExhausted = (e: unknown): boolean => {
-    const msg = e instanceof Error ? e.message : String(e);
-    return msg.includes('4006') && msg.includes('daily free allocation');
-  };
-
-  /**
-   * OCR.space fallback. POSTs the raw PDF bytes as multipart/form-data
-   * to https://api.ocr.space/parse/image. Free tier: 25k req/month,
-   * max 1MB file, max 3 PDF pages. We use engine=2 (best all-round
-   * for printed text) and language=eng; users with Vietnamese-heavy
-   * content can switch to auto via wrangler.toml later.
-   *
-   * The Workers AI failure is caught in the per-page loop below; if a
-   * call throws and isQuotaExhausted, we switch this file over to
-   * OCR.space for the rest of the PDF.
-   */
-  const runOcrSpace = async (): Promise<string> => {
-    if (!env.OCRSPACE_API_KEY) {
-      throw new Error('OCR.space API key not configured (set OCRSPACE_API_KEY secret)');
-    }
-    // Free tier hard cap: 1MB. If the file is larger, OCR.space will
-    // reject it — we surface a clear error so the operator knows to
-    // either upgrade the plan or split the PDF.
-    if (pdfBytes.length > 1024 * 1024) {
-      throw new Error(
-        `PDF size ${pdfBytes.length} bytes exceeds OCR.space free-tier 1MB cap. ` +
-          'Split the PDF or upgrade to PRO PDF.',
-      );
-    }
-    const form = new FormData();
-    form.append('apikey', env.OCRSPACE_API_KEY);
-    form.append('language', 'eng');
-    form.append('OCREngine', '2');
-    form.append('filetype', 'PDF');
-    form.append('isTable', 'true');
-    // BlobPart typing for ArrayBufferView is loose — assert to satisfy TS.
-    form.append('file', new Blob([pdfBytes], { type: 'application/pdf' }), 'document.pdf');
-
-    const res = await fetch('https://api.ocr.space/parse/image', {
-      method: 'POST',
-      body: form,
-    });
-    if (!res.ok) {
-      throw new Error(`OCR.space HTTP ${res.status}`);
-    }
-    const json = (await res.json()) as {
-      OCRExitCode?: number;
-      IsErroredOnProcessing?: boolean;
-      ErrorMessage?: string;
-      ParsedResults?: Array<{ ParsedText?: string }>;
-    };
-    const pages = (json.ParsedResults ?? []).map((p) => p.ParsedText ?? '').filter(Boolean);
-    if (pages.length === 0) {
-      throw new Error(`OCR.space returned no text: ${json.ErrorMessage ?? 'unknown'}`);
-    }
-    // OCR.space exit codes: 1 = full success, 2 = partial success
-    // (e.g. PDF > 3 page free-tier cap), 3 = all failed, 4 = fatal.
-    // We accept 1 and 2: partial text is still useful, and the free-tier
-    // 3-page limit makes "partial" the common case for legal documents.
-    // Only 3+ are treated as failures.
-    if (json.OCRExitCode !== undefined && json.OCRExitCode >= 3) {
-      throw new Error(`OCR.space error: ${json.ErrorMessage ?? 'unknown'}`);
-    }
-    if (json.OCRExitCode === 2) {
-      log(
-        'warn',
-        'OCR.space returned partial result (e.g. PDF exceeds free-tier 3-page cap). ' +
-          'Using the partial text — for full coverage upgrade to PRO PDF or self-host PaddleOCR.',
-        { size: pdfBytes.length, pages: pages.length },
-      );
-    }
-    return pages.join('\n\n');
-  };
-
-  // Stage 1: Workers AI per page.
-  if (jpegs.length === 0) {
-    log('warn', 'No embedded JPEGs found in PDF. Falling back to passing raw PDF bytes.', { model });
-    const rawBase64 = 'data:application/pdf;base64,' + uint8ArrayToBase64(pdfBytes);
-    try {
-      return await runWorkersAi(rawBase64);
-    } catch (e) {
-      if (isQuotaExhausted(e)) {
-        log('warn', 'Workers AI quota exhausted; switching this file to OCR.space fallback', {
-          model,
-          size: pdfBytes.length,
-        });
-        return await runOcrSpace();
-      }
-      throw e;
-    }
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`OCR Service HTTP ${res.status}: ${errorText}`);
   }
 
-  log('info', `Extracted ${jpegs.length} images from PDF. Running OCR page-by-page.`, { model });
-  const results: string[] = [];
-  let switchedToOcrSpace = false;
-  for (let i = 0; i < jpegs.length; i++) {
-    log('info', `Running OCR on page ${i + 1}/${jpegs.length}...`);
-    const imgBase64 = 'data:image/jpeg;base64,' + uint8ArrayToBase64(jpegs[i]);
-    try {
-      const pageText = await runWorkersAi(imgBase64);
-      results.push(pageText);
-    } catch (e) {
-      // Mid-file quota exhaustion → bail out of the per-page loop and
-      // retry the whole PDF via OCR.space. This avoids half-baked output.
-      if (isQuotaExhausted(e)) {
-        log('warn', `Workers AI quota exhausted on page ${i + 1}; switching whole file to OCR.space fallback`, {
-          model,
-          size: pdfBytes.length,
-        });
-        switchedToOcrSpace = true;
-        break;
-      }
-      throw e;
-    }
+  const json = (await res.json()) as { success: boolean; text: string; filename?: string; detail?: string };
+  if (!json.success || !json.text) {
+    throw new Error(`OCR Service failed: ${json.detail || 'unknown error'}`);
   }
-  if (switchedToOcrSpace) {
-    return await runOcrSpace();
-  }
-  return results.join('\n\n');
+
+  return json.text;
 }
 
 async function postCallback(
@@ -450,7 +177,8 @@ async function processObject(env: Env, key: string, size: number): Promise<void>
     const buf = await obj.arrayBuffer();
     const pdfBytes = new Uint8Array(buf);
 
-    const text = await callOcr(env, pdfBytes);
+    const filename = key.split('/').pop() || 'document.pdf';
+    const text = await callOcr(env, pdfBytes, filename);
     if (!text) {
       throw new Error('OCR returned empty text');
     }
@@ -528,12 +256,13 @@ export default {
       return;
     }
 
+    const imageExtensions = ['.pdf', '.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif', '.webp'];
     const candidates = listed.objects
-      .filter((o) => o.key.toLowerCase().endsWith('.pdf'))
+      .filter((o) => imageExtensions.some((ext) => o.key.toLowerCase().endsWith(ext)))
       .slice(0, maxFiles);
 
     if (candidates.length === 0) {
-      log('debug', 'no PDFs in ocr-inbox/', { total: listed.objects.length });
+      log('debug', 'no files to process in ocr-inbox/', { total: listed.objects.length });
       return;
     }
 

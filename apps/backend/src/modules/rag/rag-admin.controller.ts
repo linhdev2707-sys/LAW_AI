@@ -9,12 +9,10 @@ import {
   Logger,
   Param,
   Post,
-  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import type { Response } from 'express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -110,46 +108,20 @@ export class RagAdminController {
     @CurrentUser('sub') userId: string,
     @Body() dto: UploadRagDocumentDto,
     @UploadedFile() file: Express.Multer.File | undefined,
-    @Res({ passthrough: true }) res: Response,
   ) {
     if (!file) {
       throw new BadRequestException('Missing `file` field in multipart form');
     }
     const mimeType = file.mimetype || 'application/octet-stream';
-    try {
-      const result = await this.ragService.ingestBuffer(
-        dto.name,
-        file.buffer,
-        mimeType,
-        file.originalname,
-        dto.bucket,
-        userId,
-      );
-      res.status(HttpStatus.CREATED);
-      return result;
-    } catch (e: unknown) {
-      // If the parser said there's no text layer AND the file is a PDF
-      // (either declared MIME or .pdf extension), push it through the
-      // async OCR pipeline instead of failing the upload. We use a
-      // typed `instanceof` check rather than substring-matching the
-      // error message — the parser's contract is now expressed through
-      // PdfNeedsOcrError, not through a fragile string.
-      if (e instanceof PdfNeedsOcrError && this.isPdf(mimeType, file.originalname)) {
-        this.logger.log(
-          `PDF has no recoverable text layer (hasImages=${e.hasImages}) — ` +
-            `routing to OCR queue: ${file.originalname}`,
-        );
-        const result = await this.ragService.enqueueOcr(
-          dto.name,
-          file.buffer,
-          dto.bucket,
-          userId,
-        );
-        res.status(HttpStatus.ACCEPTED);
-        return result;
-      }
-      throw e;
-    }
+    const result = await this.ragService.ingestBuffer(
+      dto.name,
+      file.buffer,
+      mimeType,
+      file.originalname,
+      dto.bucket,
+      userId,
+    );
+    return result;
   }
 
   /**
@@ -169,12 +141,6 @@ export class RagAdminController {
       chunkCount: doc.chunkCount,
       error: doc.error,
     };
-  }
-
-  private isPdf(mimeType: string, filename?: string): boolean {
-    if (mimeType === 'application/pdf') return true;
-    if (!filename) return false;
-    return extname(filename).toLowerCase() === '.pdf';
   }
 
   @Get('documents/:id')

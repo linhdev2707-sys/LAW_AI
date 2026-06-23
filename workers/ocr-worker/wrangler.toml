@@ -11,12 +11,6 @@ binding = "R2"
 bucket_name = "law-ai-rag-ocr"
 preview_bucket_name = "law-ai-rag-ocr"
 
-# Workers AI binding — used to call @cf/meta/llama-3.2-11b-vision-instruct
-# for OCR. Enable Workers AI on the account (one-click in the Cloudflare
-# dashboard) before deploying.
-[ai]
-binding = "AI"
-
 # KV namespace used to track which R2 objects have already been OCR'd
 # so we don't re-process them on every cron tick. Create it once with:
 #
@@ -56,18 +50,10 @@ crons = ["*/1 * * * *"]
 # BACKEND_CALLBACK_URL = "https://api.law-ai.example.com/api/v1/admin/rag/documents/ocr-complete"
 [vars]
 LOG_LEVEL = "info"
-OCR_MODEL = "@cf/meta/llama-3.2-11b-vision-instruct"
-# Cap how many files we process per cron tick. We keep this low (3)
-# because the Workers AI inference call for a single PDF typically
-# takes 5-15s, and the free plan has a 30s CPU limit per invocation.
-# 3 files per tick leaves headroom for retry-on-error and avoids
-# "Exceeded CPU Limit" warnings we saw when 10 files landed at once.
-# A burst of 10 PDFs just rolls over to the next tick.
+OCR_SERVICE_URL = "http://127.0.0.1:8000/ocr"
+# Cap how many files we process per cron tick.
 MAX_FILES_PER_TICK = 3
-# Delay between consecutive OCR calls in the same tick (ms). Without
-# this, the loop can saturate the Workers AI rate limit and surface
-# as a 429 we have no retry budget for. 1500ms ≈ 40/min, well under
-# the per-model free-tier limit (~300/min).
+# Delay between consecutive OCR calls in the same tick (ms).
 INTER_FILE_DELAY_MS = 1500
 # Cap how many pages we OCR per invocation. Long documents are split by
 # the backend into multiple uploads (one per chunk of pages) — we keep
