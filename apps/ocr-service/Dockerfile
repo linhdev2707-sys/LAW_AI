@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
 
 # Install system dependencies, including Tesseract OCR and Vietnamese language data
 RUN apt-get update && apt-get install -y --no-install-recommends \

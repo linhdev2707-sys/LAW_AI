@@ -111,6 +111,7 @@ services:
     build:
       context: ./apps/ocr-service
       dockerfile: Dockerfile
+      network: host
     container_name: law-ai-ocr
     restart: unless-stopped
     ports:
