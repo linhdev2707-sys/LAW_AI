@@ -61,9 +61,12 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-super-secret-key-change-me-min-32-chars-long-aaaaaa}
       RAG_MIN_COSINE_SCORE: ${RAG_MIN_COSINE_SCORE:-0.35}
       RAG_ALLOWED_BUCKETS: ${RAG_ALLOWED_BUCKETS:-}
+      OCR_SERVICE_URL: http://ocr-service:8000/ocr
     depends_on:
       postgres:
         condition: service_healthy
+      ocr-service:
+        condition: service_started
     networks:
       - law-ai-network
     logging:
@@ -96,6 +99,22 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-super-secret-key-change-me-min-32-chars-long-aaaaaa}
     depends_on:
       - backend
+    networks:
+      - law-ai-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ocr-service:
+    build:
+      context: ./apps/ocr-service
+      dockerfile: Dockerfile
+    container_name: law-ai-ocr
+    restart: unless-stopped
+    ports:
+      - '8000:8000'
     networks:
       - law-ai-network
     logging:
