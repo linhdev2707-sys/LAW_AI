@@ -65,6 +65,7 @@ services:
       RAG_ALLOWED_BUCKETS: ${RAG_ALLOWED_BUCKETS:-}
       OCR_SERVICE_URL: http://ocr-service:8000/ocr
       EMBEDDING_CACHE_DIR: /app/cache/xenova
+      HF_ENDPOINT: https://hf-mirror.com
     depends_on:
       postgres:
         condition: service_healthy
