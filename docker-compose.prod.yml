@@ -44,6 +44,8 @@ services:
     restart: unless-stopped
     ports:
       - '4000:4000'
+    volumes:
+      - model_cache:/app/cache
     env_file:
       - .env
     environment:
@@ -62,6 +64,7 @@ services:
       RAG_MIN_COSINE_SCORE: ${RAG_MIN_COSINE_SCORE:-0.35}
       RAG_ALLOWED_BUCKETS: ${RAG_ALLOWED_BUCKETS:-}
       OCR_SERVICE_URL: http://ocr-service:8000/ocr
+      EMBEDDING_CACHE_DIR: /app/cache/xenova
     depends_on:
       postgres:
         condition: service_healthy
@@ -126,6 +129,7 @@ services:
 
 volumes:
   postgres_data:
+  model_cache:
 
 networks:
   law-ai-network:
