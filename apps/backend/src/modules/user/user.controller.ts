@@ -50,7 +50,7 @@ export class UserController {
   ) {
     // Non-admin users can only update themselves
     if (currentUser.role !== 'admin' && currentUser.sub !== id) {
-      return this.userService.update(id, { 
+      return this.userService.update(id, {
         fullName: dto.fullName,
         password: dto.password,
       });

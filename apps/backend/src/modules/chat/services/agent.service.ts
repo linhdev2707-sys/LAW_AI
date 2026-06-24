@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
-import { RetrieverService, IScoredChunk, IRetrieverFilters } from '../../rag/retrieval/retriever.service';
+import {
+  RetrieverService,
+  IScoredChunk,
+  IRetrieverFilters,
+} from '../../rag/retrieval/retriever.service';
 import { RagService } from '../../rag/rag.service';
 import { LlmService } from '../../llm/llm.service';
 import { PromptBuilder } from '../../llm/prompt.builder';
@@ -77,11 +81,14 @@ export class AgentService {
           type: 'object',
           properties: {
             query: { type: 'string', description: 'Câu truy vấn bằng tiếng Việt' },
-            lawNumber: { type: 'string', description: 'Lọc theo số văn bản, ví dụ "100/2019/QH14"' },
-            lawName:   { type: 'string', description: 'Lọc theo tên văn bản (ILIKE match)' },
-            article:   { type: 'string', description: 'Lọc theo số Điều' },
-            clause:    { type: 'string', description: 'Lọc theo số Khoản' },
-            topK:      { type: 'string', description: 'Số kết quả, mặc định 5' },
+            lawNumber: {
+              type: 'string',
+              description: 'Lọc theo số văn bản, ví dụ "100/2019/QH14"',
+            },
+            lawName: { type: 'string', description: 'Lọc theo tên văn bản (ILIKE match)' },
+            article: { type: 'string', description: 'Lọc theo số Điều' },
+            clause: { type: 'string', description: 'Lọc theo số Khoản' },
+            topK: { type: 'string', description: 'Số kết quả, mặc định 5' },
           },
           required: ['query'],
         },
@@ -97,9 +104,9 @@ export class AgentService {
         parameters: {
           type: 'object',
           properties: {
-            query:     { type: 'string', description: 'Cụm từ khoá cần tìm' },
+            query: { type: 'string', description: 'Cụm từ khoá cần tìm' },
             lawNumber: { type: 'string', description: 'Giới hạn trong một văn bản' },
-            topK:      { type: 'string', description: 'Số kết quả, mặc định 5' },
+            topK: { type: 'string', description: 'Số kết quả, mặc định 5' },
           },
           required: ['query'],
         },
@@ -116,10 +123,10 @@ export class AgentService {
           type: 'object',
           properties: {
             lawNumber: { type: 'string', description: 'Số văn bản, ví dụ "100/2019/QH14"' },
-            lawName:   { type: 'string', description: 'Tên văn bản (nếu không biết số)' },
-            article:   { type: 'string', description: 'Số Điều' },
-            clause:    { type: 'string', description: 'Số Khoản (tuỳ chọn)' },
-            point:     { type: 'string', description: 'Chữ cái Điểm (tuỳ chọn)' },
+            lawName: { type: 'string', description: 'Tên văn bản (nếu không biết số)' },
+            article: { type: 'string', description: 'Số Điều' },
+            clause: { type: 'string', description: 'Số Khoản (tuỳ chọn)' },
+            point: { type: 'string', description: 'Chữ cái Điểm (tuỳ chọn)' },
           },
           required: ['article'],
         },
@@ -135,8 +142,8 @@ export class AgentService {
         parameters: {
           type: 'object',
           properties: {
-            lawNumber:  { type: 'string', description: 'Số văn bản' },
-            lawName:    { type: 'string', description: 'Tên văn bản' },
+            lawNumber: { type: 'string', description: 'Số văn bản' },
+            lawName: { type: 'string', description: 'Tên văn bản' },
             documentId: { type: 'string', description: 'UUID văn bản (nếu đã biết)' },
           },
           required: [],
@@ -153,7 +160,7 @@ export class AgentService {
         parameters: {
           type: 'object',
           properties: {
-            text:      { type: 'string', description: 'Đoạn văn chứa tham chiếu cần mở rộng' },
+            text: { type: 'string', description: 'Đoạn văn chứa tham chiếu cần mở rộng' },
             direction: {
               type: 'string',
               enum: ['forward', 'backward', 'both'],
@@ -168,14 +175,13 @@ export class AgentService {
       type: 'function',
       function: {
         name: AGENT_TOOL_NAMES.COMPARE_ARTICLES,
-        description:
-          'So sánh hai điều luật (thường là cùng số điều giữa hai văn bản sửa đổi).',
+        description: 'So sánh hai điều luật (thường là cùng số điều giữa hai văn bản sửa đổi).',
         parameters: {
           type: 'object',
           properties: {
-            lawA:     { type: 'string', description: 'Tên hoặc số văn bản A' },
+            lawA: { type: 'string', description: 'Tên hoặc số văn bản A' },
             articleA: { type: 'string', description: 'Số Điều A' },
-            lawB:     { type: 'string', description: 'Tên hoặc số văn bản B' },
+            lawB: { type: 'string', description: 'Tên hoặc số văn bản B' },
             articleB: { type: 'string', description: 'Số Điều B' },
           },
           required: ['lawA', 'articleA', 'lawB', 'articleB'],
@@ -193,8 +199,8 @@ export class AgentService {
           type: 'object',
           properties: {
             lawNumber: { type: 'string', description: 'Số văn bản' },
-            lawName:   { type: 'string', description: 'Tên văn bản' },
-            article:   { type: 'string', description: 'Số Điều' },
+            lawName: { type: 'string', description: 'Tên văn bản' },
+            article: { type: 'string', description: 'Số Điều' },
           },
           required: ['article'],
         },
@@ -287,7 +293,13 @@ export class AgentService {
 
         let observation: unknown;
         try {
-          observation = await this.executeTool(toolName, args, userQuery, bucketName, collectedRefs);
+          observation = await this.executeTool(
+            toolName,
+            args,
+            userQuery,
+            bucketName,
+            collectedRefs,
+          );
         } catch (e) {
           this.logger.warn(`[AgentService] tool execution failed: ${(e as Error).message}`);
           observation = { error: (e as Error).message };
@@ -307,7 +319,10 @@ export class AgentService {
       }
     }
 
-    yield { kind: 'delta', text: '\n\n*(Đã đạt giới hạn suy luận — câu trả lời có thể chưa đầy đủ.)*' };
+    yield {
+      kind: 'delta',
+      text: '\n\n*(Đã đạt giới hạn suy luận — câu trả lời có thể chưa đầy đủ.)*',
+    };
     yield { kind: 'sources', sources: collectedRefs };
     yield { kind: 'done', sources: collectedRefs, maxIterationsHit: true };
   }
@@ -379,7 +394,10 @@ export class AgentService {
     return { hits, totalCandidates: hits.length, filtersApplied: filters };
   }
 
-  private async toolGetArticle(args: IGetArticleArgs, collectedRefs: IArticleRef[]): Promise<IGetArticleResult> {
+  private async toolGetArticle(
+    args: IGetArticleArgs,
+    collectedRefs: IArticleRef[],
+  ): Promise<IGetArticleResult> {
     const filters: IRetrieverFilters = {
       ...(args.lawNumber ? { lawNumber: args.lawNumber } : {}),
       ...(args.lawName ? { lawName: args.lawName } : {}),
@@ -398,7 +416,10 @@ export class AgentService {
     return { found: true, article, related };
   }
 
-  private async toolGetDocument(args: IGetDocumentArgs, collectedRefs: IArticleRef[]): Promise<IGetDocumentResult> {
+  private async toolGetDocument(
+    args: IGetDocumentArgs,
+    collectedRefs: IArticleRef[],
+  ): Promise<IGetDocumentResult> {
     const doc = await this.findDocument(args);
     if (!doc) return { found: false, articles: [] };
     const rows = await this.dataSource.query(
@@ -434,7 +455,9 @@ export class AgentService {
     };
   }
 
-  private async toolExpandReferences(args: IExpandReferencesArgs): Promise<IExpandReferencesResult> {
+  private async toolExpandReferences(
+    args: IExpandReferencesArgs,
+  ): Promise<IExpandReferencesResult> {
     const resolved = this.refExtractor.extract(args.text);
     const direction = args.direction ?? 'forward';
     // Backward refs (who references this) require the Knowledge Graph.
@@ -442,9 +465,16 @@ export class AgentService {
     return { text: args.text, direction, resolved, backward: [] };
   }
 
-  private async toolCompare(args: ICompareArticlesArgs, collectedRefs: IArticleRef[]): Promise<ICompareArticlesResult> {
-    const aHit = (await this.retriever.retrieve(`Điều ${args.articleA}`, { lawName: args.lawA }))[0];
-    const bHit = (await this.retriever.retrieve(`Điều ${args.articleB}`, { lawName: args.lawB }))[0];
+  private async toolCompare(
+    args: ICompareArticlesArgs,
+    collectedRefs: IArticleRef[],
+  ): Promise<ICompareArticlesResult> {
+    const aHit = (
+      await this.retriever.retrieve(`Điều ${args.articleA}`, { lawName: args.lawA })
+    )[0];
+    const bHit = (
+      await this.retriever.retrieve(`Điều ${args.articleB}`, { lawName: args.lawB })
+    )[0];
     const a = aHit ? this.toArticleRef(aHit) : null;
     const b = bHit ? this.toArticleRef(bHit) : null;
     if (a) collectedRefs.push(a);
@@ -452,7 +482,9 @@ export class AgentService {
     return { a, b, diff: undefined };
   }
 
-  private async toolEffectiveDate(args: IEffectiveDateCheckArgs): Promise<IEffectiveDateCheckResult> {
+  private async toolEffectiveDate(
+    args: IEffectiveDateCheckArgs,
+  ): Promise<IEffectiveDateCheckResult> {
     const doc = await this.findDocument({ lawNumber: args.lawNumber, lawName: args.lawName });
     if (!doc) {
       return { article: args.article, legalStatus: 'khong_xac_dinh', currentlyEffective: false };
@@ -550,7 +582,11 @@ export class AgentService {
  * a finish_reason (or the stream ends).
  */
 async function collectAssistantTurn(
-  stream: AsyncGenerator<{ content: string; toolCalls?: Array<{ index: number; id?: string; name?: string; arguments?: string }>; finishReason?: string | null }>,
+  stream: AsyncGenerator<{
+    content: string;
+    toolCalls?: Array<{ index: number; id?: string; name?: string; arguments?: string }>;
+    finishReason?: string | null;
+  }>,
   signal: AbortSignal | undefined,
 ): Promise<{ content: string; toolCalls: IToolCall[] }> {
   let content = '';

@@ -41,17 +41,14 @@ export class RagOcrSweeperService {
       .update(RagDocument)
       .set({
         status: RagDocumentStatus.FAILED,
-        error:
-          'OCR worker did not complete within 30 minutes (likely quota exhaustion)',
+        error: 'OCR worker did not complete within 30 minutes (likely quota exhaustion)',
       })
       .where('status = :s', { s: RagDocumentStatus.OCR_PENDING })
       .andWhere('created_at < :c', { c: cutoff })
       .execute();
 
     if (result.affected && result.affected > 0) {
-      this.logger.warn(
-        `Swept ${result.affected} stuck OCR_PENDING document(s) to FAILED`,
-      );
+      this.logger.warn(`Swept ${result.affected} stuck OCR_PENDING document(s) to FAILED`);
     }
   }
 }

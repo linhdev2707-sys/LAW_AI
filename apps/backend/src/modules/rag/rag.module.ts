@@ -16,6 +16,8 @@ import { MetadataEnricherService } from './parsers/metadata-enricher.service';
 import { ReferenceExtractorService } from './parsers/reference-extractor.service';
 import { OcrCallbackGuard } from './guards/ocr-callback.guard';
 import { RagOcrSweeperService } from './rag-ocr-sweeper.service';
+import { KnowledgeImportService } from './knowledge-import.service';
+import { KnowledgeImportSweeper } from './knowledge-import.sweeper';
 import { LlmModule } from '../llm/llm.module';
 
 @Module({
@@ -40,12 +42,15 @@ import { LlmModule } from '../llm/llm.module';
     ReferenceExtractorService,
     OcrCallbackGuard,
     RagOcrSweeperService,
+    KnowledgeImportService,
+    KnowledgeImportSweeper,
   ],
   exports: [
     RagService,
     RetrieverService,
     LegalStructureParser,
     ReferenceExtractorService,
+    KnowledgeImportService,
   ],
 })
 export class RagModule {}

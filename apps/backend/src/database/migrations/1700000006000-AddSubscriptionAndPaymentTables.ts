@@ -6,10 +6,10 @@ export class AddSubscriptionAndPaymentTables1700000006000 implements MigrationIn
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Add columns to users table
     await queryRunner.query(
-      `ALTER TABLE "users" ADD COLUMN "subscription_plan" varchar(50) NOT NULL DEFAULT 'free'`
+      `ALTER TABLE "users" ADD COLUMN "subscription_plan" varchar(50) NOT NULL DEFAULT 'free'`,
     );
     await queryRunner.query(
-      `ALTER TABLE "users" ADD COLUMN "subscription_expires_at" timestamptz DEFAULT NULL`
+      `ALTER TABLE "users" ADD COLUMN "subscription_expires_at" timestamptz DEFAULT NULL`,
     );
 
     // Create transactions table
@@ -33,7 +33,9 @@ export class AddSubscriptionAndPaymentTables1700000006000 implements MigrationIn
     `);
 
     // Create indices
-    await queryRunner.query(`CREATE INDEX "IDX_transactions_user_id" ON "transactions" ("user_id")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_transactions_user_id" ON "transactions" ("user_id")`,
+    );
     await queryRunner.query(`CREATE INDEX "IDX_transactions_code" ON "transactions" ("code")`);
   }
 

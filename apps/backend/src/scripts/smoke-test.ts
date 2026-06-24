@@ -41,7 +41,9 @@ console.log(`  Chương: ${structure.chuongList.length}`);
 for (const c of structure.chuongList) {
   console.log(`    Chương ${c.roman} (${c.title || '(no title)'})`);
   for (const d of c.dieuList) {
-    console.log(`      Điều ${d.number} (${d.title || '(no title)'}) — ${d.khoanList.length} khoản`);
+    console.log(
+      `      Điều ${d.number} (${d.title || '(no title)'}) — ${d.khoanList.length} khoản`,
+    );
   }
   for (const m of c.mucList) {
     console.log(`    Mục ${m.number} (${m.title || '(no title)'})`);
@@ -60,13 +62,16 @@ console.log(`\n── LegalHierarchicalChunker ──`);
 console.log(`  Chunks: ${chunks.length}\n`);
 for (const c of chunks.slice(0, 8)) {
   console.log(`  [${c.chunkIndex}] ${c.breadcrumb}`);
-  console.log(`      law=${c.lawName} chương=${c.chapter ?? '-'} điều=${c.article} khoản=${c.clause ?? '-'} điểm=${c.point ?? '-'}`);
+  console.log(
+    `      law=${c.lawName} chương=${c.chapter ?? '-'} điều=${c.article} khoản=${c.clause ?? '-'} điểm=${c.point ?? '-'}`,
+  );
   console.log(`      tokens=${c.tokenCount} chars=${c.rawText.length}`);
   console.log(`      text: ${c.rawText.slice(0, 80).replace(/\n/g, ' ')}…\n`);
 }
 
 const enricher = new MetadataEnricherService(cfg, undefined);
-enricher.enrich({ documentName: 'Bộ luật Lao động 2019', fullText: text })
+enricher
+  .enrich({ documentName: 'Bộ luật Lao động 2019', fullText: text })
   .then((enrichment) => {
     console.log(`── MetadataEnricher ──`);
     console.log(`  lawName:    ${enrichment.lawName}`);
@@ -82,5 +87,7 @@ const refs = refExtractor.extract(text);
 console.log(`\n── ReferenceExtractor ──`);
 console.log(`  References: ${refs.length}`);
 for (const r of refs.slice(0, 5)) {
-  console.log(`    [${r.charStart}..${r.charEnd}] ${r.raw} → article=${r.article ?? '-'} target=${r.targetLawName ?? '-'}`);
+  console.log(
+    `    [${r.charStart}..${r.charEnd}] ${r.raw} → article=${r.article ?? '-'} target=${r.targetLawName ?? '-'}`,
+  );
 }

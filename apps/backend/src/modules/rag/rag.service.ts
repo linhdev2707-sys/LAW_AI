@@ -5,16 +5,25 @@ import { DataSource, Repository } from 'typeorm';
 import { createHash, randomUUID } from 'crypto';
 import { extname } from 'path';
 import {
-  RagDocument, RagDocumentStatus, RagDocumentType, RagLegalStatus,
+  RagDocument,
+  RagDocumentStatus,
+  RagDocumentType,
+  RagLegalStatus,
 } from './entities/rag-document.entity';
 import { RagChunk } from './entities/rag-chunk.entity';
-import { LegalHierarchicalChunkerService, ILegalChunk } from './chunking/legal-hierarchical-chunker.service';
+import {
+  LegalHierarchicalChunkerService,
+  ILegalChunk,
+} from './chunking/legal-hierarchical-chunker.service';
 import { LegalEmbeddingService } from './embedding/legal-embedding.service';
 import { RetrieverService, IScoredChunk, IRetrieverFilters } from './retrieval/retriever.service';
 import { R2Service } from './storage/r2.service';
 import { DocumentParserService } from './parsers/document-parser.service';
 import { MetadataEnricherService, IEnrichmentResult } from './parsers/metadata-enricher.service';
-import { ReferenceExtractorService, IExtractedReference } from './parsers/reference-extractor.service';
+import {
+  ReferenceExtractorService,
+  IExtractedReference,
+} from './parsers/reference-extractor.service';
 import { LegalStructureParser } from './parsers/legal-structure.parser';
 import { CreateRagDocumentDto } from './dto/create-rag-document.dto';
 import { bulkInsertChunks } from './rag-chunk-insert.helper';
@@ -38,7 +47,7 @@ export class RagService implements OnModuleInit {
 
   constructor(
     @InjectRepository(RagDocument) private readonly docRepo: Repository<RagDocument>,
-    @InjectRepository(RagChunk)    private readonly chunkRepo: Repository<RagChunk>,
+    @InjectRepository(RagChunk) private readonly chunkRepo: Repository<RagChunk>,
     private readonly chunker: LegalHierarchicalChunkerService,
     private readonly embeddings: LegalEmbeddingService,
     private readonly retriever: RetrieverService,
@@ -62,18 +71,25 @@ export class RagService implements OnModuleInit {
   // ─── Public API ─────────────────────────────────────────────────────
 
   ingest(dto: CreateRagDocumentDto, userId: string): Promise<IIngestResult> {
-    return this.runIngest({
-      name: dto.name.trim(),
-      content: dto.content,
-      mimeType: dto.mimeType?.trim() || 'text/plain',
-      bucket: dto.bucket.trim(),
-      sourceUrl: dto.sourceUrl,
-    }, userId);
+    return this.runIngest(
+      {
+        name: dto.name.trim(),
+        content: dto.content,
+        mimeType: dto.mimeType?.trim() || 'text/plain',
+        bucket: dto.bucket.trim(),
+        sourceUrl: dto.sourceUrl,
+      },
+      userId,
+    );
   }
 
   async ingestBuffer(
-    name: string, buffer: Buffer, mimeType: string,
-    filename: string | undefined, bucket: string, userId: string,
+    name: string,
+    buffer: Buffer,
+    mimeType: string,
+    filename: string | undefined,
+    bucket: string,
+    userId: string,
   ): Promise<IIngestResult> {
     const sha256 = createHash('sha256').update(buffer).digest('hex');
     await this.checkManifestDuplicate(bucket, sha256);
@@ -106,12 +122,15 @@ export class RagService implements OnModuleInit {
       content = await this.callFastApiOcr(buffer, ocrFilename);
     }
 
-    const result = await this.runIngest({
-      name: name.trim(),
-      content,
-      mimeType: isOcr ? 'application/json' : resolvedMime,
-      bucket: bucket.trim(),
-    }, userId);
+    const result = await this.runIngest(
+      {
+        name: name.trim(),
+        content,
+        mimeType: isOcr ? 'application/json' : resolvedMime,
+        bucket: bucket.trim(),
+      },
+      userId,
+    );
 
     await this.updateManifest(bucket, sha256, {
       name: name.trim(),
@@ -124,17 +143,26 @@ export class RagService implements OnModuleInit {
   }
 
   async enqueueOcr(
-    name: string, buffer: Buffer, bucket: string, userId: string, filename?: string
+    name: string,
+    buffer: Buffer,
+    bucket: string,
+    userId: string,
+    filename?: string,
   ): Promise<IIngestResult> {
     if (!this.r2.isEnabled()) throw new Error('R2 is required but client is not initialised');
-    const ocrBucket = this.config.get<string>('app.ocr.bucket', '') || process.env.OCR_R2_BUCKET || 'law-ai-rag-ocr';
+    const ocrBucket =
+      this.config.get<string>('app.ocr.bucket', '') ||
+      process.env.OCR_R2_BUCKET ||
+      'law-ai-rag-ocr';
 
     const sha256 = createHash('sha256').update(buffer).digest('hex');
     await this.checkManifestDuplicate(bucket, sha256);
 
     const ext = filename ? extname(filename).toLowerCase() : '.pdf';
     const isImage = ['.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif', '.webp'].includes(ext);
-    const ocrMimeType = isImage ? this.resolveMimeFromBuffer('image/png', filename) : 'application/pdf';
+    const ocrMimeType = isImage
+      ? this.resolveMimeFromBuffer('image/png', filename)
+      : 'application/pdf';
     const r2Key = `ocr-inbox/${randomUUID()}${ext}`;
 
     try {
@@ -142,12 +170,19 @@ export class RagService implements OnModuleInit {
     } catch (e: unknown) {
       throw new Error(`R2 upload failed: ${errorMessage(e)}`);
     }
-    const doc = await this.docRepo.save(this.docRepo.create({
-      name: name.trim(), r2Key, mimeType: ocrMimeType,
-      bucketName: ocrBucket, bucketRegion: 'auto',
-      sizeBytes: buffer.length, chunkCount: 0,
-      status: RagDocumentStatus.OCR_PENDING, createdBy: userId,
-    }));
+    const doc = await this.docRepo.save(
+      this.docRepo.create({
+        name: name.trim(),
+        r2Key,
+        mimeType: ocrMimeType,
+        bucketName: ocrBucket,
+        bucketRegion: 'auto',
+        sizeBytes: buffer.length,
+        chunkCount: 0,
+        status: RagDocumentStatus.OCR_PENDING,
+        createdBy: userId,
+      }),
+    );
 
     await this.updateManifest(bucket, sha256, {
       name: name.trim(),
@@ -163,12 +198,21 @@ export class RagService implements OnModuleInit {
     const doc = await this.docRepo.findOne({ where: { id: documentId } });
     if (!doc) throw new Error(`RagDocument ${documentId} not found`);
     if (doc.status !== RagDocumentStatus.OCR_PENDING) {
-      throw new Error(`RagDocument ${documentId} is in status "${doc.status}", cannot complete OCR`);
+      throw new Error(
+        `RagDocument ${documentId} is in status "${doc.status}", cannot complete OCR`,
+      );
     }
     if (error) {
-      await this.docRepo.update(doc.id, { status: RagDocumentStatus.FAILED, error: error.slice(0, 1000) });
+      await this.docRepo.update(doc.id, {
+        status: RagDocumentStatus.FAILED,
+        error: error.slice(0, 1000),
+      });
       if (this.r2.isEnabled()) {
-        try { await this.r2.deleteObject(doc.bucketName, doc.r2Key); } catch { /* best-effort */ }
+        try {
+          await this.r2.deleteObject(doc.bucketName, doc.r2Key);
+        } catch {
+          /* best-effort */
+        }
       }
       return { id: doc.id, chunkCount: 0, status: RagDocumentStatus.FAILED };
     }
@@ -178,13 +222,21 @@ export class RagService implements OnModuleInit {
     const finalKey = `rag/${randomUUID()}.json`;
     if (this.r2.isEnabled()) {
       try {
-        const jsonContent = JSON.stringify({
-          documentId: doc.id,
-          name: doc.name,
-          text: cleaned,
-        }, null, 2);
+        const jsonContent = JSON.stringify(
+          {
+            documentId: doc.id,
+            name: doc.name,
+            text: cleaned,
+          },
+          null,
+          2,
+        );
         await this.r2.putObject(doc.bucketName, finalKey, jsonContent, 'application/json');
-        try { await this.r2.deleteObject(doc.bucketName, doc.r2Key); } catch { /* best-effort */ }
+        try {
+          await this.r2.deleteObject(doc.bucketName, doc.r2Key);
+        } catch {
+          /* best-effort */
+        }
         await this.docRepo.update(doc.id, { r2Key: finalKey, mimeType: 'application/json' });
       } catch (e: unknown) {
         this.logger.warn(`Failed to save OCR JSON result to ${finalKey}: ${errorMessage(e)}`);
@@ -193,15 +245,22 @@ export class RagService implements OnModuleInit {
     return this.runIngestOnExisting(doc, cleaned);
   }
 
-  listDocuments(): Promise<RagDocument[]> { return this.docRepo.find({ order: { createdAt: 'DESC' } }); }
-  getDocument(id: string): Promise<RagDocument | null> { return this.docRepo.findOne({ where: { id } }); }
+  listDocuments(): Promise<RagDocument[]> {
+    return this.docRepo.find({ order: { createdAt: 'DESC' } });
+  }
+  getDocument(id: string): Promise<RagDocument | null> {
+    return this.docRepo.findOne({ where: { id } });
+  }
 
   async deleteDocument(id: string): Promise<void> {
     const doc = await this.docRepo.findOne({ where: { id } });
     if (!doc) return;
     if (this.r2.isEnabled()) {
-      try { await this.r2.deleteObject(doc.bucketName, doc.r2Key); }
-      catch (e: unknown) { this.logger.warn(`R2 delete failed: ${errorMessage(e)}`); }
+      try {
+        await this.r2.deleteObject(doc.bucketName, doc.r2Key);
+      } catch (e: unknown) {
+        this.logger.warn(`R2 delete failed: ${errorMessage(e)}`);
+      }
     }
     await this.docRepo.delete({ id });
   }
@@ -209,8 +268,12 @@ export class RagService implements OnModuleInit {
   async deleteDocuments(ids: string[]) {
     const results: { id: string; ok: boolean; error?: string }[] = [];
     for (const id of ids) {
-      try { await this.deleteDocument(id); results.push({ id, ok: true }); }
-      catch (e: unknown) { results.push({ id, ok: false, error: errorMessage(e) }); }
+      try {
+        await this.deleteDocument(id);
+        results.push({ id, ok: true });
+      } catch (e: unknown) {
+        results.push({ id, ok: false, error: errorMessage(e) });
+      }
     }
     return results;
   }
@@ -220,7 +283,8 @@ export class RagService implements OnModuleInit {
   }
 
   listActiveBuckets(): Promise<string[]> {
-    return this.docRepo.createQueryBuilder('doc')
+    return this.docRepo
+      .createQueryBuilder('doc')
       .select('DISTINCT doc.bucket_name', 'bucketName')
       .where('doc.status = :status', { status: RagDocumentStatus.READY })
       .getRawMany<{ bucketName: string }>()
@@ -229,7 +293,9 @@ export class RagService implements OnModuleInit {
   listBuckets(): Promise<string[]> {
     return this.r2.isEnabled() ? this.r2.listBuckets() : Promise.resolve([]);
   }
-  createBucket(name: string, region?: string): Promise<void> { return this.r2.createBucket(name, region); }
+  createBucket(name: string, region?: string): Promise<void> {
+    return this.r2.createBucket(name, region);
+  }
 
   // ─── Private: ingest pipeline ───────────────────────────────────────
 
@@ -246,23 +312,38 @@ export class RagService implements OnModuleInit {
 
     let r2Body = content;
     if (isJson) {
-      r2Body = JSON.stringify({
-        documentId: docId,
-        name,
-        text: content,
-      }, null, 2);
+      r2Body = JSON.stringify(
+        {
+          documentId: docId,
+          name,
+          text: content,
+        },
+        null,
+        2,
+      );
     }
 
-    try { await this.r2.putObject(bucket, r2Key, r2Body, mimeType); }
-    catch (e: unknown) { throw new Error(`R2 upload failed: ${errorMessage(e)}`); }
+    try {
+      await this.r2.putObject(bucket, r2Key, r2Body, mimeType);
+    } catch (e: unknown) {
+      throw new Error(`R2 upload failed: ${errorMessage(e)}`);
+    }
 
-    const doc = await this.docRepo.save(this.docRepo.create({
-      id: docId,
-      name, r2Key, mimeType, bucketName: bucket, bucketRegion: 'auto',
-      sizeBytes: Buffer.byteLength(r2Body, 'utf8'),
-      chunkCount: 0, status: RagDocumentStatus.PENDING, createdBy: userId,
-      sourceUrl: sourceUrl ?? null,
-    }));
+    const doc = await this.docRepo.save(
+      this.docRepo.create({
+        id: docId,
+        name,
+        r2Key,
+        mimeType,
+        bucketName: bucket,
+        bucketRegion: 'auto',
+        sizeBytes: Buffer.byteLength(r2Body, 'utf8'),
+        chunkCount: 0,
+        status: RagDocumentStatus.PENDING,
+        createdBy: userId,
+        sourceUrl: sourceUrl ?? null,
+      }),
+    );
     return this.runIngestOnExisting(doc, content);
   }
 
@@ -274,7 +355,9 @@ export class RagService implements OnModuleInit {
       // 2) Extract references + enrich metadata (parallel)
       const refs = this.refExtractor.extract(content);
       const enrichment = await this.enricher.enrich({
-        documentName: doc.name, fullText: content, sourceUrl: doc.sourceUrl,
+        documentName: doc.name,
+        fullText: content,
+        sourceUrl: doc.sourceUrl,
       });
 
       // 3) Persist legal metadata on the document
@@ -294,37 +377,44 @@ export class RagService implements OnModuleInit {
       if (chunks.length === 0) throw new Error('Chunker produced zero chunks (empty content?)');
 
       // 5) Stamp chunk ids + document id
-      for (const c of chunks) { c.documentId = doc.id; }
+      for (const c of chunks) {
+        c.documentId = doc.id;
+      }
 
       // 6) Status: embedding
       await this.docRepo.update(doc.id, { status: RagDocumentStatus.EMBEDDING });
 
       const vectors = await this.embeddings.embedChunks(chunks);
       if (vectors.length !== chunks.length) {
-        throw new Error(`Embedding count mismatch: got ${vectors.length} for ${chunks.length} chunks`);
+        throw new Error(
+          `Embedding count mismatch: got ${vectors.length} for ${chunks.length} chunks`,
+        );
       }
 
       // 7) Persist chunks + finalize document status
       await this.dataSource.transaction(async (em) => {
         const docRepo = em.getRepository(RagDocument);
-        await bulkInsertChunks(this.dataSource, chunks.map((c, idx) => ({
-          documentId: doc.id,
-          chunkIndex: c.chunkIndex,
-          content: c.content,
-          rawText: c.rawText,
-          tokenCount: c.tokenCount,
-          breadcrumb: c.breadcrumb,
-          lawName: c.lawName,
-          lawNumber: c.lawNumber ?? null,
-          chapter: c.chapter ?? null,
-          section: c.section ?? null,
-          article: c.article,
-          clause: c.clause ?? null,
-          point: c.point ?? null,
-          charStart: c.charStart,
-          charEnd: c.charEnd,
-          embeddingVec: vectors[idx]!,
-        })));
+        await bulkInsertChunks(
+          this.dataSource,
+          chunks.map((c, idx) => ({
+            documentId: doc.id,
+            chunkIndex: c.chunkIndex,
+            content: c.content,
+            rawText: c.rawText,
+            tokenCount: c.tokenCount,
+            breadcrumb: c.breadcrumb,
+            lawName: c.lawName,
+            lawNumber: c.lawNumber ?? null,
+            chapter: c.chapter ?? null,
+            section: c.section ?? null,
+            article: c.article,
+            clause: c.clause ?? null,
+            point: c.point ?? null,
+            charStart: c.charStart,
+            charEnd: c.charEnd,
+            embeddingVec: vectors[idx]!,
+          })),
+        );
         await docRepo.update(doc.id, {
           status: RagDocumentStatus.READY,
           chunkCount: chunks.length,
@@ -334,17 +424,21 @@ export class RagService implements OnModuleInit {
 
       this.logger.log(
         `Ingested doc ${doc.id} (name="${doc.name}", law="${enrichment.lawName ?? '?'}", ` +
-        `chunks=${chunks.length}, refs=${refs.length})`,
+          `chunks=${chunks.length}, refs=${refs.length})`,
       );
 
       return {
-        id: doc.id, chunkCount: chunks.length, status: RagDocumentStatus.READY,
-        lawName: enrichment.lawName, lawNumber: enrichment.lawNumber,
+        id: doc.id,
+        chunkCount: chunks.length,
+        status: RagDocumentStatus.READY,
+        lawName: enrichment.lawName,
+        lawNumber: enrichment.lawNumber,
       };
     } catch (e: unknown) {
       this.logger.error(`Ingest failed for ${doc.id}: ${errorMessage(e)}`);
       await this.docRepo.update(doc.id, {
-        status: RagDocumentStatus.FAILED, error: errorMessage(e).slice(0, 1000),
+        status: RagDocumentStatus.FAILED,
+        error: errorMessage(e).slice(0, 1000),
       });
       throw e;
     }
@@ -371,7 +465,8 @@ export class RagService implements OnModuleInit {
     if (!filename) return 'text/plain';
     const ext = filename.slice(filename.lastIndexOf('.')).toLowerCase();
     if (ext === '.pdf') return 'application/pdf';
-    if (ext === '.docx') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    if (ext === '.docx')
+      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     if (ext === '.doc') return 'application/msword';
     if (ext === '.md' || ext === '.markdown') return 'text/markdown';
     if (ext === '.html' || ext === '.htm') return 'text/html';
@@ -391,7 +486,7 @@ export class RagService implements OnModuleInit {
       const manifest = JSON.parse(manifestText);
       if (manifest && manifest[sha256]) {
         throw new ConflictException(
-          `Document content already exists in VectorDB (manifest hash match: ${sha256})`
+          `Document content already exists in VectorDB (manifest hash match: ${sha256})`,
         );
       }
     } catch (e) {
@@ -414,14 +509,22 @@ export class RagService implements OnModuleInit {
     }
     manifest[sha256] = data;
     try {
-      await this.r2.putObject(bucket, 'manifest.json', JSON.stringify(manifest, null, 2), 'application/json');
+      await this.r2.putObject(
+        bucket,
+        'manifest.json',
+        JSON.stringify(manifest, null, 2),
+        'application/json',
+      );
     } catch (e) {
       this.logger.error(`Failed to update manifest.json in bucket ${bucket}: ${errorMessage(e)}`);
     }
   }
 
   private async callFastApiOcr(buffer: Buffer, filename: string): Promise<string> {
-    const serviceUrl = this.config.get<string>('app.ocr.serviceUrl', '') || process.env.OCR_SERVICE_URL || 'http://127.0.0.1:8000/ocr';
+    const serviceUrl =
+      this.config.get<string>('app.ocr.serviceUrl', '') ||
+      process.env.OCR_SERVICE_URL ||
+      'http://127.0.0.1:8000/ocr';
 
     const formData = new FormData();
     const blob = new Blob([buffer], { type: 'application/octet-stream' });

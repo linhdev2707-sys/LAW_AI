@@ -27,7 +27,7 @@ import { ConfigService } from '@nestjs/config';
 export class KgService implements OnModuleInit {
   private readonly logger = new Logger(KgService.name);
   private enabled = false;
-  private driver: unknown = null;     // typed as `any` once neo4j-driver is installed
+  private driver: unknown = null; // typed as `any` once neo4j-driver is installed
 
   constructor(private readonly config: ConfigService) {}
 
@@ -48,12 +48,16 @@ export class KgService implements OnModuleInit {
       this.enabled = true;
       this.logger.log(`Knowledge Graph: CONNECTED to ${uri}`);
     } catch (e) {
-      this.logger.warn(`Failed to init Neo4j driver (${(e as Error).message}); staying in stub mode`);
+      this.logger.warn(
+        `Failed to init Neo4j driver (${(e as Error).message}); staying in stub mode`,
+      );
       this.enabled = false;
     }
   }
 
-  isEnabled(): boolean { return this.enabled; }
+  isEnabled(): boolean {
+    return this.enabled;
+  }
 
   // ─── STUB: sync a single document's legal tree into the graph ────────
 

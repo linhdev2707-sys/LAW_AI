@@ -21,12 +21,7 @@ import { DocumentLookupService } from './services/document-lookup.service';
     PaymentModule,
   ],
   controllers: [ChatController],
-  providers: [
-    ChatService,
-    AgentService,
-    ArticleRegexService,
-    DocumentLookupService,
-  ],
+  providers: [ChatService, AgentService, ArticleRegexService, DocumentLookupService],
   exports: [ChatService],
 })
 export class ChatModule {}

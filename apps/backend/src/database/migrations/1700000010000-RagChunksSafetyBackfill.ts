@@ -22,16 +22,14 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * placeholder) for every NULL row, then enforces NOT NULL where the
  * entity requires it. It can be applied safely to any schema state.
  */
-export class RagChunksSafetyBackfill1700000010000
- implements MigrationInterface
-{
- name = 'RagChunksSafetyBackfill1700000010000';
+export class RagChunksSafetyBackfill1700000010000 implements MigrationInterface {
+  name = 'RagChunksSafetyBackfill1700000010000';
 
- public async up(q: QueryRunner): Promise<void> {
- // ── 1) Ensure all Phase-1 columns exist. All ADD COLUMN statements
- // use IF NOT EXISTS so this migration is a no-op on a clean DB
- // that already ran migration 700 end-to-end.
- await q.query(`
+  public async up(q: QueryRunner): Promise<void> {
+    // ── 1) Ensure all Phase-1 columns exist. All ADD COLUMN statements
+    // use IF NOT EXISTS so this migration is a no-op on a clean DB
+    // that already ran migration 700 end-to-end.
+    await q.query(`
  ALTER TABLE "rag_chunks"
  ADD COLUMN IF NOT EXISTS "raw_text" text,
  ADD COLUMN IF NOT EXISTS "breadcrumb" text,
@@ -46,24 +44,24 @@ export class RagChunksSafetyBackfill1700000010000
  ADD COLUMN IF NOT EXISTS "char_end" integer
  `);
 
- // ── 2) Backfill existing rows so the upcoming NOT NULL is satisfiable.
- // `raw_text` and `breadcrumb` are the only NOT-NULL columns in
- // the entity; the rest are nullable and need no backfill.
- await q.query(`
+    // ── 2) Backfill existing rows so the upcoming NOT NULL is satisfiable.
+    // `raw_text` and `breadcrumb` are the only NOT-NULL columns in
+    // the entity; the rest are nullable and need no backfill.
+    await q.query(`
  UPDATE "rag_chunks"
  SET "raw_text" = COALESCE("raw_text", "content", '')
  WHERE "raw_text" IS NULL
  `);
- await q.query(`
+    await q.query(`
  UPDATE "rag_chunks"
  SET "breadcrumb" = COALESCE("breadcrumb", '')
  WHERE "breadcrumb" IS NULL
  `);
 
- // ── 3) Enforce NOT NULL where the entity requires it. We use a
- // DO block so a partial apply (NOT NULL already in place) does
- // not abort the rest of the migration.
- await q.query(`
+    // ── 3) Enforce NOT NULL where the entity requires it. We use a
+    // DO block so a partial apply (NOT NULL already in place) does
+    // not abort the rest of the migration.
+    await q.query(`
  DO $$
  BEGIN
  IF EXISTS (
@@ -78,7 +76,7 @@ export class RagChunksSafetyBackfill1700000010000
  END$$;
  `);
 
- await q.query(`
+    await q.query(`
  DO $$
  BEGIN
  IF EXISTS (
@@ -93,7 +91,7 @@ export class RagChunksSafetyBackfill1700000010000
  END$$;
  `);
 
- await q.query(`
+    await q.query(`
  DO $$
  BEGIN
  IF EXISTS (
@@ -113,11 +111,11 @@ export class RagChunksSafetyBackfill1700000010000
  END$$;
  `);
 
- // ── 4) Make sure the UNIQUE constraint that bulkInsertChunks()
- // relies on (`ON CONFLICT (document_id, chunk_index)`) exists.
- // Migration 800 normally creates it; this is the safety net for
- // any DB where 800 didn't run or was rolled back.
- await q.query(`
+    // ── 4) Make sure the UNIQUE constraint that bulkInsertChunks()
+    // relies on (`ON CONFLICT (document_id, chunk_index)`) exists.
+    // Migration 800 normally creates it; this is the safety net for
+    // any DB where 800 didn't run or was rolled back.
+    await q.query(`
  DO $$
  BEGIN
  IF NOT EXISTS (
@@ -130,21 +128,21 @@ export class RagChunksSafetyBackfill1700000010000
  END IF;
  END$$;
  `);
- }
+  }
 
- public async down(q: QueryRunner): Promise<void> {
- // Drop the unique constraint we may have added.
- await q.query(`
+  public async down(q: QueryRunner): Promise<void> {
+    // Drop the unique constraint we may have added.
+    await q.query(`
  ALTER TABLE "rag_chunks"
  DROP CONSTRAINT IF EXISTS "UQ_rag_chunks_doc_chunk_index"
  `);
 
- // Re-open the columns so rolling back is symmetric with migration 700.
- await q.query(`
+    // Re-open the columns so rolling back is symmetric with migration 700.
+    await q.query(`
  ALTER TABLE "rag_chunks"
  ALTER COLUMN "article" DROP NOT NULL,
  ALTER COLUMN "breadcrumb" DROP NOT NULL,
  ALTER COLUMN "raw_text" DROP NOT NULL
  `);
- }
+  }
 }

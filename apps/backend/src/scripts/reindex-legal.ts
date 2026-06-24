@@ -93,7 +93,9 @@ async function main() {
   const embedder = new LegalEmbeddingService(cfg);
   await embedder.onModuleInit();
 
-  let ok = 0, fail = 0, skipped = 0;
+  let ok = 0,
+    fail = 0,
+    skipped = 0;
 
   for (const doc of docs) {
     try {
@@ -125,8 +127,8 @@ async function main() {
       if (dryRun) {
         console.log(
           `  · ${doc.id} (${doc.name}): would reindex → ${newChunks.length} chunks ` +
-          `(${refs.length} refs, law="${enrichment.lawName ?? '?'}", ` +
-          `number=${enrichment.lawNumber ?? '-'})`,
+            `(${refs.length} refs, law="${enrichment.lawName ?? '?'}", ` +
+            `number=${enrichment.lawNumber ?? '-'})`,
         );
         ok++;
         continue;
@@ -134,29 +136,34 @@ async function main() {
 
       const vectors = await embedder.embedChunks(newChunks);
       if (vectors.length !== newChunks.length) {
-        throw new Error(`vector count mismatch: got ${vectors.length} for ${newChunks.length} chunks`);
+        throw new Error(
+          `vector count mismatch: got ${vectors.length} for ${newChunks.length} chunks`,
+        );
       }
 
       await ds.transaction(async (em) => {
         await em.query('DELETE FROM rag_chunks WHERE document_id = $1', [doc.id]);
-        await bulkInsertChunks(ds, newChunks.map((c, i) => ({
-          documentId: doc.id,
-          chunkIndex: c.chunkIndex,
-          content: c.content,
-          rawText: c.rawText,
-          tokenCount: c.tokenCount,
-          breadcrumb: c.breadcrumb,
-          lawName: c.lawName,
-          lawNumber: c.lawNumber ?? null,
-          chapter: c.chapter ?? null,
-          section: c.section ?? null,
-          article: c.article,
-          clause: c.clause ?? null,
-          point: c.point ?? null,
-          charStart: c.charStart,
-          charEnd: c.charEnd,
-          embeddingVec: vectors[i]!,
-        })));
+        await bulkInsertChunks(
+          ds,
+          newChunks.map((c, i) => ({
+            documentId: doc.id,
+            chunkIndex: c.chunkIndex,
+            content: c.content,
+            rawText: c.rawText,
+            tokenCount: c.tokenCount,
+            breadcrumb: c.breadcrumb,
+            lawName: c.lawName,
+            lawNumber: c.lawNumber ?? null,
+            chapter: c.chapter ?? null,
+            section: c.section ?? null,
+            article: c.article,
+            clause: c.clause ?? null,
+            point: c.point ?? null,
+            charStart: c.charStart,
+            charEnd: c.charEnd,
+            embeddingVec: vectors[i]!,
+          })),
+        );
         await em.getRepository(RagDocument).update(doc.id, {
           documentType: enrichment.documentType,
           lawName: enrichment.lawName,

@@ -127,9 +127,7 @@ export class R2Service implements OnModuleInit {
    */
   async getObjectBuffer(bucket: string, key: string): Promise<Buffer> {
     this.assertReady();
-    const res = await this.client!.send(
-      new GetObjectCommand({ Bucket: bucket, Key: key }),
-    );
+    const res = await this.client!.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
     if (!res.Body) throw new Error(`R2 GetObject returned empty body: ${bucket}/${key}`);
     // The SDK returns a web stream on Node 18+; collect into a Buffer.
     const stream = res.Body as unknown as AsyncIterable<Uint8Array>;

@@ -41,12 +41,12 @@ export class MetadataEnricherService {
     re: RegExp;
     issuer?: string;
   }> = [
-    { type: RagDocumentType.LUAT,         re: /Bộ\s+luật|Luật\s+/ },
-    { type: RagDocumentType.NGHIDINH,     re: /Nghị\s+định\s+(\d+\/\d+\/NĐ-CP)/, issuer: 'Chính phủ' },
-    { type: RagDocumentType.THONGTU,      re: /Thông\s+tư\s+(\d+\/\d+\/TT-)/, issuer: 'Bộ' },
-    { type: RagDocumentType.QUYETDINH,    re: /Quyết\s+định\s+(\d+\/QĐ-)/, issuer: 'Thủ tướng' },
-    { type: RagDocumentType.NGHIPHAP,     re: /Nghị\s+quyết\s+(\d+\/\d+\/QH)/, issuer: 'Quốc hội' },
-    { type: RagDocumentType.PHAPLENH,     re: /Pháp\s+lệnh\s+(\d+\/\d+\/UBTVQH)/, issuer: 'UBTVQH' },
+    { type: RagDocumentType.LUAT, re: /Bộ\s+luật|Luật\s+/ },
+    { type: RagDocumentType.NGHIDINH, re: /Nghị\s+định\s+(\d+\/\d+\/NĐ-CP)/, issuer: 'Chính phủ' },
+    { type: RagDocumentType.THONGTU, re: /Thông\s+tư\s+(\d+\/\d+\/TT-)/, issuer: 'Bộ' },
+    { type: RagDocumentType.QUYETDINH, re: /Quyết\s+định\s+(\d+\/QĐ-)/, issuer: 'Thủ tướng' },
+    { type: RagDocumentType.NGHIPHAP, re: /Nghị\s+quyết\s+(\d+\/\d+\/QH)/, issuer: 'Quốc hội' },
+    { type: RagDocumentType.PHAPLENH, re: /Pháp\s+lệnh\s+(\d+\/\d+\/UBTVQH)/, issuer: 'UBTVQH' },
   ];
 
   private readonly NUMBER_RE = /Số[:\s]+([0-9]+\/[0-9]+\/[A-ZĐ0-9-]+)/i;
@@ -60,7 +60,8 @@ export class MetadataEnricherService {
    *     and other trailing clauses
    * The `+` is non-greedy so we stop at the first terminator.
    */
-  private readonly LAW_NAME_RE = /(Bộ\s+luật|Luật|Nghị\s+định|Thông\s+tư|Quyết\s+định|Nghị\s+quyết|Pháp\s+lệnh)\s+([^\n.;:]{3,200}?)(?=\s+(?:năm|số|về|ngày|;|:|$))/i;
+  private readonly LAW_NAME_RE =
+    /(Bộ\s+luật|Luật|Nghị\s+định|Thông\s+tư|Quyết\s+định|Nghị\s+quyết|Pháp\s+lệnh)\s+([^\n.;:]{3,200}?)(?=\s+(?:năm|số|về|ngày|;|:|$))/i;
 
   private readonly DATE_RE =
     /(ngày\s+)?(\d{1,2})\s*(tháng\s+(\d{1,2})\s*)?(năm\s+(\d{4}))?|(\d{1,2}\/\d{1,2}\/\d{4})/gi;
@@ -122,7 +123,10 @@ export class MetadataEnricherService {
 
     const nameMatch = text.match(this.LAW_NAME_RE);
     const lawName = nameMatch
-      ? `${nameMatch[1]?.trim()} ${nameMatch[2]?.trim()}`.replace(/\s+/g, ' ').trim().replace(/[;:,]+$/, '')
+      ? `${nameMatch[1]?.trim()} ${nameMatch[2]?.trim()}`
+          .replace(/\s+/g, ' ')
+          .trim()
+          .replace(/[;:,]+$/, '')
       : null;
 
     const header = text.slice(0, 1500);
@@ -138,7 +142,8 @@ export class MetadataEnricherService {
     if (/hết\s+hiệu\s+lực\s+toàn\s+bộ/.test(text)) legalStatus = RagLegalStatus.HET_HIEU_LUC;
     else if (/hết\s+hiệu\s+lực\s+một\s+phần|hết\s+hiệu\s+lực\s+.*\s+Điều/.test(text))
       legalStatus = RagLegalStatus.HET_HIEU_LUC_MOT_PHAN;
-    else if (effectiveDate && effectiveDate > new Date()) legalStatus = RagLegalStatus.CHUA_CO_HIEU_LUC;
+    else if (effectiveDate && effectiveDate > new Date())
+      legalStatus = RagLegalStatus.CHUA_CO_HIEU_LUC;
     else if (expiryDate && expiryDate < new Date()) legalStatus = RagLegalStatus.HET_HIEU_LUC;
     else if (effectiveDate) legalStatus = RagLegalStatus.CON_HIEU_LUC;
 
@@ -158,7 +163,11 @@ export class MetadataEnricherService {
     };
   }
 
-  private scoreConfidence(lawName: string | null, lawNumber: string | null, effectiveDate: Date | null): number {
+  private scoreConfidence(
+    lawName: string | null,
+    lawNumber: string | null,
+    effectiveDate: Date | null,
+  ): number {
     let score = 0;
     if (lawName) score += 0.4;
     if (lawNumber) score += 0.4;
@@ -208,7 +217,9 @@ Hãy bổ sung các trường còn thiếu hoặc sai. Trả về JSON đúng sc
       lawNumber: (parsed.lawNumber as string) ?? seed.lawNumber,
       issuer: (parsed.issuer as string) ?? seed.issuer,
       issuedDate: parsed.issuedDate ? this.parseDate(String(parsed.issuedDate)) : seed.issuedDate,
-      effectiveDate: parsed.effectiveDate ? this.parseDate(String(parsed.effectiveDate)) : seed.effectiveDate,
+      effectiveDate: parsed.effectiveDate
+        ? this.parseDate(String(parsed.effectiveDate))
+        : seed.effectiveDate,
       expiryDate: parsed.expiryDate ? this.parseDate(String(parsed.expiryDate)) : seed.expiryDate,
       legalStatus: (parsed.legalStatus as RagLegalStatus) ?? seed.legalStatus,
     };

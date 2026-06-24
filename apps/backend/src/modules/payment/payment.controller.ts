@@ -27,10 +27,7 @@ export class PaymentController {
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
-  checkout(
-    @CurrentUser('sub') userId: string,
-    @Body() dto: { planId: string },
-  ) {
+  checkout(@CurrentUser('sub') userId: string, @Body() dto: { planId: string }) {
     return this.paymentService.checkout(userId, dto.planId);
   }
 
@@ -38,19 +35,13 @@ export class PaymentController {
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  getStatus(
-    @CurrentUser('sub') userId: string,
-    @Param('code') code: string,
-  ) {
+  getStatus(@CurrentUser('sub') userId: string, @Param('code') code: string) {
     return this.paymentService.getStatus(userId, code);
   }
 
   @Post('casso-webhook')
   @HttpCode(HttpStatus.OK)
-  async cassoWebhook(
-    @Headers('secure-token') secureToken: string,
-    @Body() body: any,
-  ) {
+  async cassoWebhook(@Headers('secure-token') secureToken: string, @Body() body: any) {
     return this.paymentService.handleCassoWebhook(secureToken, body);
   }
 

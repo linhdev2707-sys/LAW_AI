@@ -48,10 +48,10 @@ export class LegalMetadataPgVector1700000007000 implements MigrationInterface {
       // eslint-disable-next-line no-console
       console.warn(
         '[LegalMetadataPgVector] pgvector extension not available — ' +
-        'skipping embedding_vec column + HNSW index. RAG will use the ' +
-        'legacy JSON `embedding` TEXT column with in-memory cosine. ' +
-        'To enable pgvector, switch to the `pgvector/pgvector:pg16-alpine` ' +
-        'image and re-run this migration.',
+          'skipping embedding_vec column + HNSW index. RAG will use the ' +
+          'legacy JSON `embedding` TEXT column with in-memory cosine. ' +
+          'To enable pgvector, switch to the `pgvector/pgvector:pg16-alpine` ' +
+          'image and re-run this migration.',
       );
       hasVector = false;
     }

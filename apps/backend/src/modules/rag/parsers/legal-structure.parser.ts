@@ -94,15 +94,13 @@ export class LegalStructureParser {
    * Điều 1. Tiêu đề …   (period is OPTIONAL — many OCRs drop it)
    * Also matches "Điều 1 Tiêu đề" (space) and "Điều 1:" (colon).
    */
-  private readonly DIEU_RE =
-    /^[ \t]*Điều[ \t]+(\d+)[ \t]*[.:]?[ \t]*([^\n]*)$/gim;
+  private readonly DIEU_RE = /^[ \t]*Điều[ \t]+(\d+)[ \t]*[.:]?[ \t]*([^\n]*)$/gim;
 
   /**
    * Khoản 1. nội dung…   (period OPTIONAL)
    * Also tolerate "Khoản 1)" and "Khoản 1:".
    */
-  private readonly KHOAN_RE =
-    /^[ \t]*Khoản[ \t]+(\d+)[ \t]*[.):]?[ \t]?/gim;
+  private readonly KHOAN_RE = /^[ \t]*Khoản[ \t]+(\d+)[ \t]*[.):]?[ \t]?/gim;
 
   /**
    * Điểm a) nội dung …
@@ -133,7 +131,9 @@ export class LegalStructureParser {
    * Return all articles in document order, regardless of nesting.
    * Useful for chunkers that just want a flat list of (article, raw text).
    */
-  flattenArticles(structure: ILegalStructure): Array<IDieu & { chuongRoman?: string; mucNumber?: string }> {
+  flattenArticles(
+    structure: ILegalStructure,
+  ): Array<IDieu & { chuongRoman?: string; mucNumber?: string }> {
     const out: Array<IDieu & { chuongRoman?: string; mucNumber?: string }> = [];
     for (const d of structure.preambleDieuList) {
       out.push({ ...d });
@@ -348,7 +348,13 @@ export class LegalStructureParser {
 
   private romanToInt(roman: string): number {
     const map: Record<string, number> = {
-      I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000,
+      I: 1,
+      V: 5,
+      X: 10,
+      L: 50,
+      C: 100,
+      D: 500,
+      M: 1000,
     };
     let total = 0;
     let prev = 0;
