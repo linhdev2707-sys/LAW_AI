@@ -29,8 +29,8 @@ export const AppDataSource = new DataSource({
   // TypeORM's DirectoryExportedClassesLoader on Windows does not understand
   // brace expansion and fails with "The system cannot find the path specified".
   migrations: [
-    resolve(__dirname, 'database/migrations/*-*.ts'),
-    resolve(__dirname, 'database/migrations/*-*.js'),
+    resolve(__dirname, 'database/migrations/[0-9]*-*.ts'),
+    resolve(__dirname, 'database/migrations/[0-9]*-*.js'),
   ],
   synchronize: false,
   logging: ['error', 'warn'],
