@@ -55,7 +55,7 @@ export default registerAs('app', () => ({
   // LegalEmbeddingService picks this up. Default = local Xenova bge-m3.
   // Set backend=cloudflare to use Workers AI (no model download).
   embedding: {
-    backend: process.env.EMBEDDING_BACKEND || 'local',     // 'local' | 'cloudflare'
+    backend: process.env.EMBEDDING_BACKEND || 'local', // 'local' | 'cloudflare'
     model: process.env.EMBEDDING_MODEL || 'Xenova/bge-m3',
     dim: intEnv('EMBEDDING_DIM', 1024),
     /** BGE-* (non-M3) recommends "Represent this sentence for searching
@@ -70,7 +70,7 @@ export default registerAs('app', () => ({
   // on first boot; flip RERANKER_ENABLED=true to turn on.
   reranker: {
     enabled: process.env.RERANKER_ENABLED === 'true',
-    backend: process.env.RERANKER_BACKEND || 'local',     // 'local' | 'cohere'
+    backend: process.env.RERANKER_BACKEND || 'local', // 'local' | 'cohere'
     model: process.env.RERANKER_MODEL || 'Xenova/bge-reranker-v2-m3',
     maxLength: intEnv('RERANKER_MAX_LENGTH', 512),
   },
@@ -137,7 +137,7 @@ export default registerAs('app', () => ({
     // threshold. BGE-M3 multilingual vectors typically sit in [-0.2, 0.9];
     // 0.30 is a reasonable floor for "loosely related" content. Set to 0
     // to disable.
-    minCosineScore: floatEnv('RAG_MIN_COSINE_SCORE', 0.30),
+    minCosineScore: floatEnv('RAG_MIN_COSINE_SCORE', 0.3),
     // Optional whitelist of bucket names the retriever is allowed to
     // search. Empty array = no filter (backward compatible). Used to
     // prevent chat from pulling chunks from corpora that were ingested
@@ -165,6 +165,24 @@ export default registerAs('app', () => ({
     accountNo: process.env.ACCOUNT_NO || '19039988776601',
     accountName: process.env.ACCOUNT_NAME || 'CONG TY CONG NGHE iLaw',
     template: process.env.VIETQR_TEMPLATE || 'qr_only',
+  },
+
+  // ─── Knowledge import (bulk + cron) ────────────────────────────────
+  // Walks `<dir>/<category>/<docId>/v1.json` files (one per legal doc)
+  // and ingests them into the RAG pipeline. Used by:
+  // 1. `pnpm bulk-import:knowledge` CLI (manual / scheduled via cron)
+  // 2. KnowledgeImportSweeper @Cron (default 08:00 daily)
+  // Bucket is shared (`law-ai-rag-knowledge`) — sha256 manifest dedup is
+  // bucket-scoped, so re-ingest of the same file is a no-op.
+  knowledgeImport: {
+    enabled: process.env.KNOWLEDGE_IMPORT_ENABLED !== 'false',
+    cron: process.env.KNOWLEDGE_IMPORT_CRON || '0 8 * * *',
+    dir: process.env.KNOWLEDGE_IMPORT_DIR || '',
+    bucket: process.env.KNOWLEDGE_IMPORT_BUCKET || 'law-ai-rag-knowledge',
+    concurrency: intEnv('KNOWLEDGE_IMPORT_CONCURRENCY', 3),
+    /** When true, skip R2 upload + DB write (CLI only). Useful for
+     * smoke-testing the folder walk without spending embeddings. */
+    dryRun: process.env.KNOWLEDGE_IMPORT_DRY_RUN === 'true',
   },
 
   // ─── Chat modes (deep agent tuning) ────────────────────────────────

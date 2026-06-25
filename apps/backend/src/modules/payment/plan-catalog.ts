@@ -90,10 +90,13 @@ export function resolveEffectivePlan(
  */
 export class PlanNotAllowedError extends Error {
   readonly code = 'PLAN_NOT_ALLOWED';
-  constructor(public readonly plan: IPlanDefinition, public readonly mode: ChatMode) {
+  constructor(
+    public readonly plan: IPlanDefinition,
+    public readonly mode: ChatMode,
+  ) {
     super(
       `Gói "${plan.displayName}" không hỗ trợ chế độ "${mode}". ` +
-      `Vui lòng nâng cấp gói để sử dụng.`,
+        `Vui lòng nâng cấp gói để sử dụng.`,
     );
   }
 }

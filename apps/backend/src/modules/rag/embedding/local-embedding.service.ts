@@ -54,7 +54,9 @@ export class LocalEmbeddingService implements OnModuleInit {
   async onModuleInit(): Promise<void> {
     if (this.cfApiToken && this.cfAccountId) {
       this.isCfEnabled = true;
-      this.logger.log(`Using Cloudflare Workers AI for embedding model "${this.model}" (dim=${this.dim})`);
+      this.logger.log(
+        `Using Cloudflare Workers AI for embedding model "${this.model}" (dim=${this.dim})`,
+      );
       return;
     }
 
@@ -177,7 +179,7 @@ export class LocalEmbeddingService implements OnModuleInit {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.cfApiToken}`,
+          Authorization: `Bearer ${this.cfApiToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -187,7 +189,9 @@ export class LocalEmbeddingService implements OnModuleInit {
 
       if (!response.ok) {
         const errText = await response.text();
-        this.logger.error(`Cloudflare Workers AI embedding request failed: Status ${response.status} - ${errText}`);
+        this.logger.error(
+          `Cloudflare Workers AI embedding request failed: Status ${response.status} - ${errText}`,
+        );
         throw new Error(`Cloudflare Workers AI embedding failed with status ${response.status}`);
       }
 
@@ -204,7 +208,9 @@ export class LocalEmbeddingService implements OnModuleInit {
       }
 
       result.push(...resBody.result.data);
-      this.logger.debug(`Embedded batch of ${slice.length} items via Cloudflare in ${Date.now() - t0}ms`);
+      this.logger.debug(
+        `Embedded batch of ${slice.length} items via Cloudflare in ${Date.now() - t0}ms`,
+      );
     }
 
     return result;

@@ -11,7 +11,7 @@ export interface IExtractedReference {
   point?: string;
   charStart: number;
   charEnd: number;
-  relation?: string;   // THAM_CHIEU | SUA_DOI | THAY_THE | BAI_BO | HET_HIEU_LUC
+  relation?: string; // THAM_CHIEU | SUA_DOI | THAY_THE | BAI_BO | HET_HIEU_LUC
 }
 
 /**
@@ -67,11 +67,15 @@ export class ReferenceExtractorService {
     this.RELATION_RE.lastIndex = 0;
     while ((m = this.RELATION_RE.exec(text)) !== null) {
       const verb = m[1]!.toLowerCase();
-      const relation =
-        /sửa\s+đổi/.test(verb) ? 'SUA_DOI' :
-        /thay\s+thế/.test(verb) ? 'THAY_THE' :
-        /bãi\s*bỏ|mất\s+hiệu\s+lực/.test(verb) ? 'BAI_BO' :
-        /hết\s+hiệu\s+lực/.test(verb) ? 'HET_HIEU_LUC' : 'THAM_CHIEU';
+      const relation = /sửa\s+đổi/.test(verb)
+        ? 'SUA_DOI'
+        : /thay\s+thế/.test(verb)
+          ? 'THAY_THE'
+          : /bãi\s*bỏ|mất\s+hiệu\s+lực/.test(verb)
+            ? 'BAI_BO'
+            : /hết\s+hiệu\s+lực/.test(verb)
+              ? 'HET_HIEU_LUC'
+              : 'THAM_CHIEU';
       const raw = m[0].trim();
       out.push({
         raw,
@@ -99,9 +103,14 @@ export class ReferenceExtractorService {
 
   // ─────────────────────────────────────────────────────────────────────
 
-  private parseArticleRef(raw: string): Pick<IExtractedReference, 'article' | 'clause' | 'point' | 'targetLawName'> {
+  private parseArticleRef(
+    raw: string,
+  ): Pick<IExtractedReference, 'article' | 'clause' | 'point' | 'targetLawName'> {
     const out: Pick<IExtractedReference, 'article' | 'clause' | 'point' | 'targetLawName'> = {
-      article: undefined, clause: undefined, point: undefined, targetLawName: undefined,
+      article: undefined,
+      clause: undefined,
+      point: undefined,
+      targetLawName: undefined,
     };
     const article = raw.match(/Điều\s+(\d+)/);
     if (article) out.article = article[1]!;

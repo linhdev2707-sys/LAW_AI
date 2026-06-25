@@ -22,7 +22,7 @@ export class QuotaExceededError extends Error {
   ) {
     super(
       `Bạn đã dùng hết ${limit} lượt của gói "${plan.displayName}" trong tháng ${month}/${year}. ` +
-      `Vui lòng nâng cấp gói hoặc đợi đến tháng sau.`,
+        `Vui lòng nâng cấp gói hoặc đợi đến tháng sau.`,
     );
   }
 }
@@ -34,7 +34,7 @@ export interface IQuotaStatus {
   remaining: number;
   year: number;
   month: number;
-  resetAt: Date;     // first day of the next month, 00:00 UTC
+  resetAt: Date; // first day of the next month, 00:00 UTC
 }
 
 @Injectable()
@@ -72,10 +72,7 @@ export class QuotaService {
    * this exactly once per user message, AFTER classification but
    * BEFORE the LLM is invoked.
    */
-  async checkAndIncrement(
-    userId: string,
-    mode: ChatMode,
-  ): Promise<IQuotaStatus> {
+  async checkAndIncrement(userId: string, mode: ChatMode): Promise<IQuotaStatus> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     const plan = resolveEffectivePlan(user?.subscriptionPlan, user?.subscriptionExpiresAt);
 
@@ -142,7 +139,7 @@ export class QuotaService {
     );
     return {
       plan,
-      used: -1,           // unknown but recorded
+      used: -1, // unknown but recorded
       limit: -1,
       remaining: Infinity,
       year,

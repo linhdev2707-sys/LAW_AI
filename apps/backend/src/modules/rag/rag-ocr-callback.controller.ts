@@ -35,7 +35,7 @@ class OcrCompleteDto {
   @MaxLength(50_000_000)
   text?: string;
 
-  @ApiPropertyOptional({ description: 'Number of pages OCR\'d (for logging).' })
+  @ApiPropertyOptional({ description: "Number of pages OCR'd (for logging)." })
   @IsOptional()
   pageCount?: number;
 
@@ -72,19 +72,11 @@ export class RagOcrCallbackController {
       throw new BadRequestException('Either text or error must be provided');
     }
     try {
-      const result = await this.ragService.completeOcr(
-        body.documentId,
-        body.text,
-        body.error,
-      );
+      const result = await this.ragService.completeOcr(body.documentId, body.text, body.error);
       if (body.error) {
-        this.logger.warn(
-          `OCR failed for doc ${body.documentId}: ${body.error}`,
-        );
+        this.logger.warn(`OCR failed for doc ${body.documentId}: ${body.error}`);
       } else {
-        this.logger.log(
-          `OCR completed for doc ${body.documentId} (chunks=${result.chunkCount})`,
-        );
+        this.logger.log(`OCR completed for doc ${body.documentId} (chunks=${result.chunkCount})`);
       }
       return result;
     } catch (e: unknown) {

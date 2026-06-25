@@ -1,10 +1,4 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  Logger,
-  NestInterceptor,
-} from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
 import { randomUUID } from 'crypto';
 import type { Request, Response } from 'express';
@@ -64,7 +58,7 @@ export class StructuredLoggerInterceptor implements NestInterceptor {
     err: unknown,
   ): void {
     const durationMs = Date.now() - start;
-    const status = err ? (err as any).status ?? 500 : res.statusCode;
+    const status = err ? ((err as any).status ?? 500) : res.statusCode;
     const level = status >= 500 ? 'error' : status >= 400 ? 'warn' : 'log';
     const payload = {
       kind: 'http',

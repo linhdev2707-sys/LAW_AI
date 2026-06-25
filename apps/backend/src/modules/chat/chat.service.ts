@@ -10,10 +10,7 @@ import { LlmService } from '../llm/llm.service';
 import { PromptBuilder, IRetrievedSource } from '../llm/prompt.builder';
 import { AgentService, DeepAgentEvent } from './services/agent.service';
 import { DocumentLookupService, LookupEvent } from './services/document-lookup.service';
-import {
-  QuotaService,
-  QuotaExceededError,
-} from '../payment/quota.service';
+import { QuotaService, QuotaExceededError } from '../payment/quota.service';
 import { PlanNotAllowedError } from '../payment/plan-catalog';
 import type { IChatMessage } from '../llm/interfaces/chat-completion.types';
 
@@ -208,31 +205,28 @@ export class ChatService {
       // Surface the post-increment usage so the FE can show the pill.
       // (Sent as a normal JSON response via res.locals, then attached
       // to the first SSE event below.)
-      res.setHeader(
-        'X-Quota-Used',
-        String(quota.used),
-      );
-      res.setHeader(
-        'X-Quota-Limit',
-        String(quota.limit),
-      );
+      res.setHeader('X-Quota-Used', String(quota.used));
+      res.setHeader('X-Quota-Limit', String(quota.limit));
       res.setHeader('X-Quota-Plan', quota.plan.id);
     } catch (e) {
-      if (
-        e instanceof QuotaExceededError ||
-        e instanceof PlanNotAllowedError
-      ) {
+      if (e instanceof QuotaExceededError || e instanceof PlanNotAllowedError) {
         // Map domain errors to HTTP responses and roll back the
         // user-message we just persisted (it never executed).
         const status = e instanceof PlanNotAllowedError ? 403 : 429;
         res.statusCode = status;
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
-        res.end(JSON.stringify({
-          error: (e as { code?: string }).code,
-          message: (e as Error).message,
-        }));
+        res.end(
+          JSON.stringify({
+            error: (e as { code?: string }).code,
+            message: (e as Error).message,
+          }),
+        );
         // Best-effort cleanup of the user message we just wrote.
-        try { await this.msgRepo.delete({ id: userMsg.id }); } catch { /* ignore */ }
+        try {
+          await this.msgRepo.delete({ id: userMsg.id });
+        } catch {
+          /* ignore */
+        }
         return;
       }
       throw e;
@@ -318,7 +312,10 @@ export class ChatService {
       if (!searchBucket) {
         searchBucket = await this.classifyBucketForQuery(dto.content);
       }
-      const retrieved = await this.rag.retrieve(dto.content, searchBucket ? { bucketName: searchBucket } : undefined);
+      const retrieved = await this.rag.retrieve(
+        dto.content,
+        searchBucket ? { bucketName: searchBucket } : undefined,
+      );
       sources = retrieved.map((s) => ({
         index: s.index,
         name: s.documentName,
@@ -349,13 +346,12 @@ export class ChatService {
     // Score thresholds are intentionally conservative; the reranker
     // output is a calibrated probability so 0.4+ is usually solid.
     const LOW_SCORE_THRESHOLD = 0.4;
-    const topScore = sources.length > 0
-      ? Math.max(...sources.map((s) => s.score ?? 0))
-      : 0;
+    const topScore = sources.length > 0 ? Math.max(...sources.map((s) => s.score ?? 0)) : 0;
 
     if (sources.length === 0 && !usedFallback) {
       // Tier 3
-      const refusal = 'Tôi không tìm thấy thông tin này trong kho tài liệu pháp luật của hệ thống. Vui lòng tải thêm tài liệu hoặc diễn đạt câu hỏi khác cụ thể hơn.';
+      const refusal =
+        'Tôi không tìm thấy thông tin này trong kho tài liệu pháp luật của hệ thống. Vui lòng tải thêm tài liệu hoặc diễn đạt câu hỏi khác cụ thể hơn.';
       writeSse('delta', { content: refusal });
       await this.finishWithMessage(conversation, refusal, writeSse);
       return;
@@ -408,8 +404,9 @@ export class ChatService {
     signal: AbortSignal,
     isAborted: () => boolean,
   ): Promise<void> {
-    const historyMessages: IChatMessage[] = (await this.loadHistory(conversation.id, userMsg.id))
-      .map((h) => ({ role: h.role as 'user' | 'assistant', content: h.content }));
+    const historyMessages: IChatMessage[] = (
+      await this.loadHistory(conversation.id, userMsg.id)
+    ).map((h) => ({ role: h.role as 'user' | 'assistant', content: h.content }));
 
     let full = '';
     let sources: IRetrievedSource[] = [];
@@ -509,11 +506,7 @@ export class ChatService {
     const sources: IRetrievedSource[] = [];
 
     try {
-      const stream = this.documentLookup.stream(
-        dto.content,
-        conversation.bucketName,
-        signal,
-      );
+      const stream = this.documentLookup.stream(dto.content, conversation.bucketName, signal);
 
       for await (const ev of stream) {
         if (isAborted()) break;

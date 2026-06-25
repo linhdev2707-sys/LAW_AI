@@ -33,11 +33,7 @@ export class InternalChatService {
     private readonly prompt: PromptBuilder,
   ) {}
 
-  async streamMessage(
-    dto: InternalSendMessageDto,
-    res: Response,
-    req: Request,
-  ): Promise<void> {
+  async streamMessage(dto: InternalSendMessageDto, res: Response, req: Request): Promise<void> {
     // 1) SSE headers
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
