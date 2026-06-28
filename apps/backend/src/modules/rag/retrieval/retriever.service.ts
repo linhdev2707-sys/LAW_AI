@@ -226,6 +226,7 @@ export class RetrieverService {
       law_name: string | null; law_number: string | null;
       chapter: string | null; section: string | null;
       article: string; clause: string | null; point: string | null;
+      embedding: string | null;
       cosine: number;
     }>>(
       `
@@ -233,6 +234,7 @@ export class RetrieverService {
              c.raw_text AS content, c.breadcrumb,
              c.law_name, c.law_number, c.chapter, c.section,
              c.article, c.clause, c.point,
+             c.embedding_vec::text AS embedding,
              1 - (c.embedding_vec <=> $1::vector) AS cosine
         FROM rag_chunks c
         JOIN rag_documents d ON d.id = c.document_id
@@ -258,7 +260,7 @@ export class RetrieverService {
       article: r.article,
       clause: r.clause,
       point: r.point,
-      embedding: [],
+      embedding: parsePgVector(r.embedding),
     }));
   }
 
@@ -350,12 +352,17 @@ export class RetrieverService {
     // $1 + 1 + where.params.length = $2 + where.params.length.
     const statusIdx = 1 + 1 + where.params.length;
     const limitIdx = statusIdx + 1;
+    const selectEmbedding = this.usePgVector
+      ? 'c.embedding_vec::text AS embedding'
+      : 'c.embedding';
+
     const rows = await this.dataSource.query<Array<{
       id: string; document_id: string; document_name: string;
       content: string; breadcrumb: string;
       law_name: string | null; law_number: string | null;
       chapter: string | null; section: string | null;
       article: string; clause: string | null; point: string | null;
+      embedding: string | null;
       rank: number;
     }>>(
       `
@@ -363,6 +370,7 @@ export class RetrieverService {
              c.raw_text AS content, c.breadcrumb,
              c.law_name, c.law_number, c.chapter, c.section,
              c.article, c.clause, c.point,
+             ${selectEmbedding},
              ts_rank(c.tsv, plainto_tsquery('simple', $1)) AS rank
         FROM rag_chunks c
         JOIN rag_documents d ON d.id = c.document_id
@@ -375,21 +383,33 @@ export class RetrieverService {
       [query, ...where.params, RagDocumentStatus.READY, limit],
     );
 
-    return rows.map((r) => ({
-      id: r.id,
-      documentId: r.document_id,
-      documentName: r.document_name,
-      content: r.content,
-      breadcrumb: r.breadcrumb,
-      lawName: r.law_name,
-      lawNumber: r.law_number,
-      chapter: r.chapter,
-      section: r.section,
-      article: r.article,
-      clause: r.clause,
-      point: r.point,
-      embedding: [],
-    }));
+    return rows.map((r) => {
+      let vec: number[] = [];
+      if (r.embedding) {
+        try {
+          vec = this.usePgVector
+            ? parsePgVector(r.embedding)
+            : JSON.parse(r.embedding);
+        } catch {
+          vec = [];
+        }
+      }
+      return {
+        id: r.id,
+        documentId: r.document_id,
+        documentName: r.document_name,
+        content: r.content,
+        breadcrumb: r.breadcrumb,
+        lawName: r.law_name,
+        lawNumber: r.law_number,
+        chapter: r.chapter,
+        section: r.section,
+        article: r.article,
+        clause: r.clause,
+        point: r.point,
+        embedding: vec,
+      };
+    });
   }
 
   // ─────────────────────────────────────────────────────────────────────
@@ -461,6 +481,11 @@ export class RetrieverService {
       index: 0,
     };
   }
+}
+
+function parsePgVector(val: string | null): number[] {
+  if (!val) return [];
+  return val.substring(1, val.length - 1).split(',').map(Number);
 }
 
 function cosine(a: number[], b: number[]): number {
