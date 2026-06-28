@@ -78,6 +78,45 @@ export function usePaymentAdmin(isAdmin: boolean) {
     await Promise.all([loadStats(), loadTransactions()]);
   }, [loadStats, loadTransactions]);
 
+  const [approvingCode, setApprovingCode] = useState<string | null>(null);
+  const [rejectingCode, setRejectingCode] = useState<string | null>(null);
+
+  const onApprove = useCallback(async (code: string) => {
+    setApprovingCode(code);
+    try {
+      const promise = paymentAdminApi.approve(code);
+      toast.promise(promise, {
+        loading: `Đang duyệt giao dịch ${code}...`,
+        success: `Giao dịch ${code} đã được duyệt thành công!`,
+        error: (err) => err?.message || `Lỗi khi duyệt giao dịch ${code}`,
+      });
+      await promise;
+      await refreshAll();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setApprovingCode(null);
+    }
+  }, [refreshAll]);
+
+  const onReject = useCallback(async (code: string) => {
+    setRejectingCode(code);
+    try {
+      const promise = paymentAdminApi.reject(code);
+      toast.promise(promise, {
+        loading: `Đang từ chối giao dịch ${code}...`,
+        success: `Giao dịch ${code} đã bị từ chối!`,
+        error: (err) => err?.message || `Lỗi khi từ chối giao dịch ${code}`,
+      });
+      await promise;
+      await refreshAll();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setRejectingCode(null);
+    }
+  }, [refreshAll]);
+
   return {
     transactions,
     total,
@@ -96,5 +135,9 @@ export function usePaymentAdmin(isAdmin: boolean) {
     errorList,
     errorStats,
     refreshAll,
+    onApprove,
+    onReject,
+    approvingCode,
+    rejectingCode,
   };
 }

@@ -16,6 +16,7 @@ export interface IPromptInput {
    *  that the matched sources are weak and may not fully answer the
    *  question. Default false. */
   lowConfidence?: boolean;
+  noSources?: boolean;
 }
 
 /**
@@ -39,7 +40,7 @@ const BASE_SYSTEM_PROMPT = `Bạn là **iLaw** – trợ lý pháp luật chuyê
 ## Nhiệm vụ
 
 * Trả lời câu hỏi pháp lý bằng tiếng Việt.
-* Trả lời CHỈ dựa trên phần **NGUỒN THAM KHẢO** được cung cấp.
+* Trả lời dựa trên phần **NGUỒN THAM KHẢO** được cung cấp. Nếu không tìm thấy thông tin phù hợp, sử dụng kiến thức có sẵn của bạn.
 * Trả lời ngắn gọn, chính xác, đúng trọng tâm câu hỏi.
 * Phân biệt rõ quy định pháp luật hiện hành với ý kiến giải thích hoặc suy đoán.
 
@@ -48,14 +49,15 @@ const BASE_SYSTEM_PROMPT = `Bạn là **iLaw** – trợ lý pháp luật chuyê
 * Mỗi thông tin quan trọng lấy từ NGUỒN THAM KHẢO phải được gắn trích dẫn theo định dạng **[N]**, trong đó N là số thứ tự nguồn.
 * Trích dẫn đầy đủ theo format: "Điều X [N]" hoặc "Điều X Khoản Y Bộ luật Z [N]".
 * Có thể sử dụng nhiều trích dẫn liên tiếp, ví dụ: [1][3].
-* TUYỆT ĐỐI KHÔNG bịa đặt điều luật, văn bản hoặc nội dung không có trong NGUỒN.
+* Khi trích dẫn từ NGUỒN THAM KHẢO, hãy trích dẫn trung thực và không tự bịa đặt nội dung không có trong nguồn. Tuy nhiên, nếu nguồn không có thông tin cần tìm, bạn có thể tự sử dụng kiến thức pháp luật của mình để trả lời (khi đó không gắn ký hiệu trích dẫn dạng [N]).
 
 ## Khi nguồn không đủ thông tin hoặc rỗng
 
-* Trả lời CHÍNH XÁC một câu: "Tôi không tìm thấy thông tin này trong kho tài liệu pháp luật của hệ thống."
-* KHÔNG dùng kiến thức bên ngoài (training data) để suy đoán, diễn giải, hay bổ sung.
-* KHÔNG tự bịa số điều, số khoản, ngày tháng, tên văn bản.
-* Nếu người dùng hỏi thêm, gợi ý họ tải thêm tài liệu vào kho.
+* Nếu trong NGUỒN THAM KHẢO không có thông tin cần tìm hoặc nguồn rỗng: Bạn BẮT BUỘC phải sử dụng kiến thức pháp luật Việt Nam sẵn có trong mô hình của mình để trả lời chi tiết và đầy đủ nhất cho người dùng.
+* Hãy trả lời TRỰC TIẾP vào câu hỏi. TUYỆT ĐỐI KHÔNG giải thích dông dài hay viết các câu dẫn mang tính chất giải thích nội bộ hệ thống như: "Tôi không tìm thấy thông tin này trong nguồn...", "Các nguồn bạn cung cấp chỉ đề cập đến...", "Dựa trên kiến thức của tôi...". Hãy đi thẳng vào nội dung giải đáp câu hỏi pháp lý.
+* Khi trả lời hoàn toàn bằng kiến thức có sẵn của AI, hãy thêm câu sau ở cuối câu trả lời: "*(Lưu ý: Thông tin này dựa trên kiến thức chung của AI và chưa được đối chiếu trực tiếp với các tài liệu trong kho lưu trữ của bạn)*".
+* Vẫn đảm bảo tính chính xác cao, không tự bịa số điều khoản nếu không chắc chắn.
+* Nếu người dùng hỏi thêm, gợi ý họ tải thêm tài liệu vào kho để có câu trả lời chuẩn xác đối chiếu.
 
 ## Trường hợp có rủi ro pháp lý
 
@@ -90,7 +92,7 @@ Quy tắc:
 3. Mỗi thông tin quan trọng phải gắn trích dẫn **[N]** theo format:
    "Điều X Khoản Y [N]" hoặc "Điều X Bộ luật Y số Z/W [N]"
 4. Khi đã đủ thông tin, dừng gọi tool và đưa ra câu trả lời cuối cùng.
-5. Nếu không tìm thấy, nói rõ "không tìm thấy trong kho tài liệu".
+5. Nếu không tìm thấy thông tin phù hợp trong kho tài liệu bằng các công cụ tra cứu, hãy sử dụng kiến thức pháp luật Việt Nam có sẵn của bạn để phân tích và trả lời người dùng, kèm theo lưu ý ở cuối câu trả lời.
 `;
 
 /**
@@ -115,7 +117,7 @@ export class PromptBuilder {
    * full-citation, prefer `buildFastWithArticles`.
    */
   build(input: IPromptInput): IChatMessage[] {
-    const sys = this.buildSystemMessage(input.sources, input.lowConfidence ?? false);
+    const sys = this.buildSystemMessage(input.sources, input.lowConfidence ?? false, input.noSources ?? false);
     const trimmedHistory = input.history.slice(-this.historyTurns * 2);
     return [
       { role: 'system', content: sys },
@@ -125,8 +127,10 @@ export class PromptBuilder {
   }
 
   /** Build the system message for the fast mode (no agent loop). */
-  buildSystemMessage(sources: IRetrievedSource[], lowConfidence = false): string {
-    if (sources.length === 0) return BASE_SYSTEM_PROMPT;
+  buildSystemMessage(sources: IRetrievedSource[], lowConfidence = false, noSources = false): string {
+    if (sources.length === 0 || noSources) {
+      return BASE_SYSTEM_PROMPT + `\n\n## ⚠️ KHÔNG CÓ TÀI LIỆU TRONG KHO\nHiện tại kho tài liệu không chứa văn bản nào liên quan trực tiếp đến câu hỏi này. Bạn BẮT BUỘC phải dùng kiến thức pháp luật Việt Nam có sẵn trong mô hình của mình để trả lời chi tiết và chính xác nhất cho người dùng. Hãy ghi rõ chú thích lưu ý ở cuối câu trả lời của bạn.`;
+    }
     const blocks = sources
       .map((s) => `[${s.index}] (source: ${s.name})\n${s.content.trim()}`)
       .join('\n\n---\n\n');

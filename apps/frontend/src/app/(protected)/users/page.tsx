@@ -78,7 +78,7 @@ export default function UserAdminPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-brand-background text-brand-on-surface">
+    <main className="relative min-h-screen overflow-x-hidden bg-brand-background text-brand-on-surface">
       {/* Soft cyan glow at the top */}
       <div
         aria-hidden

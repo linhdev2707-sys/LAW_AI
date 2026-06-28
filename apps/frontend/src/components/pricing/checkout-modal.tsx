@@ -22,6 +22,7 @@ interface CheckoutModalProps {
   qrUrl: string | null;
   paymentSuccess: boolean;
   confirming: boolean;
+  durationMonths: number;
   onClose: () => void;
   onConfirm: () => void;
   onCopy: (text: string, type: string) => void;
@@ -42,6 +43,7 @@ export function CheckoutModal({
   qrUrl,
   paymentSuccess,
   confirming,
+  durationMonths,
   onClose,
   onConfirm,
   onCopy,
@@ -79,6 +81,7 @@ export function CheckoutModal({
             transactionCode={transactionCode}
             qrUrl={qrUrl ?? fallbackQr}
             confirming={confirming}
+            durationMonths={durationMonths}
             onClose={onClose}
             onConfirm={onConfirm}
             onCopy={onCopy}
@@ -127,6 +130,7 @@ interface PaymentViewProps {
   transactionCode: string | null;
   qrUrl: string;
   confirming: boolean;
+  durationMonths: number;
   onClose: () => void;
   onConfirm: () => void;
   onCopy: (text: string, type: string) => void;
@@ -139,6 +143,7 @@ function PaymentView({
   transactionCode,
   qrUrl,
   confirming,
+  durationMonths,
   onClose,
   onConfirm,
   onCopy,
@@ -164,10 +169,12 @@ function PaymentView({
       <div className="rounded-xl border border-brand-outline-variant/20 bg-white/[0.02] p-4 flex justify-between items-center text-sm">
         <div>
           <span className="text-brand-on-surface font-semibold">Gói {plan.name}</span>
-          <span className="block text-xs text-brand-on-surface-variant">Thời hạn sử dụng: 1 tháng</span>
+          <span className="block text-xs text-brand-on-surface-variant">Thời hạn sử dụng: {durationMonths} tháng</span>
         </div>
         <div className="text-right">
-          <span className="font-headline font-bold text-brand-secondary text-lg">{plan.price}</span>
+          <span className="font-headline font-bold text-brand-secondary text-lg">
+            {bankDetails?.amount ? bankDetails.amount.toLocaleString('vi-VN') : plan.price}
+          </span>
           <span className="ml-1 text-sm font-semibold text-brand-on-surface-variant">VND</span>
         </div>
       </div>

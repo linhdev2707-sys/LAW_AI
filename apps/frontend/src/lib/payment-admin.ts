@@ -59,4 +59,18 @@ export const paymentAdminApi = {
   async stats(): Promise<IAdminPaymentStats> {
     return apiFetch<IAdminPaymentStats>('/api/v1/payments/admin/stats');
   },
+
+  async approve(code: string): Promise<{ success: boolean; message: string }> {
+    return apiFetch<{ success: boolean; message: string }>(
+      `/api/v1/payments/admin/transactions/${code}/approve`,
+      { method: 'POST' },
+    );
+  },
+
+  async reject(code: string): Promise<{ success: boolean; message: string }> {
+    return apiFetch<{ success: boolean; message: string }>(
+      `/api/v1/payments/admin/transactions/${code}/reject`,
+      { method: 'POST' },
+    );
+  },
 };

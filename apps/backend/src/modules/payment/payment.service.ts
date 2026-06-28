@@ -11,9 +11,9 @@ import { Transaction } from './entities/transaction.entity';
 import { User } from '../user/entities/user.entity';
 
 const PLAN_PRICES: Record<string, { price: number; name: string }> = {
-  basic: { price: 69000, name: 'Cơ bản' },
-  pro: { price: 109000, name: 'Plus' },
-  premium: { price: 149000, name: 'Pro' },
+  basic: { price: 49000, name: 'Cơ bản' },
+  pro: { price: 99000, name: 'Plus' },
+  premium: { price: 249000, name: 'Pro' },
 };
 
 @Injectable()
@@ -26,11 +26,22 @@ export class PaymentService {
     private readonly configService: ConfigService,
   ) {}
 
-  async checkout(userId: string, planId: string) {
+  async checkout(userId: string, planId: string, durationMonths = 1) {
     const planConfig = PLAN_PRICES[planId.toLowerCase()];
     if (!planConfig) {
       throw new BadRequestException(`Gói dịch vụ "${planId}" không hợp lệ`);
     }
+
+    // Calculate total amount based on duration: 3 months (20% off), 6 months (30% off), 12 months (50% off)
+    let discountMultiplier = 1.0;
+    if (durationMonths === 3) {
+      discountMultiplier = 0.8;
+    } else if (durationMonths === 6) {
+      discountMultiplier = 0.7;
+    } else if (durationMonths === 12) {
+      discountMultiplier = 0.5;
+    }
+    const amount = Math.round(planConfig.price * durationMonths * discountMultiplier);
 
     // Generate unique code LAWxxxxx
     let code = '';
@@ -53,9 +64,10 @@ export class PaymentService {
       userId,
       code,
       plan: planId.toLowerCase(),
-      amount: planConfig.price,
+      amount,
       status: 'pending',
       paymentGateway: 'casso',
+      durationMonths,
     });
 
     await this.transactionRepository.save(transaction);
@@ -156,7 +168,7 @@ export class PaymentService {
           if (user) {
             user.subscriptionPlan = dbTx.plan;
             const expiresAt = new Date();
-            expiresAt.setDate(expiresAt.getDate() + 30);
+            expiresAt.setMonth(expiresAt.getMonth() + (dbTx.durationMonths || 1));
             user.subscriptionExpiresAt = expiresAt;
             await this.userRepository.save(user);
           }
@@ -318,6 +330,88 @@ export class PaymentService {
       countsByStatus,
       countsByPlan,
       monthlyTrend: trend,
+    };
+  }
+
+  async confirmTransfer(userId: string, code: string) {
+    const transaction = await this.transactionRepository.findOne({
+      where: { code: code.toUpperCase() },
+    });
+
+    if (!transaction) {
+      throw new NotFoundException(`Không tìm thấy giao dịch với mã ${code}`);
+    }
+
+    if (transaction.userId !== userId) {
+      throw new UnauthorizedException('Bạn không có quyền xác thực giao dịch này');
+    }
+
+    if (transaction.status === 'pending') {
+      transaction.status = 'approval_pending';
+      await this.transactionRepository.save(transaction);
+    }
+
+    return {
+      code: transaction.code,
+      status: transaction.status,
+    };
+  }
+
+  async adminApprove(code: string) {
+    const transaction = await this.transactionRepository.findOne({
+      where: { code: code.toUpperCase() },
+    });
+
+    if (!transaction) {
+      throw new NotFoundException(`Không tìm thấy giao dịch với mã ${code}`);
+    }
+
+    if (transaction.status === 'completed') {
+      return { success: true, message: 'Giao dịch đã được duyệt trước đó.' };
+    }
+
+    transaction.status = 'completed';
+    transaction.paidAt = new Date();
+    transaction.transactionId = 'MANUAL_APPROVE_BY_ADMIN';
+    await this.transactionRepository.save(transaction);
+
+    // Upgrade user subscription
+    const user = await this.userRepository.findOne({ where: { id: transaction.userId } });
+    if (user) {
+      user.subscriptionPlan = transaction.plan;
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + (transaction.durationMonths || 1));
+      user.subscriptionExpiresAt = expiresAt;
+      await this.userRepository.save(user);
+    }
+
+    return {
+      success: true,
+      message: `Đã duyệt thành công giao dịch ${code}`,
+      status: transaction.status,
+    };
+  }
+
+  async adminReject(code: string) {
+    const transaction = await this.transactionRepository.findOne({
+      where: { code: code.toUpperCase() },
+    });
+
+    if (!transaction) {
+      throw new NotFoundException(`Không tìm thấy giao dịch với mã ${code}`);
+    }
+
+    if (transaction.status === 'completed') {
+      throw new BadRequestException('Không thể từ chối giao dịch đã thành công');
+    }
+
+    transaction.status = 'failed';
+    await this.transactionRepository.save(transaction);
+
+    return {
+      success: true,
+      message: `Đã từ chối giao dịch ${code}`,
+      status: transaction.status,
     };
   }
 }

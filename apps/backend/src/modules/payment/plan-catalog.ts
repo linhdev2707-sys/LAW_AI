@@ -14,7 +14,7 @@ export type ChatMode = 'fast' | 'deep' | 'lookup';
 
 export interface IPlanDefinition {
   /** Public id, matches users.subscription_plan. */
-  id: 'free' | 'basic' | 'plus' | 'pro';
+  id: 'free' | 'basic' | 'pro' | 'premium';
   /** Vietnamese display name. */
   displayName: string;
   /** Monthly quota across all modes. -1 = unlimited. */
@@ -34,36 +34,36 @@ export const PLAN_CATALOG: Record<IPlanDefinition['id'], IPlanDefinition> = {
     displayName: 'Miễn phí',
     monthlyQuota: 12,
     priceVnd: 0,
-    allowedModes: ['fast', 'lookup'],
+    allowedModes: ['fast'],
     tagline: 'Dùng thử các tính năng cơ bản',
   },
   basic: {
     id: 'basic',
     displayName: 'Cơ bản',
     monthlyQuota: 72,
-    priceVnd: 99_000,
+    priceVnd: 49_000,
     allowedModes: ['fast', 'deep', 'lookup'],
     tagline: 'Suy nghĩ sâu + truy vấn nhanh',
   },
-  plus: {
-    id: 'plus',
+  pro: {
+    id: 'pro',
     displayName: 'Plus',
     monthlyQuota: 192,
-    priceVnd: 199_000,
+    priceVnd: 99_000,
     allowedModes: ['fast', 'deep', 'lookup'],
     tagline: 'Dành cho người dùng thường xuyên',
   },
-  pro: {
-    id: 'pro',
+  premium: {
+    id: 'premium',
     displayName: 'Pro',
     monthlyQuota: 600,
-    priceVnd: 499_000,
+    priceVnd: 249_000,
     allowedModes: ['fast', 'deep', 'lookup'],
     tagline: 'Không giới hạn cho luật sư & doanh nghiệp',
   },
 };
 
-export const PLAN_IDS: IPlanDefinition['id'][] = ['free', 'basic', 'plus', 'pro'];
+export const PLAN_IDS: IPlanDefinition['id'][] = ['free', 'basic', 'pro', 'premium'];
 
 /**
  * Resolve the effective plan for a user. Falls back to `free` if the

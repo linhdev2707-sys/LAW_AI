@@ -37,8 +37,8 @@ export const PLANS: PricingPlan[] = [
   {
     id: 'basic',
     name: 'Cơ bản',
-    price: '69.000',
-    priceVal: 69000,
+    price: '49.000',
+    priceVal: 49000,
     period: 'tháng',
     description: 'Phù hợp cho nhu cầu sử dụng thường xuyên.',
     features: [
@@ -53,8 +53,8 @@ export const PLANS: PricingPlan[] = [
   {
     id: 'pro',
     name: 'Plus',
-    price: '109.000',
-    priceVal: 109000,
+    price: '99.000',
+    priceVal: 99000,
     period: 'tháng',
     description: 'Phù hợp cho cá nhân và doanh nghiệp nhỏ.',
     features: [

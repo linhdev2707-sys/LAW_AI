@@ -29,9 +29,9 @@ export class PaymentController {
   @HttpCode(HttpStatus.CREATED)
   checkout(
     @CurrentUser('sub') userId: string,
-    @Body() dto: { planId: string },
+    @Body() dto: { planId: string; durationMonths?: number },
   ) {
-    return this.paymentService.checkout(userId, dto.planId);
+    return this.paymentService.checkout(userId, dto.planId, dto.durationMonths);
   }
 
   @Get('status/:code')
@@ -82,5 +82,34 @@ export class PaymentController {
       status,
       plan,
     });
+  }
+
+  @Post('status/:code/confirm-transfer')
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  confirmTransfer(
+    @CurrentUser('sub') userId: string,
+    @Param('code') code: string,
+  ) {
+    return this.paymentService.confirmTransfer(userId, code);
+  }
+
+  @Post('admin/transactions/:code/approve')
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  adminApprove(@Param('code') code: string) {
+    return this.paymentService.adminApprove(code);
+  }
+
+  @Post('admin/transactions/:code/reject')
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  adminReject(@Param('code') code: string) {
+    return this.paymentService.adminReject(code);
   }
 }

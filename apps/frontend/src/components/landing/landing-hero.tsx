@@ -22,7 +22,7 @@ export function LandingHero() {
 
         <h1 className="max-w-4xl font-headline text-display-lg-mobile leading-tight text-brand-on-surface md:text-display-lg">
           Giải đáp vướng mắc{' '}
-          <span className="bg-gradient-to-r from-brand-tertiary via-brand-primary to-brand-secondary bg-clip-text font-semibold italic text-transparent">
+          <span className="inline-block bg-gradient-to-r from-brand-tertiary via-brand-primary to-brand-secondary bg-clip-text px-1 pr-3 font-semibold italic text-transparent">
             pháp luật dễ dàng
           </span>
         </h1>

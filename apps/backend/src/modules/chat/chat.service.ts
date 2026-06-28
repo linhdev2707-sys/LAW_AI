@@ -353,14 +353,6 @@ export class ChatService {
       ? Math.max(...sources.map((s) => s.score ?? 0))
       : 0;
 
-    if (sources.length === 0 && !usedFallback) {
-      // Tier 3
-      const refusal = 'Tôi không tìm thấy thông tin này trong kho tài liệu pháp luật của hệ thống. Vui lòng tải thêm tài liệu hoặc diễn đạt câu hỏi khác cụ thể hơn.';
-      writeSse('delta', { content: refusal });
-      await this.finishWithMessage(conversation, refusal, writeSse);
-      return;
-    }
-
     const isLowConfidence = topScore < LOW_SCORE_THRESHOLD && !usedFallback;
 
     // 2) Build prompt + stream
@@ -370,6 +362,7 @@ export class ChatService {
       history,
       userContent: dto.content,
       lowConfidence: isLowConfidence,
+      noSources: sources.length === 0,
     });
 
     let full = '';

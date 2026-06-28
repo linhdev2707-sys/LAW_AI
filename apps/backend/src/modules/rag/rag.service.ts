@@ -309,6 +309,11 @@ export class RagService implements OnModuleInit {
     const doc = await this.docRepo.findOne({ where: { id } });
     if (!doc) return;
     if (this.r2.isEnabled()) {
+      try {
+        await this.removeFromManifest(doc.bucketName, id);
+      } catch (e: unknown) {
+        this.logger.warn(`Manifest cleanup failed: ${errorMessage(e)}`);
+      }
       try { await this.r2.deleteObject(doc.bucketName, doc.r2Key); }
       catch (e: unknown) { this.logger.warn(`R2 delete failed: ${errorMessage(e)}`); }
     }
@@ -550,10 +555,34 @@ export class RagService implements OnModuleInit {
       // ignore
     }
     manifest[sha256] = data;
+    await this.r2.putObject(bucket, 'manifest.json', JSON.stringify(manifest), 'application/json');
+  }
+
+  private async removeFromManifest(bucket: string, docId: string): Promise<void> {
+    if (!this.r2.isEnabled()) return;
     try {
-      await this.r2.putObject(bucket, 'manifest.json', JSON.stringify(manifest, null, 2), 'application/json');
+      const manifestText = await this.r2.getObjectText(bucket, 'manifest.json');
+      const manifest = JSON.parse(manifestText);
+      let updated = false;
+      for (const sha256 in manifest) {
+        if (manifest[sha256]?.docId === docId) {
+          delete manifest[sha256];
+          updated = true;
+        }
+      }
+      if (updated) {
+        await this.r2.putObject(
+          bucket,
+          'manifest.json',
+          JSON.stringify(manifest),
+          'application/json',
+        );
+      }
     } catch (e) {
-      this.logger.error(`Failed to update manifest.json in bucket ${bucket}: ${errorMessage(e)}`);
+      const errName = (e as any)?.name || (e as any)?.code || '';
+      if (errName !== 'NoSuchKey' && errName !== 'NotFound') {
+        this.logger.warn(`Failed to clean manifest.json for doc ${docId}: ${errorMessage(e)}`);
+      }
     }
   }
 

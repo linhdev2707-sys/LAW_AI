@@ -1,9 +1,11 @@
 'use client';
 
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Brain, BookOpen, Zap, Check } from 'lucide-react';
+import { Brain, BookOpen, Zap, Check, Lock } from 'lucide-react';
 import { CHAT_MODES, CHAT_MODE_LABELS, type ChatMode } from '@law-ai/shared';
 import { cn } from '@/lib/utils';
+import { useSession } from 'next-auth/react';
+import { toast } from 'sonner';
 
 interface ModePickerProps {
   value: ChatMode;
@@ -17,15 +19,22 @@ const ICONS: Record<ChatMode, React.ComponentType<{ className?: string }>> = {
   lookup: BookOpen,
 };
 
+const DESCRIPTIONS: Record<ChatMode, string> = {
+  fast: 'Trò chuyện nhanh, phản hồi tức thì',
+  deep: 'Phân tích chuyên sâu với lập luận chi tiết',
+  lookup: 'Chỉ hiển thị trích dẫn điều luật, không sinh câu trả lời',
+};
+
 /**
  * Mode picker dropdown. Replaces the (disabled) paperclip attachment
  * button in the chat input. Shows the current mode as a label + icon,
  * and opens a Radix DropdownMenu with the three options on click.
- *
- * Keyboard: Tab to focus, Enter/Space to open, ↑/↓ to navigate, Enter
- * to select, Esc to close — all handled by Radix.
  */
 export function ModePicker({ value, onChange, disabled }: ModePickerProps) {
+  const { data: session } = useSession();
+  const plan = session?.user?.subscriptionPlan || 'free';
+  const isPaid = ['basic', 'pro', 'premium'].includes(plan);
+
   const CurrentIcon = ICONS[value];
 
   return (
@@ -42,11 +51,6 @@ export function ModePicker({ value, onChange, disabled }: ModePickerProps) {
             'hover:bg-white/5 hover:text-brand-tertiary',
             'data-[state=open]:bg-white/5 data-[state=open]:text-brand-tertiary',
             'disabled:opacity-50 disabled:hover:bg-transparent',
-            // No focus ring on the trigger after a click — selecting an
-            // option would otherwise leave a visible halo around the
-            // button while the user is composing the next message.
-            // Keyboard users still get a visible state via the open
-            // background (data-[state=open]).
             'focus:outline-none focus-visible:outline-none',
           )}
         >
@@ -67,27 +71,44 @@ export function ModePicker({ value, onChange, disabled }: ModePickerProps) {
           {CHAT_MODES.map((m) => {
             const Icon = ICONS[m];
             const isSelected = m === value;
+            const isLocked = !isPaid && m !== 'fast';
+
             return (
               <DropdownMenu.Item
                 key={m}
-                onSelect={() => onChange(m)}
+                onSelect={(e) => {
+                  if (isLocked) {
+                    e.preventDefault(); // Prevent closing menu
+                    toast.error(
+                      `Chế độ "${CHAT_MODE_LABELS[m].label}" chỉ dành cho tài khoản hội viên. Vui lòng nâng cấp gói cước để sử dụng!`,
+                    );
+                    return;
+                  }
+                  onChange(m);
+                }}
                 className={cn(
                   'flex cursor-pointer items-start gap-3 rounded-lg px-3 py-2.5',
                   'text-sm outline-none transition-colors',
-                  'data-[highlighted]:bg-white/5',
-                  'focus:bg-white/5',
+                  isLocked
+                    ? 'opacity-60 hover:bg-white/5'
+                    : 'data-[highlighted]:bg-white/5 focus:bg-white/5',
                 )}
               >
                 <Icon className="mt-0.5 h-4 w-4 shrink-0 text-brand-tertiary" />
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-brand-on-surface">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={cn('font-medium', isLocked ? 'text-brand-on-surface-variant' : 'text-brand-on-surface')}>
                       {CHAT_MODE_LABELS[m].label}
                     </span>
-                    {isSelected && (
+                    {isLocked ? (
+                      <Lock className="h-3.5 w-3.5 text-brand-on-surface-variant/40" />
+                    ) : isSelected ? (
                       <Check className="h-3.5 w-3.5 text-brand-tertiary" />
-                    )}
+                    ) : null}
                   </div>
+                  <span className="block text-[11px] text-brand-on-surface-variant/60 mt-0.5 font-normal">
+                    {DESCRIPTIONS[m]}
+                  </span>
                 </div>
               </DropdownMenu.Item>
             );

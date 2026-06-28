@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
@@ -14,6 +14,7 @@ import {
   Clock,
   XCircle,
   Award,
+  ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,6 +52,10 @@ export default function AdminPaymentPage() {
     errorList,
     errorStats,
     refreshAll,
+    onApprove,
+    onReject,
+    approvingCode,
+    rejectingCode,
   } = usePaymentAdmin(isAdmin);
 
   const totalPages = Math.ceil(total / limit);
@@ -108,13 +113,15 @@ export default function AdminPaymentPage() {
         return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
       case 'failed':
         return 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
+      case 'approval_pending':
+        return 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 animate-pulse';
       default:
         return 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
     }
   };
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-brand-background text-brand-on-surface">
+    <main className="relative min-h-screen overflow-x-hidden bg-brand-background text-brand-on-surface">
       {/* Light glow at the top */}
       <div
         aria-hidden
@@ -272,28 +279,31 @@ export default function AdminPaymentPage() {
             {/* Dropdown Filters and refresh */}
             <div className="flex flex-wrap items-center gap-3">
               {/* Filter by Plan */}
-              <select
+              <CustomSelect
                 value={plan}
-                onChange={(e) => setPlan(e.target.value)}
-                className="flex h-10 w-36 rounded-md border border-brand-outline-variant/30 bg-brand-surface-container-lowest/60 px-3 py-2 text-sm text-brand-on-surface focus-visible:border-brand-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-tertiary/30"
-              >
-                <option value="">Mọi gói cước</option>
-                <option value="basic">Gói Cơ bản</option>
-                <option value="pro">Gói Plus</option>
-                <option value="premium">Gói Pro</option>
-              </select>
+                onChange={setPlan}
+                placeholder="Mọi gói cước"
+                options={[
+                  { label: 'Mọi gói cước', value: '' },
+                  { label: 'Gói Cơ bản', value: 'basic' },
+                  { label: 'Gói Plus', value: 'pro' },
+                  { label: 'Gói Pro', value: 'premium' },
+                ]}
+              />
 
               {/* Filter by Status */}
-              <select
+              <CustomSelect
                 value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="flex h-10 w-36 rounded-md border border-brand-outline-variant/30 bg-brand-surface-container-lowest/60 px-3 py-2 text-sm text-brand-on-surface focus-visible:border-brand-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-tertiary/30"
-              >
-                <option value="">Mọi trạng thái</option>
-                <option value="pending">Chờ thanh toán</option>
-                <option value="completed">Thành công</option>
-                <option value="failed">Thất bại</option>
-              </select>
+                onChange={setStatus}
+                placeholder="Mọi trạng thái"
+                options={[
+                  { label: 'Mọi trạng thái', value: '' },
+                  { label: 'Chờ thanh toán', value: 'pending' },
+                  { label: 'Chờ duyệt', value: 'approval_pending' },
+                  { label: 'Thành công', value: 'completed' },
+                  { label: 'Thất bại', value: 'failed' },
+                ]}
+              />
 
               {/* Refresh button */}
               <Button
@@ -344,7 +354,8 @@ export default function AdminPaymentPage() {
                         <th className="pb-3 px-4">Số tiền</th>
                         <th className="pb-3 px-4 text-center">Trạng thái</th>
                         <th className="pb-3 px-4">Ngày tạo</th>
-                        <th className="pb-3 pl-4">Ngày thanh toán</th>
+                        <th className="pb-3 px-4">Ngày thanh toán</th>
+                        <th className="pb-3 pl-4 text-right">Hành động</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-brand-outline-variant/10 text-sm font-body">
@@ -373,14 +384,15 @@ export default function AdminPaymentPage() {
                             <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${getStatusBadgeClass(tx.status)}`}>
                               {tx.status === 'completed' && <CheckCircle className="h-3 w-3 shrink-0" />}
                               {tx.status === 'pending' && <Clock className="h-3 w-3 shrink-0" />}
+                              {tx.status === 'approval_pending' && <Clock className="h-3 w-3 shrink-0 animate-pulse" />}
                               {tx.status === 'failed' && <XCircle className="h-3 w-3 shrink-0" />}
-                              {tx.status === 'completed' ? 'Thành công' : tx.status === 'failed' ? 'Thất bại' : 'Chờ xử lý'}
+                              {tx.status === 'completed' ? 'Thành công' : tx.status === 'failed' ? 'Thất bại' : tx.status === 'approval_pending' ? 'Chờ duyệt' : 'Chờ xử lý'}
                             </span>
                           </td>
                           <td className="py-3.5 px-4 text-xs text-brand-on-surface-variant/80">
                             {new Date(tx.createdAt).toLocaleString('vi-VN')}
                           </td>
-                          <td className="py-3.5 pl-4 text-xs text-brand-on-surface-variant/80">
+                          <td className="py-3.5 px-4 text-xs text-brand-on-surface-variant/80">
                             {tx.paidAt ? (
                               <div>
                                 <div>{new Date(tx.paidAt).toLocaleString('vi-VN')}</div>
@@ -388,6 +400,40 @@ export default function AdminPaymentPage() {
                               </div>
                             ) : (
                               <span className="text-slate-600">-</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 pl-4 text-right">
+                            {tx.status === 'completed' || tx.status === 'failed' ? (
+                              <span className="text-xs text-brand-on-surface-variant/40">-</span>
+                            ) : (
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => onApprove(tx.code)}
+                                  disabled={!!approvingCode || !!rejectingCode}
+                                  className="h-7 rounded-md bg-emerald-500/10 px-2.5 text-xs font-semibold text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/20 hover:text-emerald-300"
+                                >
+                                  {approvingCode === tx.code ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    'Duyệt'
+                                  )}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => onReject(tx.code)}
+                                  disabled={!!approvingCode || !!rejectingCode}
+                                  className="h-7 rounded-md bg-rose-500/10 px-2.5 text-xs font-semibold text-rose-400 border border-rose-500/25 hover:bg-rose-500/20 hover:text-rose-300"
+                                >
+                                  {rejectingCode === tx.code ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    'Từ chối'
+                                  )}
+                                </Button>
+                              </div>
                             )}
                           </td>
                         </tr>
@@ -430,5 +476,68 @@ export default function AdminPaymentPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+// Custom select dropdown component for unified premium theme
+function CustomSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: { label: string; value: string }[];
+  placeholder: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  return (
+    <div ref={containerRef} className="relative w-44">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex h-10 w-full items-center justify-between rounded-lg border border-brand-outline-variant/30 bg-brand-surface-container-lowest/60 px-3 py-2 text-sm text-brand-on-surface transition-all hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-brand-tertiary/30"
+      >
+        <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-brand-on-surface-variant/70 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 z-50 mt-1.5 max-h-60 overflow-y-auto rounded-lg border border-brand-outline-variant/20 bg-brand-surface-container-low p-1 shadow-xl backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-150">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                opt.value === value
+                  ? 'bg-brand-primary text-white font-semibold'
+                  : 'text-brand-on-surface-variant hover:bg-white/5 hover:text-brand-on-surface'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

@@ -34,8 +34,10 @@ export default function PricingPage() {
   const [transferContent, setTransferContent] = useState<string | null>(null);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [bankDetails, setBankDetails] = useState<BankDetails | null>(null);
+  const [selectedDuration, setSelectedDuration] = useState<number>(1);
 
   async function handleSelectPlan(plan: PricingPlan) {
+    if (plan.id === 'free') return;
     if (!session) {
       toast.error('Vui lòng đăng nhập để nâng cấp gói hội viên');
       return;
@@ -54,7 +56,7 @@ export default function PricingPage() {
         transferContent: string;
       }>('/api/v1/payments/checkout', {
         method: 'POST',
-        body: { planId: plan.id },
+        body: { planId: plan.id, durationMonths: selectedDuration },
       });
 
       setSelectedPlan(plan);
@@ -136,7 +138,17 @@ export default function PricingPage() {
             : new Date().toISOString(),
         });
       } else {
-        toast.info('Hệ thống chưa nhận được khoản chuyển. Vui lòng đợi trong giây lát hoặc nhấp kiểm tra lại sau.');
+        try {
+          await apiFetch(`/api/v1/payments/status/${transactionCode}/confirm-transfer`, {
+            method: 'POST',
+          });
+          toast.success('Đã gửi yêu cầu xác nhận thanh toán!', {
+            description: 'Ban quản trị sẽ đối chiếu sao kê và kích hoạt tài khoản trong ít phút.',
+          });
+        } catch (confirmErr) {
+          console.error('Failed to notify transfer confirmation:', confirmErr);
+          toast.info('Hệ thống chưa nhận được khoản chuyển. Vui lòng đợi trong giây lát hoặc nhấp kiểm tra lại sau.');
+        }
       }
     } catch (err: any) {
       toast.error('Đã có lỗi xảy ra khi kiểm tra trạng thái.');
@@ -166,20 +178,83 @@ export default function PricingPage() {
         <Container className="relative z-10 max-w-[1600px]">
           <PricingHeader />
 
+          {/* Promo banner */}
+          <div className="relative mb-10 overflow-hidden rounded-2xl border border-brand-primary/25 bg-gradient-to-r from-brand-primary/10 via-brand-tertiary/10 to-brand-primary/10 px-6 py-5 shadow-lg backdrop-blur-xl">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-primary/20 text-brand-primary">
+                  <span className="text-xl">🔥</span>
+                </span>
+                <div>
+                  <h3 className="font-headline font-bold text-brand-on-surface text-base sm:text-lg">
+                    Khuyến mãi đặc biệt: Tiết kiệm đến 50%
+                  </h3>
+                  <p className="text-sm text-brand-on-surface-variant mt-0.5">
+                    Giảm ngay <strong className="text-brand-primary">20%</strong> cho gói 3 tháng, <strong className="text-brand-primary">30%</strong> cho gói 6 tháng, và lên đến <strong className="text-brand-primary">50%</strong> cho gói 1 năm!
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-full bg-brand-primary/10 px-4 py-1.5 text-xs font-semibold text-brand-primary border border-brand-primary/20">
+                Ưu đãi đăng ký dài hạn
+              </div>
+            </div>
+          </div>
+
+          {/* Duration Selector Tabs */}
+          <div className="mb-10 flex justify-center">
+            <div className="inline-flex rounded-xl bg-brand-surface-container-lowest/80 p-1 border border-brand-outline-variant/20 shadow-inner">
+              {[
+                { label: '1 Tháng', val: 1 },
+                { label: '3 Tháng (-20%)', val: 3 },
+                { label: '6 Tháng (-30%)', val: 6 },
+                { label: '1 Năm (-50%)', val: 12 },
+              ].map((opt) => (
+                <button
+                  key={opt.val}
+                  type="button"
+                  onClick={() => setSelectedDuration(opt.val)}
+                  className={`rounded-lg px-5 py-2 text-sm font-semibold transition-all duration-200 ${
+                    selectedDuration === opt.val
+                      ? 'bg-brand-primary text-white shadow-md'
+                      : 'text-brand-on-surface-variant hover:text-brand-on-surface hover:bg-white/5'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Pricing Plans grid */}
           <div className="mb-12 grid grid-cols-1 items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {PLANS.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                loading={loadingCheckout}
-                isCurrent={
-                  session?.user?.subscriptionPlan === plan.id ||
-                  (plan.id === 'free' && (!session?.user?.subscriptionPlan || session?.user?.subscriptionPlan === 'free'))
-                }
-                onSelect={handleSelectPlan}
-              />
-            ))}
+            {PLANS.map((plan) => {
+              let discountMultiplier = 1.0;
+              if (selectedDuration === 3) {
+                discountMultiplier = 0.8;
+              } else if (selectedDuration === 6) {
+                discountMultiplier = 0.7;
+              } else if (selectedDuration === 12) {
+                discountMultiplier = 0.5;
+              }
+              const computedVal = Math.round(plan.priceVal * selectedDuration * discountMultiplier);
+              const customPlan: PricingPlan = {
+                ...plan,
+                price: plan.id === 'free' ? '0' : computedVal.toLocaleString('vi-VN'),
+                period: plan.id === 'free' ? 'tháng' : (selectedDuration === 12 ? 'năm' : `${selectedDuration} tháng`),
+              };
+              return (
+                <PlanCard
+                  key={plan.id}
+                  plan={customPlan}
+                  loading={loadingCheckout}
+                  isCurrent={
+                    session?.user?.subscriptionPlan === plan.id ||
+                    (plan.id === 'free' && (!session?.user?.subscriptionPlan || session?.user?.subscriptionPlan === 'free'))
+                  }
+                  onSelect={handleSelectPlan}
+                />
+              );
+            })}
           </div>
 
           <TrustRow />
@@ -219,6 +294,7 @@ export default function PricingPage() {
           qrUrl={qrUrl}
           paymentSuccess={paymentSuccess}
           confirming={confirming}
+          durationMonths={selectedDuration}
           onClose={handleCloseModal}
           onConfirm={handleConfirmPayment}
           onCopy={handleCopy}

@@ -38,6 +38,9 @@ export class Transaction {
   @Column({ name: 'paid_at', type: 'timestamptz', nullable: true })
   paidAt: Date | null;
 
+  @Column({ name: 'duration_months', type: 'integer', default: 1 })
+  durationMonths: number;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
