@@ -27,6 +27,13 @@ export default registerAs('app', () => ({
     name: process.env.DATABASE_NAME || 'law_ai',
   },
 
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: intEnv('REDIS_PORT', 6379),
+    password: process.env.REDIS_PASSWORD || undefined,
+    db: intEnv('REDIS_DB', 0),
+  },
+
   jwt: {
     secret: process.env.JWT_SECRET || 'change-me-in-prod',
     expiresIn: process.env.JWT_EXPIRES_IN || '15m',

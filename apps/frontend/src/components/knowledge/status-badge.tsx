@@ -4,18 +4,27 @@ export function StatusBadge({ status }: { status: RagDocumentStatus }) {
   const styles: Record<RagDocumentStatus, string> = {
     ready: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200',
     pending: 'border-amber-400/40 bg-amber-500/10 text-amber-200',
+    parsing: 'border-blue-400/40 bg-blue-500/10 text-blue-200',
+    chunking: 'border-blue-400/40 bg-blue-500/10 text-blue-200',
+    embedding: 'border-blue-400/40 bg-blue-500/10 text-blue-200',
     ocr_pending: 'border-sky-400/40 bg-sky-500/10 text-sky-200',
     failed: 'border-red-400/40 bg-red-500/10 text-red-200',
   };
   const labels: Record<RagDocumentStatus, string> = {
     ready: 'Sẵn sàng',
-    pending: 'Đang xử lý',
+    pending: 'Chưa đồng bộ',
+    parsing: 'Đang phân tích',
+    chunking: 'Đang chia nhỏ',
+    embedding: 'Đang tạo vector',
     ocr_pending: 'Đang OCR',
     failed: 'Lỗi',
   };
   const dotColor: Record<RagDocumentStatus, string> = {
     ready: 'bg-emerald-400',
     pending: 'bg-amber-400',
+    parsing: 'bg-blue-400 animate-pulse',
+    chunking: 'bg-blue-400 animate-pulse',
+    embedding: 'bg-blue-400 animate-pulse',
     ocr_pending: 'bg-sky-400 animate-pulse',
     failed: 'bg-red-400',
   };

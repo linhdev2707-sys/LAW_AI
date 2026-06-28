@@ -16,6 +16,19 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  redis:
+    image: redis:7-alpine
+    container_name: law-ai-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Backend (NestJS) and Frontend (Next.js) are intentionally NOT defined
   # here. Run them on the host via `pnpm dev` from the repo root so that
@@ -30,3 +43,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:

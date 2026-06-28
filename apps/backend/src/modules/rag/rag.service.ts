@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit, ConflictException } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -8,6 +8,7 @@ import {
   RagDocument, RagDocumentStatus, RagDocumentType, RagLegalStatus,
 } from './entities/rag-document.entity';
 import { RagChunk } from './entities/rag-chunk.entity';
+import { DocumentVersion } from './entities/document-version.entity';
 import { LegalHierarchicalChunkerService, ILegalChunk } from './chunking/legal-hierarchical-chunker.service';
 import { LegalEmbeddingService } from './embedding/legal-embedding.service';
 import { RetrieverService, IScoredChunk, IRetrieverFilters } from './retrieval/retriever.service';
@@ -19,6 +20,7 @@ import { LegalStructureParser } from './parsers/legal-structure.parser';
 import { CreateRagDocumentDto } from './dto/create-rag-document.dto';
 import { bulkInsertChunks } from './rag-chunk-insert.helper';
 import { PdfNeedsOcrError } from './parsers/pdf-needs-ocr.error';
+import { RagQueueService } from './queue/rag-queue.service';
 
 export interface IIngestResult {
   id: string;
@@ -49,6 +51,7 @@ export class RagService implements OnModuleInit {
     private readonly structureParser: LegalStructureParser,
     private readonly dataSource: DataSource,
     private readonly config: ConfigService,
+    private readonly queueService: RagQueueService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -69,6 +72,112 @@ export class RagService implements OnModuleInit {
       bucket: dto.bucket.trim(),
       sourceUrl: dto.sourceUrl,
     }, userId);
+  }
+
+  async startAsyncIngestBuffer(
+    name: string, buffer: Buffer, mimeType: string,
+    filename: string | undefined, bucket: string, userId: string,
+  ) {
+    const sha256 = createHash('sha256').update(buffer).digest('hex');
+    await this.checkManifestDuplicate(bucket, sha256);
+
+    const resolvedMime = this.resolveMimeFromBuffer(mimeType, filename);
+
+    // Get existing document or create a new one
+    let doc = await this.docRepo.findOne({ where: { name: name.trim(), bucketName: bucket.trim() } });
+    let isNewDoc = false;
+    if (!doc) {
+      isNewDoc = true;
+      doc = await this.docRepo.save(this.docRepo.create({
+        name: name.trim(),
+        r2Key: '', // Will be set once active version is finalized
+        bucketName: bucket.trim(),
+        bucketRegion: 'auto',
+        sizeBytes: buffer.length,
+        chunkCount: 0,
+        status: RagDocumentStatus.PENDING,
+        createdBy: userId,
+      }));
+    }
+
+    // Determine version number
+    let versionNumber = 1;
+    if (!isNewDoc) {
+      const latestVersion = await this.dataSource.getRepository(DocumentVersion).findOne({
+        where: { documentId: doc.id },
+        order: { versionNumber: 'DESC' },
+      });
+      if (latestVersion) {
+        versionNumber = latestVersion.versionNumber + 1;
+      }
+    }
+
+    // Upload raw file buffer to R2 version-specific folder
+    const versionId = randomUUID();
+    const isJson = resolvedMime === 'application/json';
+    const ext = filename ? extname(filename).toLowerCase() : '.pdf';
+    const r2Key = `rag-versions/${doc.id}/${versionId}${isJson ? '.json' : ext}`;
+
+    try {
+      await this.r2.putObject(bucket.trim(), r2Key, buffer, resolvedMime);
+    } catch (e: unknown) {
+      if (isNewDoc) {
+        await this.docRepo.delete(doc.id);
+      }
+      throw new Error(`R2 upload failed: ${errorMessage(e)}`);
+    }
+
+    // Save document version record
+    const version = await this.dataSource.getRepository(DocumentVersion).save(
+      this.dataSource.getRepository(DocumentVersion).create({
+        id: versionId,
+        documentId: doc.id,
+        versionNumber,
+        r2Key,
+        mimeType: resolvedMime,
+        sizeBytes: buffer.length,
+        status: 'pending' as any,
+        createdBy: userId,
+      })
+    );
+
+    // Trigger the ingestion pipeline (Analyze step) is now deferred to manual Sync
+    // const job = await this.queueService.startIngestion(doc.id, versionId);
+
+    // Update the manifest for deduplication matching
+    await this.updateManifest(bucket, sha256, {
+      name: name.trim(),
+      uploadedAt: new Date().toISOString(),
+      docId: doc.id,
+      versionId,
+      status: 'pending',
+    });
+
+    return {
+      documentId: doc.id,
+      versionId,
+      jobId: null,
+      status: doc.status,
+    };
+  }
+
+  async syncDocument(documentId: string): Promise<any> {
+    const doc = await this.docRepo.findOne({ where: { id: documentId } });
+    if (!doc) {
+      throw new NotFoundException(`Không tìm thấy tài liệu với ID ${documentId}`);
+    }
+
+    const latestVersion = await this.dataSource.getRepository(DocumentVersion).findOne({
+      where: { documentId: doc.id },
+      order: { versionNumber: 'DESC' },
+    });
+    if (!latestVersion) {
+      throw new BadRequestException(`Không tìm thấy phiên bản nào cho tài liệu ${doc.name}`);
+    }
+
+    // Trigger the ingestion pipeline (Analyze step)
+    const job = await this.queueService.startIngestion(doc.id, latestVersion.id);
+    return job;
   }
 
   async ingestBuffer(
@@ -307,8 +416,35 @@ export class RagService implements OnModuleInit {
       // 7) Persist chunks + finalize document status
       await this.dataSource.transaction(async (em) => {
         const docRepo = em.getRepository(RagDocument);
+        const verRepo = em.getRepository(DocumentVersion);
+        let versionId = doc.activeVersionId;
+        if (!versionId) {
+          const latest = await verRepo.findOne({
+            where: { documentId: doc.id },
+            order: { versionNumber: 'DESC' },
+          });
+          if (latest) {
+            versionId = latest.id;
+          } else {
+            const newVer = await verRepo.save(
+              verRepo.create({
+                documentId: doc.id,
+                versionNumber: 1,
+                r2Key: doc.r2Key || 'legacy',
+                mimeType: doc.mimeType || 'text/plain',
+                sizeBytes: doc.sizeBytes || 0,
+                status: 'ready' as any,
+                createdBy: doc.createdBy || '00000000-0000-0000-0000-000000000000',
+              })
+            );
+            versionId = newVer.id;
+            await docRepo.update(doc.id, { activeVersionId: versionId });
+          }
+        }
+
         await bulkInsertChunks(this.dataSource, chunks.map((c, idx) => ({
           documentId: doc.id,
+          versionId: versionId!,
           chunkIndex: c.chunkIndex,
           content: c.content,
           rawText: c.rawText,
@@ -328,6 +464,7 @@ export class RagService implements OnModuleInit {
         await docRepo.update(doc.id, {
           status: RagDocumentStatus.READY,
           chunkCount: chunks.length,
+          activeVersionId: versionId,
           error: null,
         });
       });

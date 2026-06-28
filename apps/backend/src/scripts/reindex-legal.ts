@@ -12,6 +12,7 @@ import 'dotenv/config';
 import { DataSource } from 'typeorm';
 import { RagDocument, RagDocumentStatus } from '../modules/rag/entities/rag-document.entity';
 import { RagChunk } from '../modules/rag/entities/rag-chunk.entity';
+import { DocumentVersion } from '../modules/rag/entities/document-version.entity';
 import { LegalStructureParser } from '../modules/rag/parsers/legal-structure.parser';
 import { LegalHierarchicalChunkerService } from '../modules/rag/chunking/legal-hierarchical-chunker.service';
 import { MetadataEnricherService } from '../modules/rag/parsers/metadata-enricher.service';
@@ -34,7 +35,7 @@ async function main() {
     username: process.env.DATABASE_USER,
     password: process.env.DATABASE_PASSWORD,
     database: process.env.DATABASE_NAME,
-    entities: [RagDocument, RagChunk],
+    entities: [RagDocument, RagChunk, DocumentVersion],
     synchronize: false,
     logging: ['error', 'warn'],
   });
@@ -138,9 +139,35 @@ async function main() {
       }
 
       await ds.transaction(async (em) => {
-        await em.query('DELETE FROM rag_chunks WHERE document_id = $1', [doc.id]);
+        const verRepo = em.getRepository(DocumentVersion);
+        let versionId = doc.activeVersionId;
+        if (!versionId) {
+          const latest = await verRepo.findOne({
+            where: { documentId: doc.id },
+            order: { versionNumber: 'DESC' },
+          });
+          if (latest) {
+            versionId = latest.id;
+          } else {
+            const newVer = await verRepo.save(
+              verRepo.create({
+                documentId: doc.id,
+                versionNumber: 1,
+                r2Key: doc.r2Key || 'legacy',
+                mimeType: doc.mimeType || 'text/plain',
+                sizeBytes: doc.sizeBytes || 0,
+                status: 'ready' as any,
+                createdBy: doc.createdBy || '00000000-0000-0000-0000-000000000000',
+              })
+            );
+            versionId = newVer.id;
+          }
+        }
+
+        await em.query('DELETE FROM rag_chunks WHERE version_id = $1', [versionId]);
         await bulkInsertChunks(ds, newChunks.map((c, i) => ({
           documentId: doc.id,
+          versionId: versionId!,
           chunkIndex: c.chunkIndex,
           content: c.content,
           rawText: c.rawText,
@@ -168,6 +195,7 @@ async function main() {
           legalStatus: enrichment.legalStatus,
           extraMetadata: enrichment.extraMetadata as never,
           chunkCount: newChunks.length,
+          activeVersionId: versionId,
         });
       });
       ok++;

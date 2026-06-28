@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BullModule } from '@nestjs/bullmq';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation.schema';
 import { typeOrmModuleOptions } from './config/typeorm.config';
@@ -30,6 +31,17 @@ import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: typeOrmModuleOptions,
+    }),
+    BullModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        connection: {
+          host: config.get<string>('app.redis.host'),
+          port: config.get<number>('app.redis.port'),
+          password: config.get<string>('app.redis.password'),
+          db: config.get<number>('app.redis.db'),
+        },
+      }),
     }),
     // Global rate-limit defaults. Endpoints that need a different limit
     // (e.g. /chat/messages) override with @Throttle({...}). The actual

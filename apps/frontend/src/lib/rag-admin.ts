@@ -108,6 +108,13 @@ export const ragAdminApi = {
     );
   },
 
+  async sync(id: string): Promise<{ success: boolean; jobId: string }> {
+    return apiFetch<{ success: boolean; jobId: string }>(
+      `/api/v1/admin/rag/documents/${encodeURIComponent(id)}/sync`,
+      { method: 'POST' },
+    );
+  },
+
   // ─── Bucket helpers ───────────────────────────────────────────────────
 
   /**

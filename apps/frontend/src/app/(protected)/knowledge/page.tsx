@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
@@ -11,6 +11,7 @@ import {
   Plus,
   Trash2,
   UploadCloud,
+  RefreshCw,
 } from 'lucide-react';
 import { UserRole } from '@law-ai/shared';
 import { Button } from '@/components/ui/button';
@@ -64,7 +65,23 @@ export default function KnowledgePage() {
     refreshDocs,
     onConfirmDelete,
     onCreateBucket,
+    onSync,
+    onBulkSync,
+    bulkSyncing,
   } = useRagAdmin(isAdmin);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
+  const totalPages = Math.ceil(docs.length / PAGE_SIZE);
+  const paginatedDocs = useMemo(() => {
+    return docs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  }, [docs, currentPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [docs.length, totalPages, currentPage]);
 
   const pendingDoc = useMemo(
     () => docs.find((d) => d.status === 'ocr_pending') ?? null,
@@ -219,15 +236,28 @@ export default function KnowledgePage() {
                       <button
                         type="button"
                         onClick={clearSelection}
-                        disabled={bulkDeleting}
+                        disabled={bulkDeleting || bulkSyncing}
                         className="rounded-md px-3 py-1.5 text-xs font-medium text-brand-on-surface-variant transition-colors hover:bg-white/5 hover:text-brand-on-surface disabled:opacity-50"
                       >
                         Bỏ chọn
                       </button>
                       <button
                         type="button"
+                        onClick={onBulkSync}
+                        disabled={bulkDeleting || bulkSyncing}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-brand-primary/40 bg-brand-primary/10 px-3 py-1.5 text-xs font-semibold text-brand-primary transition-colors hover:bg-brand-primary/20 disabled:opacity-50"
+                      >
+                        {bulkSyncing ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-3.5 w-3.5" />
+                        )}
+                        Đồng bộ đã chọn
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => setPendingBulkDelete(new Set(selectedIds))}
-                        disabled={bulkDeleting}
+                        disabled={bulkDeleting || bulkSyncing}
                         className="inline-flex items-center gap-1.5 rounded-md border border-red-400/40 bg-red-500/15 px-3 py-1.5 text-xs font-semibold text-red-200 transition-colors hover:bg-red-500/25 disabled:opacity-50"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -237,12 +267,44 @@ export default function KnowledgePage() {
                   </div>
                 )}
                 <DocumentTable
-                  docs={docs}
+                  docs={paginatedDocs}
                   selectedIds={selectedIds}
                   onToggleSelected={toggleSelected}
                   onToggleAll={(ids) => setSelectedMany(ids)}
                   onDeleteClick={setPendingDelete}
+                  onSyncClick={onSync}
                 />
+
+                {totalPages > 1 && (
+                  <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-brand-outline-variant/10 pt-4">
+                    <p className="text-xs text-brand-on-surface-variant">
+                      Hiển thị {(currentPage - 1) * PAGE_SIZE + 1} - {Math.min(currentPage * PAGE_SIZE, docs.length)} trong tổng số {docs.length} tài liệu
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage((p) => p - 1)}
+                        className="border border-brand-outline-variant/10 text-brand-on-surface-variant hover:bg-white/5 hover:text-brand-tertiary disabled:opacity-40"
+                      >
+                        Trước
+                      </Button>
+                      <span className="text-xs font-medium text-brand-on-surface">
+                        Trang {currentPage} / {totalPages}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage((p) => p + 1)}
+                        className="border border-brand-outline-variant/10 text-brand-on-surface-variant hover:bg-white/5 hover:text-brand-tertiary disabled:opacity-40"
+                      >
+                        Sau
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>

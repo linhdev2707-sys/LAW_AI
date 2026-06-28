@@ -22,6 +22,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '@law-ai/shared';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RagService } from './rag.service';
+import { RagQueueService } from './queue/rag-queue.service';
 import { PdfNeedsOcrError } from './parsers/pdf-needs-ocr.error';
 import { CreateRagDocumentDto } from './dto/create-rag-document.dto';
 import { RagDocumentIdParamDto } from './dto/rag-document-id.dto';
@@ -38,7 +39,10 @@ import { extname } from 'path';
 export class RagAdminController {
   private readonly logger = new Logger(RagAdminController.name);
 
-  constructor(private readonly ragService: RagService) {}
+  constructor(
+    private readonly ragService: RagService,
+    private readonly queueService: RagQueueService,
+  ) {}
 
   // ─── Bucket management ───────────────────────────────────────────────
 
@@ -113,7 +117,7 @@ export class RagAdminController {
       throw new BadRequestException('Missing `file` field in multipart form');
     }
     const mimeType = file.mimetype || 'application/octet-stream';
-    const result = await this.ragService.ingestBuffer(
+    const result = await this.ragService.startAsyncIngestBuffer(
       dto.name,
       file.buffer,
       mimeType,
@@ -122,6 +126,32 @@ export class RagAdminController {
       userId,
     );
     return result;
+  }
+
+  @Get('jobs/:id')
+  getJobStatus(@Param('id') jobId: string) {
+    return this.queueService.getJobStatus(jobId);
+  }
+
+  @Post('jobs/:id/cancel')
+  @HttpCode(HttpStatus.OK)
+  async cancelJob(@Param('id') jobId: string) {
+    await this.queueService.cancelJob(jobId);
+    return { success: true };
+  }
+
+  @Post('jobs/:id/retry')
+  @HttpCode(HttpStatus.OK)
+  async retryJob(@Param('id') jobId: string) {
+    await this.queueService.retryJob(jobId);
+    return { success: true };
+  }
+
+  @Post('documents/:id/sync')
+  @HttpCode(HttpStatus.OK)
+  async sync(@Param() params: RagDocumentIdParamDto) {
+    const job = await this.ragService.syncDocument(params.id);
+    return { success: true, jobId: job.id };
   }
 
   /**

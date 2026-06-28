@@ -15,6 +15,11 @@ export const validationSchema = Joi.object({
   DATABASE_PASSWORD: Joi.string().default('lawai_password'),
   DATABASE_NAME: Joi.string().default('law_ai'),
 
+  REDIS_HOST: Joi.string().default('localhost'),
+  REDIS_PORT: Joi.number().default(6379),
+  REDIS_PASSWORD: Joi.string().allow('').optional(),
+  REDIS_DB: Joi.number().default(0),
+
   JWT_SECRET: Joi.string().min(32).required(),
   JWT_EXPIRES_IN: Joi.string().default('15m'),
   JWT_REFRESH_SECRET: Joi.string().min(32).required(),

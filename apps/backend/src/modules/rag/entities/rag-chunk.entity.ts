@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { RagDocument } from './rag-document.entity';
+import { DocumentVersion } from './document-version.entity';
 
 @Entity({ name: 'rag_chunks' })
 @Index('IDX_rag_chunks_doc_index', ['documentId', 'chunkIndex'])
@@ -23,6 +24,13 @@ export class RagChunk {
   @ManyToOne(() => RagDocument, (d) => d.chunks, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'document_id' })
   document: RagDocument;
+
+  @Column({ name: 'version_id', type: 'uuid', nullable: true })
+  versionId: string | null;
+
+  @ManyToOne(() => DocumentVersion, (v) => v.chunks, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'version_id' })
+  version: DocumentVersion | null;
 
   @Column({ name: 'chunk_index', type: 'integer' })
   chunkIndex: number;
@@ -80,11 +88,12 @@ export class RagChunk {
     name: 'embedding_vec',
     type: 'vector',
     nullable: true,
+    select: false,
   })
   embeddingVec: number[] | null;
 
   /** Legacy JSON-serialized vector (kept for rollback). */
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, select: false })
   embedding: string | null;
 
   @Column({

@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RagDocument } from './entities/rag-document.entity';
 import { RagChunk } from './entities/rag-chunk.entity';
+import { DocumentVersion } from './entities/document-version.entity';
+import { DocumentJob } from './entities/document-job.entity';
+import { ProcessingLog } from './entities/processing-log.entity';
 import { RagService } from './rag.service';
 import { RagAdminController } from './rag-admin.controller';
 import { RagOcrCallbackController } from './rag-ocr-callback.controller';
@@ -17,14 +20,27 @@ import { ReferenceExtractorService } from './parsers/reference-extractor.service
 import { OcrCallbackGuard } from './guards/ocr-callback.guard';
 import { RagOcrSweeperService } from './rag-ocr-sweeper.service';
 import { LlmModule } from '../llm/llm.module';
+import { BullModule } from '@nestjs/bullmq';
+import { RagQueueService } from './queue/rag-queue.service';
+import { AnalyzeProcessor } from './queue/processors/analyze.processor';
+import { TextExtractProcessor } from './queue/processors/text-extract.processor';
+import { ChunkProcessor } from './queue/processors/chunk.processor';
+import { EmbedProcessor } from './queue/processors/embed.processor';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RagDocument, RagChunk]),
+    TypeOrmModule.forFeature([RagDocument, RagChunk, DocumentVersion, DocumentJob, ProcessingLog]),
     // LlmModule is imported so MetadataEnricherService can @Optional()
     // inject LlmService. If LLM isn't configured the enricher silently
     // falls back to regex-only metadata extraction.
     LlmModule,
+    BullModule.registerQueue(
+      { name: 'analyze' },
+      { name: 'ocr' },
+      { name: 'text-extract' },
+      { name: 'chunk' },
+      { name: 'embed' },
+    ),
   ],
   controllers: [RagAdminController, RagOcrCallbackController],
   providers: [
@@ -40,12 +56,18 @@ import { LlmModule } from '../llm/llm.module';
     ReferenceExtractorService,
     OcrCallbackGuard,
     RagOcrSweeperService,
+    RagQueueService,
+    AnalyzeProcessor,
+    TextExtractProcessor,
+    ChunkProcessor,
+    EmbedProcessor,
   ],
   exports: [
     RagService,
     RetrieverService,
     LegalStructureParser,
     ReferenceExtractorService,
+    RagQueueService,
   ],
 })
 export class RagModule {}

@@ -55,6 +55,7 @@ services:
       DATABASE_USER: ${POSTGRES_USER:-lawai}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-lawai_password}
       DATABASE_NAME: ${POSTGRES_DB:-law_ai}
+      REDIS_HOST: redis
       BACKEND_PORT: 4000
       JWT_SECRET: ${JWT_SECRET:-super-secret-key-change-me-min-32-chars-long-aaaaaa}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
@@ -129,9 +130,29 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  redis:
+    image: redis:7-alpine
+    container_name: law-ai-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - law-ai-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   postgres_data:
   model_cache:
+  redis_data:
 
 networks:
   law-ai-network:

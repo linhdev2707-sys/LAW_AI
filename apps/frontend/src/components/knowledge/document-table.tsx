@@ -1,6 +1,6 @@
 'use client';
 
-import { Trash2 } from 'lucide-react';
+import { Trash2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from './status-badge';
 import { formatBytes, formatDateTime } from '@/lib/rag-admin';
@@ -19,6 +19,7 @@ interface DocumentTableProps {
    */
   onToggleAll: (ids: string[]) => void;
   onDeleteClick: (doc: IRagDocument) => void;
+  onSyncClick?: (doc: IRagDocument) => void;
 }
 
 export function DocumentTable({
@@ -27,6 +28,7 @@ export function DocumentTable({
   onToggleSelected,
   onToggleAll,
   onDeleteClick,
+  onSyncClick,
 }: DocumentTableProps) {
   // "All selected" = every row in the current view is in the selection
   // set. We intentionally don't care about ids outside `docs` — those
@@ -112,17 +114,30 @@ export function DocumentTable({
                 <td className="py-3 pr-4 align-top text-brand-on-surface-variant">
                   {formatDateTime(d.createdAt)}
                 </td>
-                <td className="py-3 text-right align-top">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDeleteClick(d)}
-                    className="text-red-300 hover:bg-red-500/10 hover:text-red-200"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Xoá</span>
-                  </Button>
-                </td>
+                 <td className="py-3 text-right align-top">
+                   <div className="flex items-center justify-end gap-1">
+                     {onSyncClick && (d.status === 'pending' || d.status === 'failed') && (
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => onSyncClick(d)}
+                         className="text-brand-primary hover:bg-brand-primary/10 hover:text-brand-primary-variant"
+                       >
+                         <RefreshCw className="h-4 w-4 mr-1" />
+                         Đồng bộ
+                       </Button>
+                     )}
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       onClick={() => onDeleteClick(d)}
+                       className="text-red-300 hover:bg-red-500/10 hover:text-red-200"
+                     >
+                       <Trash2 className="h-4 w-4" />
+                       <span className="sr-only">Xoá</span>
+                     </Button>
+                   </div>
+                 </td>
               </tr>
             );
           })}

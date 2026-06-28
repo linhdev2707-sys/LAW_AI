@@ -6,6 +6,9 @@ import { Message } from '../modules/chat/entities/message.entity';
 import { RagDocument } from '../modules/rag/entities/rag-document.entity';
 import { RagChunk } from '../modules/rag/entities/rag-chunk.entity';
 import { Transaction } from '../modules/payment/entities/transaction.entity';
+import { DocumentVersion } from '../modules/rag/entities/document-version.entity';
+import { DocumentJob } from '../modules/rag/entities/document-job.entity';
+import { ProcessingLog } from '../modules/rag/entities/processing-log.entity';
 
 /**
  * Build TypeORM options.
@@ -21,7 +24,17 @@ export const typeOrmModuleOptions = (configService: ConfigService): TypeOrmModul
 
   const baseOptions: TypeOrmModuleOptions = {
     type: 'postgres',
-    entities: [User, Conversation, Message, RagDocument, RagChunk, Transaction],
+    entities: [
+      User,
+      Conversation,
+      Message,
+      RagDocument,
+      RagChunk,
+      Transaction,
+      DocumentVersion,
+      DocumentJob,
+      ProcessingLog,
+    ],
     // Glob matches migration files of the form "<timestamp>-<Name>.{ts,js}".
     // Avoids matching non-migration files (e.g. the standalone runner) in the
     // same directory, which would otherwise cause infinite recursion in

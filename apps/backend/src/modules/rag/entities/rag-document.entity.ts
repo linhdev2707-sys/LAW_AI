@@ -3,11 +3,14 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { RagChunk } from './rag-chunk.entity';
+import { DocumentVersion } from './document-version.entity';
 
 export enum RagDocumentStatus {
   PENDING = 'pending',
@@ -148,4 +151,14 @@ export class RagDocument {
 
   @OneToMany(() => RagChunk, (c) => c.document, { cascade: false })
   chunks: RagChunk[];
+
+  @Column({ name: 'active_version_id', type: 'uuid', nullable: true })
+  activeVersionId: string | null;
+
+  @ManyToOne(() => DocumentVersion, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'active_version_id' })
+  activeVersion: DocumentVersion | null;
+
+  @OneToMany(() => DocumentVersion, (v) => v.document, { cascade: false })
+  versions: DocumentVersion[];
 }

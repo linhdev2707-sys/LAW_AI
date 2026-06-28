@@ -18,6 +18,9 @@ import { Conversation } from '../../modules/chat/entities/conversation.entity';
 import { Message } from '../../modules/chat/entities/message.entity';
 import { RagDocument } from '../../modules/rag/entities/rag-document.entity';
 import { RagChunk } from '../../modules/rag/entities/rag-chunk.entity';
+import { DocumentVersion } from '../../modules/rag/entities/document-version.entity';
+import { DocumentJob } from '../../modules/rag/entities/document-job.entity';
+import { ProcessingLog } from '../../modules/rag/entities/processing-log.entity';
 
 // Best-effort .env load. In production (Railway) env vars are injected by
 // the platform, so this is a no-op there; locally it picks up the dev .env.
@@ -28,7 +31,7 @@ const isProd = process.env.NODE_ENV === 'production';
 
 const baseOptions = {
   type: 'postgres' as const,
-  entities: [User, Conversation, Message, RagDocument, RagChunk],
+  entities: [User, Conversation, Message, RagDocument, RagChunk, DocumentVersion, DocumentJob, ProcessingLog],
   // Glob matches migration files of the form "<timestamp>-<Name>.{ts,js}"
   // (e.g. 1700000000000-InitialSchema.js). Excludes this runner itself,
   // which would otherwise recurse infinitely during migrations discovery.
