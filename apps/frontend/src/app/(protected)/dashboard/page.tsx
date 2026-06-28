@@ -245,6 +245,7 @@ export default function DashboardPage() {
                         <Input
                           id="password"
                           type="password"
+                          autoComplete="new-password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           className="border-brand-outline-variant/30 bg-brand-surface-container-lowest/60 text-brand-on-surface focus-visible:border-brand-tertiary focus-visible:ring-brand-tertiary/30 h-11 rounded-xl"
@@ -260,6 +261,7 @@ export default function DashboardPage() {
                         <Input
                           id="confirmPassword"
                           type="password"
+                          autoComplete="new-password"
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           className="border-brand-outline-variant/30 bg-brand-surface-container-lowest/60 text-brand-on-surface focus-visible:border-brand-tertiary focus-visible:ring-brand-tertiary/30 h-11 rounded-xl"
