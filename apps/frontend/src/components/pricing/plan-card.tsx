@@ -51,12 +51,6 @@ export function PlanCard({ plan, isCurrent, loading, onSelect }: PlanCardProps) 
         <h3 className="font-headline text-xl font-bold text-brand-on-surface">{plan.name}</h3>
       </div>
 
-      {plan.description && (
-        <p className="mb-4 text-sm text-brand-on-surface-variant leading-relaxed">
-          {plan.description}
-        </p>
-      )}
-
       {/* Price block */}
       <div
         className={`mb-6 min-w-0 rounded-xl p-4 ${
