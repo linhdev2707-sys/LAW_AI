@@ -2,7 +2,7 @@
 
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Brain, BookOpen, Zap, Check, Lock } from 'lucide-react';
-import { CHAT_MODES, CHAT_MODE_LABELS, type ChatMode } from '@law-ai/shared';
+import { CHAT_MODES, CHAT_MODE_LABELS, type ChatMode, UserRole } from '@law-ai/shared';
 import { cn } from '@/lib/utils';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
@@ -32,8 +32,7 @@ const DESCRIPTIONS: Record<ChatMode, string> = {
  */
 export function ModePicker({ value, onChange, disabled }: ModePickerProps) {
   const { data: session } = useSession();
-  const plan = session?.user?.subscriptionPlan || 'free';
-  const isPaid = ['basic', 'pro', 'premium'].includes(plan);
+  const isAdmin = session?.user?.role === UserRole.ADMIN;
 
   const CurrentIcon = ICONS[value];
 
@@ -71,7 +70,7 @@ export function ModePicker({ value, onChange, disabled }: ModePickerProps) {
           {CHAT_MODES.map((m) => {
             const Icon = ICONS[m];
             const isSelected = m === value;
-            const isLocked = !isPaid && m !== 'fast';
+            const isLocked = !isAdmin && m !== 'fast';
 
             return (
               <DropdownMenu.Item
@@ -80,7 +79,7 @@ export function ModePicker({ value, onChange, disabled }: ModePickerProps) {
                   if (isLocked) {
                     e.preventDefault(); // Prevent closing menu
                     toast.error(
-                      `Chế độ "${CHAT_MODE_LABELS[m].label}" chỉ dành cho tài khoản hội viên. Vui lòng nâng cấp gói cước để sử dụng!`,
+                      `Chế độ "${CHAT_MODE_LABELS[m].label}" hiện đang trong quá trình thử nghiệm và chỉ dành riêng cho Quản trị viên (Admin).`,
                     );
                     return;
                   }

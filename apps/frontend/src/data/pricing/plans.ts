@@ -8,7 +8,6 @@ export interface PricingPlan {
   price: string;
   priceVal: number;
   period: string;
-  description: string;
   features: string[];
   /**
    * Optional helper text shown right under the quota feature (the first
@@ -26,12 +25,10 @@ export const PLANS: PricingPlan[] = [
     price: '0',
     priceVal: 0,
     period: 'tháng',
-    description: 'Phù hợp để trải nghiệm dịch vụ.',
     features: [
       '12 lượt hỏi mỗi tháng',
       'Trò chuyện với AI để giải đáp thắc mắc',
       'Câu trả lời nhanh và dễ hiểu',
-      'Phù hợp để trải nghiệm dịch vụ',
     ],
   },
   {
@@ -40,15 +37,13 @@ export const PLANS: PricingPlan[] = [
     price: '49.000',
     priceVal: 49000,
     period: 'tháng',
-    description: 'Phù hợp cho nhu cầu sử dụng thường xuyên.',
     features: [
       '72 lượt hỏi mỗi tháng',
       'Tìm kiếm thông tin và tài liệu',
       'Giải đáp chi tiết hơn cho các câu hỏi phức tạp',
       'Tốc độ phản hồi tiêu chuẩn',
-      'Phù hợp cho nhu cầu sử dụng thường xuyên',
     ],
-    quotaNote: 'Nhiều hơn 60 lượt so với gói Miễn Phí (tương đương ×6)',
+    quotaNote: 'Hạn mức cao hơn so với gói miễn phí',
   },
   {
     id: 'pro',
@@ -56,7 +51,6 @@ export const PLANS: PricingPlan[] = [
     price: '99.000',
     priceVal: 99000,
     period: 'tháng',
-    description: 'Phù hợp cho cá nhân và doanh nghiệp nhỏ.',
     features: [
       '192 lượt hỏi mỗi tháng',
       'Bao gồm toàn bộ tính năng của gói Cơ Bản',
@@ -64,7 +58,7 @@ export const PLANS: PricingPlan[] = [
       'Ưu tiên xử lý câu hỏi',
     ],
     isPopular: true,
-    quotaNote: 'Nhiều hơn 120 lượt so với gói Cơ Bản (tương đương ×2,7)',
+    quotaNote: 'Quyền lợi sử dụng được mở rộng đáng kể',
   },
   {
     id: 'premium',
@@ -72,13 +66,12 @@ export const PLANS: PricingPlan[] = [
     price: '249.000',
     priceVal: 249000,
     period: 'tháng',
-    description: 'Cá nhân hóa trải nghiệm sử dụng với quyền lực tối đa.',
     features: [
       '600 lượt hỏi mỗi tháng',
       'Bao gồm toàn bộ tính năng của gói Plus',
       'Truy cập các tính năng AI mới nhất',
       'Hỗ trợ ưu tiên',
     ],
-    quotaNote: 'Nhiều hơn 408 lượt so với gói Plus (tương đương ×3,1)',
+    quotaNote: 'Tối đa hóa khả năng sử dụng mỗi tháng',
   },
 ];

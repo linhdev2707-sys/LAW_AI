@@ -35,7 +35,7 @@ export function PlanCard({ plan, isCurrent, loading, onSelect }: PlanCardProps) 
       )}
 
       {/* Plan icon + name */}
-      <div className="mb-5 flex items-center gap-3">
+      <div className="mb-4 flex items-center gap-3">
         <span
           className={`flex h-10 w-10 items-center justify-center rounded-xl text-lg ${
             plan.isPopular
@@ -51,13 +51,15 @@ export function PlanCard({ plan, isCurrent, loading, onSelect }: PlanCardProps) 
         <h3 className="font-headline text-xl font-bold text-brand-on-surface">{plan.name}</h3>
       </div>
 
-      <p className="mb-6 min-h-[44px] text-sm text-brand-on-surface-variant leading-relaxed">
-        {plan.description}
-      </p>
+      {plan.description && (
+        <p className="mb-4 text-sm text-brand-on-surface-variant leading-relaxed">
+          {plan.description}
+        </p>
+      )}
 
       {/* Price block */}
       <div
-        className={`mb-7 min-w-0 rounded-xl p-4 ${
+        className={`mb-6 min-w-0 rounded-xl p-4 ${
           plan.isPopular
             ? 'bg-white/5 ring-1 ring-brand-primary/30'
             : 'bg-white/[0.02]'

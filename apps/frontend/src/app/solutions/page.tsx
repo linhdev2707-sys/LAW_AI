@@ -50,14 +50,11 @@ export default function SolutionsPage() {
                   key={item.title}
                   className="group glass-card relative overflow-hidden rounded-2xl border border-brand-outline-variant/20 bg-brand-surface-container-low/40 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand-tertiary/40 hover:shadow-xl hover:shadow-brand-tertiary/10"
                 >
-                  <div className="mb-4 flex items-start justify-between">
+                  <div className="mb-4">
                     <span
                       className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${item.color} text-white shadow-lg`}
                     >
                       <Icon className="h-6 w-6" />
-                    </span>
-                    <span className="rounded-full border border-brand-outline-variant/20 bg-white/[0.02] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-on-surface-variant">
-                      {item.audience}
                     </span>
                   </div>
                   <h2 className="font-headline text-lg font-bold text-brand-on-surface">

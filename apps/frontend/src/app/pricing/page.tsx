@@ -187,15 +187,15 @@ export default function PricingPage() {
                 </span>
                 <div>
                   <h3 className="font-headline font-bold text-brand-on-surface text-base sm:text-lg">
-                    Khuyến mãi đặc biệt: Tiết kiệm đến 50%
+                    Sự kiện Khai Trương: Giảm ngay 50% gói 1 tháng
                   </h3>
                   <p className="text-sm text-brand-on-surface-variant mt-0.5">
-                    Giảm ngay <strong className="text-brand-primary">20%</strong> cho gói 3 tháng, <strong className="text-brand-primary">30%</strong> cho gói 6 tháng, và lên đến <strong className="text-brand-primary">50%</strong> cho gói 1 năm!
+                    Trong 3 tháng khai trương, đăng ký bất kỳ gói dịch vụ nào theo chu kỳ <strong className="text-brand-primary">1 tháng</strong> cũng sẽ được <strong className="text-brand-primary">giảm ngay 50%</strong>!
                   </p>
                 </div>
               </div>
               <div className="rounded-full bg-brand-primary/10 px-4 py-1.5 text-xs font-semibold text-brand-primary border border-brand-primary/20">
-                Ưu đãi đăng ký dài hạn
+                Ưu đãi Khai Trương
               </div>
             </div>
           </div>
@@ -204,10 +204,10 @@ export default function PricingPage() {
           <div className="mb-10 flex justify-center">
             <div className="inline-flex rounded-xl bg-brand-surface-container-lowest/80 p-1 border border-brand-outline-variant/20 shadow-inner">
               {[
-                { label: '1 Tháng', val: 1 },
-                { label: '3 Tháng (-20%)', val: 3 },
-                { label: '6 Tháng (-30%)', val: 6 },
-                { label: '1 Năm (-50%)', val: 12 },
+                { label: '1 Tháng (-50%)', val: 1 },
+                { label: '3 Tháng', val: 3 },
+                { label: '6 Tháng', val: 6 },
+                { label: '1 Năm', val: 12 },
               ].map((opt) => (
                 <button
                   key={opt.val}
@@ -228,14 +228,7 @@ export default function PricingPage() {
           {/* Pricing Plans grid */}
           <div className="mb-12 grid grid-cols-1 items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {PLANS.map((plan) => {
-              let discountMultiplier = 1.0;
-              if (selectedDuration === 3) {
-                discountMultiplier = 0.8;
-              } else if (selectedDuration === 6) {
-                discountMultiplier = 0.7;
-              } else if (selectedDuration === 12) {
-                discountMultiplier = 0.5;
-              }
+              const discountMultiplier = selectedDuration === 1 ? 0.5 : 1.0;
               const computedVal = Math.round(plan.priceVal * selectedDuration * discountMultiplier);
               const customPlan: PricingPlan = {
                 ...plan,
