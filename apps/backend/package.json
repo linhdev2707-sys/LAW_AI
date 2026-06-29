@@ -23,6 +23,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1064.0",
     "@aws-sdk/s3-request-presigner": "^3.1064.0",
+    "@google-analytics/data": "^6.1.0",
     "@law-ai/shared": "workspace:*",
     "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^10.3.10",

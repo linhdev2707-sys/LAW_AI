@@ -2,6 +2,8 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import { Providers } from '@/components/providers';
+import GoogleAnalytics from '@/components/google-analytics';
+
 
 // Self-host Google Fonts via next/font — eliminates the render-blocking
 // <link> tags the previous layout used and dodges the
@@ -27,9 +29,12 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const gaId = process.env.NEXT_PUBLIC_GA_ID || '';
+
   return (
     <html lang="vi" className={`${inter.variable} ${playfair.variable}`} suppressHydrationWarning>
       <head>
+        <GoogleAnalytics gaId={gaId} />
         {/* Material Symbols Outlined — icon font used by MaterialIcon.
             Kept as a stylesheet link (next/font does not cover icon fonts)
             but with display=block so it never blocks first paint. */}

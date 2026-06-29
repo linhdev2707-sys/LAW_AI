@@ -173,6 +173,14 @@ export default registerAs('app', () => ({
     accountName: process.env.ACCOUNT_NAME || 'CONG TY CONG NGHE iLaw',
     template: process.env.VIETQR_TEMPLATE || 'qr_only',
   },
+  ga: {
+    propertyId: process.env.GA_PROPERTY_ID || '',
+    clientEmail: process.env.GA_CLIENT_EMAIL || '',
+    privateKey: (process.env.GA_PRIVATE_KEY || '')
+      .replace(/\\b/g, '\nb')
+      .replace(/\\n/g, '\n')
+      .replace(/\n+/g, '\n'),
+  },
 
   // ─── Chat modes (deep agent tuning) ────────────────────────────────
   // Per-mode flags and limits. Currently only `deep` mode has tunables;

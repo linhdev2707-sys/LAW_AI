@@ -80,4 +80,9 @@ export const validationSchema = Joi.object({
   ACCOUNT_NO: Joi.string().default('19039988776601'),
   ACCOUNT_NAME: Joi.string().default('CONG TY CONG NGHE iLaw'),
   VIETQR_TEMPLATE: Joi.string().default('qr_only'),
+
+  // ─── Google Analytics (GA4) ────────────────────────────────────────
+  GA_PROPERTY_ID: Joi.string().allow('').optional().default(''),
+  GA_CLIENT_EMAIL: Joi.string().allow('').optional().default(''),
+  GA_PRIVATE_KEY: Joi.string().allow('').optional().default(''),
 });

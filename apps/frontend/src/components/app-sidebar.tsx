@@ -17,6 +17,7 @@ import {
   X,
   Users,
   CreditCard,
+  BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@law-ai/shared';
@@ -114,6 +115,12 @@ export function AppSidebar({ forceOpen = false, onClose }: AppSidebarProps) {
             label: 'Thanh toán',
             icon: <CreditCard className="h-4 w-4" />,
             matches: (p: string) => p.startsWith('/payments'),
+          },
+          {
+            href: '/traffic',
+            label: 'Lưu lượng truy cập',
+            icon: <BarChart3 className="h-4 w-4" />,
+            matches: (p: string) => p.startsWith('/traffic'),
           },
         ]
       : []),
