@@ -637,6 +637,11 @@ Instructions:
       if (!conversation) {
         throw new NotFoundException(`Conversation ${dto.conversationId} not found`);
       }
+      if (conversation.title === 'New chat') {
+        const newTitle = dto.content.trim().slice(0, 60) || 'New chat';
+        conversation.title = newTitle;
+        await this.convRepo.update({ id: conversation.id }, { title: newTitle });
+      }
     } else {
       const title = dto.content.trim().slice(0, 60) || 'New chat';
       conversation = await this.convRepo.save(

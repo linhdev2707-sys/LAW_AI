@@ -72,33 +72,17 @@ export function PlanCard({ plan, isCurrent, loading, onSelect }: PlanCardProps) 
 
       <ul className="mb-8 flex-1 space-y-3 font-body text-sm text-brand-on-surface-variant">
         {plan.features.map((feature, idx) => (
-          <li key={idx} className="flex flex-col gap-1.5">
-            <span className="flex items-start gap-2.5">
-              <span
-                className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
-                  plan.isPopular
-                    ? 'bg-brand-primary/20 text-brand-primary'
-                    : 'bg-brand-tertiary/15 text-brand-tertiary'
-                }`}
-              >
-                <Check className="h-3 w-3" strokeWidth={3} />
-              </span>
-              <span className="leading-relaxed">{feature}</span>
+          <li key={idx} className="flex items-start gap-2.5">
+            <span
+              className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
+                plan.isPopular
+                  ? 'bg-brand-primary/20 text-brand-primary'
+                  : 'bg-brand-tertiary/15 text-brand-tertiary'
+              }`}
+            >
+              <Check className="h-3 w-3" strokeWidth={3} />
             </span>
-            {/* Show the helper badge only under the quota feature (first
-                bullet) and only when one is defined for this plan. */}
-            {idx === 0 && plan.quotaNote && (
-              <span
-                className={`ml-[26px] inline-flex w-fit items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                  plan.isPopular
-                    ? 'border-brand-primary/30 bg-brand-primary/10 text-brand-primary'
-                    : 'border-brand-tertiary/30 bg-brand-tertiary/10 text-brand-tertiary'
-                }`}
-              >
-                <Sparkles className="h-3 w-3" />
-                {plan.quotaNote}
-              </span>
-            )}
+            <span className="leading-relaxed">{feature}</span>
           </li>
         ))}
       </ul>

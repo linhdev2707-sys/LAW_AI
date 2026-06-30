@@ -9,12 +9,6 @@ export interface PricingPlan {
   priceVal: number;
   period: string;
   features: string[];
-  /**
-   * Optional helper text shown right under the quota feature (the first
-   * entry in `features`). Use it to tell users how much MORE they get
-   * versus the previous tier — empty/undefined means hide the helper.
-   */
-  quotaNote?: string;
   isPopular?: boolean;
 }
 
@@ -26,7 +20,6 @@ export const PLANS: PricingPlan[] = [
     priceVal: 0,
     period: 'tháng',
     features: [
-      '12 lượt hỏi mỗi tháng',
       'Trò chuyện với AI để giải đáp thắc mắc',
       'Câu trả lời nhanh và dễ hiểu',
     ],
@@ -38,12 +31,11 @@ export const PLANS: PricingPlan[] = [
     priceVal: 49000,
     period: 'tháng',
     features: [
-      '72 lượt hỏi mỗi tháng',
+      'Hạn mức cao hơn so với gói miễn phí',
       'Tìm kiếm thông tin và tài liệu',
       'Giải đáp chi tiết hơn cho các câu hỏi phức tạp',
       'Tốc độ phản hồi tiêu chuẩn',
     ],
-    quotaNote: 'Hạn mức cao hơn so với gói miễn phí',
   },
   {
     id: 'pro',
@@ -52,13 +44,12 @@ export const PLANS: PricingPlan[] = [
     priceVal: 99000,
     period: 'tháng',
     features: [
-      '192 lượt hỏi mỗi tháng',
+      'Quyền lợi sử dụng được mở rộng đáng kể',
       'Bao gồm toàn bộ tính năng của gói Cơ Bản',
       'Tra cứu thông tin nhanh hơn với AI',
       'Ưu tiên xử lý câu hỏi',
     ],
     isPopular: true,
-    quotaNote: 'Quyền lợi sử dụng được mở rộng đáng kể',
   },
   {
     id: 'premium',
@@ -67,11 +58,10 @@ export const PLANS: PricingPlan[] = [
     priceVal: 249000,
     period: 'tháng',
     features: [
-      '600 lượt hỏi mỗi tháng',
+      'Tối đa hóa khả năng sử dụng mỗi tháng',
       'Bao gồm toàn bộ tính năng của gói Plus',
       'Truy cập các tính năng AI mới nhất',
       'Hỗ trợ ưu tiên',
     ],
-    quotaNote: 'Tối đa hóa khả năng sử dụng mỗi tháng',
   },
 ];
