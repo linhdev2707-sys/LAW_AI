@@ -55,7 +55,6 @@ const BASE_SYSTEM_PROMPT = `Bạn là **iLaw** – trợ lý pháp luật chuyê
 
 * Nếu trong NGUỒN THAM KHẢO không có thông tin cần tìm hoặc nguồn rỗng: Bạn BẮT BUỘC phải sử dụng kiến thức pháp luật Việt Nam sẵn có trong mô hình của mình để trả lời chi tiết và đầy đủ nhất cho người dùng.
 * Hãy trả lời TRỰC TIẾP vào câu hỏi. TUYỆT ĐỐI KHÔNG giải thích dông dài hay viết các câu dẫn mang tính chất giải thích nội bộ hệ thống như: "Tôi không tìm thấy thông tin này trong nguồn...", "Các nguồn bạn cung cấp chỉ đề cập đến...", "Dựa trên kiến thức của tôi...". Hãy đi thẳng vào nội dung giải đáp câu hỏi pháp lý.
-* Khi trả lời hoàn toàn bằng kiến thức có sẵn của AI, hãy thêm câu sau ở cuối câu trả lời: "*(Lưu ý: Thông tin này dựa trên kiến thức chung của AI và chưa được đối chiếu trực tiếp với các tài liệu trong kho lưu trữ của bạn)*".
 * Vẫn đảm bảo tính chính xác cao, không tự bịa số điều khoản nếu không chắc chắn.
 * Nếu người dùng hỏi thêm, gợi ý họ tải thêm tài liệu vào kho để có câu trả lời chuẩn xác đối chiếu.
 
@@ -92,7 +91,7 @@ Quy tắc:
 3. Mỗi thông tin quan trọng phải gắn trích dẫn **[N]** theo format:
    "Điều X Khoản Y [N]" hoặc "Điều X Bộ luật Y số Z/W [N]"
 4. Khi đã đủ thông tin, dừng gọi tool và đưa ra câu trả lời cuối cùng.
-5. Nếu không tìm thấy thông tin phù hợp trong kho tài liệu bằng các công cụ tra cứu, hãy sử dụng kiến thức pháp luật Việt Nam có sẵn của bạn để phân tích và trả lời người dùng, kèm theo lưu ý ở cuối câu trả lời.
+5. Nếu không tìm thấy thông tin phù hợp trong kho tài liệu bằng các công cụ tra cứu, hãy sử dụng kiến thức pháp luật Việt Nam có sẵn của bạn để phân tích và trả lời người dùng.
 `;
 
 /**
@@ -117,7 +116,11 @@ export class PromptBuilder {
    * full-citation, prefer `buildFastWithArticles`.
    */
   build(input: IPromptInput): IChatMessage[] {
-    const sys = this.buildSystemMessage(input.sources, input.lowConfidence ?? false, input.noSources ?? false);
+    const sys = this.buildSystemMessage(
+      input.sources,
+      input.lowConfidence ?? false,
+      input.noSources ?? false,
+    );
     const trimmedHistory = input.history.slice(-this.historyTurns * 2);
     return [
       { role: 'system', content: sys },
@@ -127,9 +130,16 @@ export class PromptBuilder {
   }
 
   /** Build the system message for the fast mode (no agent loop). */
-  buildSystemMessage(sources: IRetrievedSource[], lowConfidence = false, noSources = false): string {
+  buildSystemMessage(
+    sources: IRetrievedSource[],
+    lowConfidence = false,
+    noSources = false,
+  ): string {
     if (sources.length === 0 || noSources) {
-      return BASE_SYSTEM_PROMPT + `\n\n## ⚠️ KHÔNG CÓ TÀI LIỆU TRONG KHO\nHiện tại kho tài liệu không chứa văn bản nào liên quan trực tiếp đến câu hỏi này. Bạn BẮT BUỘC phải dùng kiến thức pháp luật Việt Nam có sẵn trong mô hình của mình để trả lời chi tiết và chính xác nhất cho người dùng. Hãy ghi rõ chú thích lưu ý ở cuối câu trả lời của bạn.`;
+      return (
+        BASE_SYSTEM_PROMPT +
+        `\n\n## ⚠️ KHÔNG CÓ TÀI LIỆU TRONG KHO\nHiện tại kho tài liệu không chứa văn bản nào liên quan trực tiếp đến câu hỏi này. Bạn BẮT BUỘC phải dùng kiến thức pháp luật Việt Nam có sẵn trong mô hình của mình để trả lời chi tiết và chính xác nhất cho người dùng.`
+      );
     }
     const blocks = sources
       .map((s) => `[${s.index}] (source: ${s.name})\n${s.content.trim()}`)

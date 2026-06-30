@@ -10,6 +10,8 @@ import { ChatStreamProvider } from '@/hooks/chat-stream-context';
  * `router.replace('/chat/<id>')` that unmounts the original hook
  * instance, dropping the in-flight stream and optimistic UI.
  */
+export const dynamic = 'force-dynamic';
+
 export default function ChatLayout({ children }: { children: ReactNode }) {
   return <ChatStreamProvider>{children}</ChatStreamProvider>;
 }

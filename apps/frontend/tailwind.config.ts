@@ -117,9 +117,9 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-playfair)', 'Georgia', 'serif'],
+        display: ['var(--font-inter)', 'system-ui', 'sans-serif'],
         body: ['var(--font-inter)', 'system-ui', 'sans-serif'],
-        headline: ['var(--font-playfair)', 'Georgia', 'serif'],
+        headline: ['var(--font-inter)', 'system-ui', 'sans-serif'],
         'material-symbols': ['"Material Symbols Outlined"'],
       },
       fontSize: {
