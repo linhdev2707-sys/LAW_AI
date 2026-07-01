@@ -18,7 +18,7 @@ export default function TermsPage() {
 
       <main className="relative pt-32 pb-24">
         {/* Soft radial backdrop glow */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(14,165,233,0.08),transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,229,255,0.22),transparent_60%)]" />
 
         <Container className="relative z-10 max-w-4xl">
           {/* Header */}
@@ -27,7 +27,7 @@ export default function TermsPage() {
               <FileText className="h-3.5 w-3.5" />
               Văn bản pháp lý
             </div>
-            <h1 className="mt-4 font-headline text-3xl font-bold leading-tight tracking-tight sm:text-4xl text-brand-on-surface">
+            <h1 className="mt-4 font-headline text-4xl sm:text-5xl md:text-6xl font-bold leading-tight tracking-tight text-brand-on-surface">
               Điều khoản sử dụng
             </h1>
             <div className="mt-3 flex items-center justify-center md:justify-start gap-2 text-sm text-brand-on-surface-variant">

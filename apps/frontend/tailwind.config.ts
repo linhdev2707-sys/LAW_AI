@@ -55,30 +55,30 @@ const config: Config = {
         // Landing page brand palette — extracted from logo.jpg
         // Logo: deep navy background + electric blue/cyan shield + white scales + gold dots
         brand: {
-          // Background scale (deep → mid navy)
-          background: '#001233',
-          surface: '#001233',
-          'surface-dim': '#000d27',
-          'surface-container': '#001a40',
-          'surface-container-low': '#00173a',
-          'surface-container-lowest': '#00091f',
-          'surface-container-high': '#002553',
-          'surface-container-highest': '#00306b',
-          'surface-bright': '#0a3373',
-          'surface-variant': '#0e2a5c',
-          'surface-tint': '#7dd3fc',
+          // Background scale (Vibrant Dark Navy)
+          background: '#0b1a36',
+          surface: '#0b1a36',
+          'surface-dim': '#051026',
+          'surface-container': '#12264c',
+          'surface-container-low': '#0e2043',
+          'surface-container-lowest': '#030d1f',
+          'surface-container-high': '#193262',
+          'surface-container-highest': '#203d77',
+          'surface-bright': '#294f99',
+          'surface-variant': '#162c54',
+          'surface-tint': '#00e5ff',
 
-          // Primary — electric sky blue (matches shield's bright highlight)
-          primary: '#0ea5e9',
-          'primary-container': '#0c4a6e',
+          // Primary — Vibrant Ice Blue
+          primary: '#00b0ff',
+          'primary-container': '#003b66',
           'on-primary': '#ffffff',
-          'on-primary-container': '#bae6fd',
-          'on-primary-fixed': '#0c1a2b',
-          'on-primary-fixed-variant': '#075985',
+          'on-primary-container': '#e0f2fe',
+          'on-primary-fixed': '#001b33',
+          'on-primary-fixed-variant': '#004c80',
           'primary-fixed': '#e0f2fe',
-          'primary-fixed-dim': '#7dd3fc',
+          'primary-fixed-dim': '#80d8ff',
 
-          // Secondary — gold (matches the three dots in the chat bubble)
+          // Secondary — gold/yellow accents (matches dots in logo and pricing highlight)
           secondary: '#fbbf24',
           'secondary-container': '#78350f',
           'on-secondary': '#1f1500',
@@ -88,31 +88,31 @@ const config: Config = {
           'on-secondary-fixed': '#1a1100',
           'on-secondary-fixed-variant': '#92400e',
 
-          // Tertiary — cyan glow (logo's brightest highlight)
-          tertiary: '#22d3ee',
-          'tertiary-container': '#083344',
-          'on-tertiary': '#001a20',
-          'on-tertiary-container': '#67e8f9',
-          'tertiary-fixed': '#cffafe',
-          'tertiary-fixed-dim': '#22d3ee',
-          'on-tertiary-fixed': '#001014',
-          'on-tertiary-fixed-variant': '#155e75',
+          // Tertiary — Neon Ice Cyan
+          tertiary: '#00e5ff',
+          'tertiary-container': '#004d56',
+          'on-tertiary': '#001f23',
+          'on-tertiary-container': '#b2ebf2',
+          'tertiary-fixed': '#e0f7fa',
+          'tertiary-fixed-dim': '#00e5ff',
+          'on-tertiary-fixed': '#001f23',
+          'on-tertiary-fixed-variant': '#006064',
 
           error: '#fca5a5',
           'error-container': '#7f1d1d',
           'on-error': '#450a0a',
           'on-error-container': '#fecaca',
 
-          outline: '#7dd3fc',
-          'outline-variant': 'rgba(125, 211, 252, 0.18)',
+          outline: '#00e5ff',
+          'outline-variant': 'rgba(0, 229, 255, 0.18)',
 
-          // "on-X" — readable colors on dark navy surfaces
-          'on-surface': '#e0f2fe',
-          'on-surface-variant': '#94a3b8',
-          'on-background': '#e0f2fe',
-          'inverse-primary': '#0c4a6e',
-          'inverse-surface': '#e0f2fe',
-          'inverse-on-surface': '#001233',
+          // "on-X" — readable colors on dark surfaces
+          'on-surface': '#f0f8ff',
+          'on-surface-variant': '#9bb2d2',
+          'on-background': '#f0f8ff',
+          'inverse-primary': '#003b66',
+          'inverse-surface': '#f0f8ff',
+          'inverse-on-surface': '#0b1a36',
         },
       },
       fontFamily: {

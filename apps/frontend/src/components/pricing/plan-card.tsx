@@ -53,12 +53,24 @@ export function PlanCard({ plan, isCurrent, loading, onSelect }: PlanCardProps) 
 
       {/* Price block */}
       <div
-        className={`mb-6 min-w-0 rounded-xl p-4 ${
+        className={`mb-6 min-w-0 rounded-xl p-4 flex flex-col justify-center ${
           plan.isPopular
             ? 'bg-white/5 ring-1 ring-brand-primary/30'
             : 'bg-white/[0.02]'
         }`}
       >
+        {plan.originalPrice && (
+          <div className="mb-1 flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-brand-on-surface-variant/50 line-through">
+              {plan.originalPrice} VND
+            </span>
+            {plan.discountPercent && (
+              <span className="rounded bg-brand-primary/10 border border-brand-primary/20 px-1 py-0.5 text-[10px] font-bold text-brand-primary">
+                Giảm {plan.discountPercent}%
+              </span>
+            )}
+          </div>
+        )}
         <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
           <span className="font-headline text-3xl font-extrabold text-brand-tertiary sm:text-4xl">
             {plan.price}

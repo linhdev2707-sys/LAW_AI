@@ -13,7 +13,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            'radial-gradient(ellipse at top, rgba(14,165,233,0.12) 0%, transparent 55%), radial-gradient(ellipse at bottom right, rgba(34,211,238,0.10) 0%, transparent 50%), radial-gradient(ellipse at bottom left, rgba(125,211,252,0.08) 0%, transparent 45%)',
+            'radial-gradient(ellipse at top, rgba(0,176,255,0.22) 0%, transparent 55%), radial-gradient(ellipse at bottom right, rgba(0,229,255,0.18) 0%, transparent 50%), radial-gradient(ellipse at bottom left, rgba(0,229,255,0.12) 0%, transparent 45%)',
         }}
       />
 
@@ -23,7 +23,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         className="pointer-events-none absolute inset-0 opacity-[0.08]"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(125,211,252,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(125,211,252,0.6) 1px, transparent 1px)',
+            'linear-gradient(rgba(0,229,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.6) 1px, transparent 1px)',
           backgroundSize: '56px 56px',
           maskImage:
             'radial-gradient(ellipse at center, black 30%, transparent 75%)',

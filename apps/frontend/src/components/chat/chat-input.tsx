@@ -46,6 +46,27 @@ export function ChatInput({
 }: ChatInputProps) {
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showTour, setShowTour] = useState(false);
+
+  useEffect(() => {
+    try {
+      const dismissed = window.localStorage.getItem('tour:mode-picker:dismissed');
+      if (dismissed !== 'true') {
+        setShowTour(true);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const dismissTour = () => {
+    try {
+      window.localStorage.setItem('tour:mode-picker:dismissed', 'true');
+    } catch {
+      // ignore
+    }
+    setShowTour(false);
+  };
 
   // Auto-grow textarea up to a max height.
   useEffect(() => {
@@ -114,6 +135,45 @@ export function ChatInput({
               : 'border-brand-tertiary/25 focus-within:border-brand-tertiary/60',
           )}
         >
+          {/* Mode picker onboarding tutorial tooltip */}
+          {showTour && (
+            <div className="absolute bottom-[52px] left-2 z-40 w-72 rounded-xl border border-brand-primary/30 bg-brand-surface-container-high p-4 shadow-xl shadow-black/50 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+              {/* Small downward pointing arrow */}
+              <div className="absolute bottom-[-6px] left-[14px] h-3 w-3 rotate-45 border-r border-b border-brand-primary/30 bg-brand-surface-container-high" />
+              
+              <div className="space-y-2">
+                <div className="flex items-start justify-between">
+                  <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-brand-primary">
+                    💡 Chế Độ Trả Lời AI
+                  </h4>
+                </div>
+                <p className="text-xs text-brand-on-surface-variant leading-relaxed font-body">
+                  Nhấp vào đây để chuyển đổi chế độ phản hồi của AI phù hợp với nhu cầu của bạn:
+                </p>
+                <ul className="space-y-1 text-[11px] text-brand-on-surface-variant/80 font-body">
+                  <li className="flex items-center gap-1.5">
+                    <span className="font-bold text-brand-on-surface">⚡ Nhanh</span>: Trò chuyện phản hồi tức thì
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <span className="font-bold text-brand-on-surface">🧠 Sâu</span>: Lập luận chi tiết (Admin)
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <span className="font-bold text-brand-on-surface">📖 Tra cứu</span>: Chỉ trích dẫn điều luật gốc
+                  </li>
+                </ul>
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={dismissTour}
+                    className="rounded bg-brand-primary px-2.5 py-1 text-[11px] font-bold text-white shadow hover:bg-brand-primary/95 transition-all font-body"
+                  >
+                    Tôi đã hiểu
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Mode picker — replaces the (previously disabled) paperclip
               attachment button. Selecting a mode here only affects the
               NEXT message; the page owns the state. */}

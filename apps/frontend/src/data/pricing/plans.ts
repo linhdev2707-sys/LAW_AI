@@ -10,6 +10,8 @@ export interface PricingPlan {
   period: string;
   features: string[];
   isPopular?: boolean;
+  originalPrice?: string;
+  discountPercent?: number;
 }
 
 export const PLANS: PricingPlan[] = [

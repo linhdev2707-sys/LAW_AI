@@ -173,7 +173,7 @@ export default function PricingPage() {
 
       <main className="relative pt-32 pb-24">
         {/* Ambient background glow */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(14,165,233,0.08),transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,229,255,0.22),transparent_60%)]" />
 
         <Container className="relative z-10 max-w-[1600px]">
           <PricingHeader />
@@ -230,10 +230,21 @@ export default function PricingPage() {
             {PLANS.map((plan) => {
               const discountMultiplier = selectedDuration === 1 ? 0.5 : 1.0;
               const computedVal = Math.round(plan.priceVal * selectedDuration * discountMultiplier);
+              const originalVal = plan.priceVal * selectedDuration;
+              const hasDiscount = discountMultiplier < 1.0 && plan.id !== 'free';
+              const originalPrice = hasDiscount
+                ? originalVal.toLocaleString('vi-VN')
+                : undefined;
+              const discountPercent = hasDiscount
+                ? Math.round((1 - discountMultiplier) * 100)
+                : undefined;
+
               const customPlan: PricingPlan = {
                 ...plan,
                 price: plan.id === 'free' ? '0' : computedVal.toLocaleString('vi-VN'),
                 period: plan.id === 'free' ? 'tháng' : (selectedDuration === 12 ? 'năm' : `${selectedDuration} tháng`),
+                originalPrice,
+                discountPercent,
               };
               return (
                 <PlanCard

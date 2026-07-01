@@ -79,8 +79,8 @@ export function MessageBubble({ message, sources, loading }: MessageBubbleProps)
             isUser ? 'order-2 flex flex-col items-end' : 'order-2',
           )}
         >
-          {/* Mode + answer-source badge row — only for AI messages */}
-          {!isUser && message.mode && <ModeBadge mode={message.mode} />}
+          {/* Mode + answer-source badge row — only for AI messages, shown after loading is complete */}
+          {!isUser && !loading && message.mode && <ModeBadge mode={message.mode} />}
 
           {/* In-flight tool-call indicator — only visible while a deep-mode
               agent is iterating. Renders above the placeholder content. */}
@@ -100,6 +100,12 @@ export function MessageBubble({ message, sources, loading }: MessageBubbleProps)
                 {message.content}
               </div>
             </div>
+          ) : !message.content.trim() && loading ? (
+            <div className="flex items-center gap-1.5 px-1 py-3" aria-label="Đang trả lời">
+              <span className="h-2 w-2 animate-bounce rounded-full bg-brand-primary [animation-delay:-0.3s]" />
+              <span className="h-2 w-2 animate-bounce rounded-full bg-brand-primary [animation-delay:-0.15s]" />
+              <span className="h-2 w-2 animate-bounce rounded-full bg-brand-primary" />
+            </div>
           ) : (
             <div
               className={cn(
@@ -116,13 +122,13 @@ export function MessageBubble({ message, sources, loading }: MessageBubbleProps)
           )}
 
           {/* Source-of-truth badge — only for AI messages, and only once
-              the streaming metadata has arrived. */}
-          {!isUser && message.answerSource && (
+              the streaming metadata has arrived and loading is complete. */}
+          {!isUser && !loading && message.answerSource && (
             <AnswerSourceBadge kind={message.answerSource} />
           )}
 
-          {/* Sources row — only for AI messages */}
-          {!isUser && sources && sources.length > 0 && (
+          {/* Sources row — only for AI messages, shown after loading is complete */}
+          {!isUser && !loading && sources && sources.length > 0 && (
             <SourcesRow sources={sources} />
           )}
 

@@ -109,7 +109,7 @@ export default function KnowledgePage() {
       <main className="relative h-full overflow-y-auto bg-brand-background text-brand-on-surface-variant">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(14,165,233,0.10),transparent_60%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,229,255,0.22),transparent_60%)]"
         />
         <div className="relative flex min-h-[60vh] items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin" />
@@ -122,7 +122,7 @@ export default function KnowledgePage() {
     <main className="relative h-full overflow-y-auto bg-brand-background text-brand-on-surface">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(34,211,238,0.10),transparent_60%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(0,229,255,0.22),transparent_60%)]"
       />
       <div className="container relative max-w-6xl py-12">
         <header className="mb-8">

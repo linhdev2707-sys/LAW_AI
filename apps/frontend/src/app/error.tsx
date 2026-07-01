@@ -20,7 +20,7 @@ export default function GlobalError({
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center bg-brand-background px-4 py-8 text-center text-brand-on-surface">
       {/* Ambient background glow */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(14,165,233,0.12),transparent_60%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,229,255,0.22),transparent_60%)]" />
 
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-brand-outline-variant/15 bg-brand-surface-container/80 p-8 shadow-2xl backdrop-blur-xl">
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-400">

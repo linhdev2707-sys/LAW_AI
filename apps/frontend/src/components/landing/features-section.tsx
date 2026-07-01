@@ -34,7 +34,7 @@ export function FeaturesSection() {
   return (
     <section id="features" className="relative py-24 md:py-32">
       {/* Subtle radial backdrop for depth */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(14,165,233,0.06),transparent_60%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,229,255,0.18),transparent_60%)]" />
 
       <Container className="relative">
         <div className="mb-20 flex flex-col items-center text-center">

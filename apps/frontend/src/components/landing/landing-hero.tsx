@@ -20,10 +20,10 @@ export function LandingHero() {
           </span>
         </div>
 
-        <h1 className="max-w-4xl font-headline text-display-lg-mobile leading-tight text-brand-on-surface md:text-display-lg">
+        <h1 className="max-w-4xl font-headline text-4xl sm:text-5xl md:text-6xl font-bold leading-tight text-brand-on-surface">
           Giải đáp vướng mắc{' '}
-          <span className="inline-block bg-gradient-to-r from-brand-tertiary via-brand-primary to-brand-secondary bg-clip-text px-1 pr-3 font-semibold italic text-transparent">
-            pháp luật dễ dàng
+          <span className="inline-block bg-gradient-to-r from-brand-tertiary via-brand-primary to-brand-secondary bg-clip-text py-2 px-1 pr-5 font-semibold italic text-transparent">
+            pháp luật dễ dàng{" "}
           </span>
         </h1>
 

@@ -11,7 +11,7 @@ export function PricingHeader() {
         <TrendingUp className="h-4 w-4" />
         Bảng giá & Cơ cấu Chi phí
       </div>
-      <h1 className="font-headline text-3xl font-bold tracking-tight text-brand-on-surface sm:text-4xl md:text-5xl max-w-3xl leading-tight">
+      <h1 className="font-headline text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-brand-on-surface max-w-3xl leading-tight">
         Mô hình giá minh bạch & vận hành tinh gọn
       </h1>
       <div className="beam-gradient mt-6 h-1 w-24 rounded-full opacity-70" />

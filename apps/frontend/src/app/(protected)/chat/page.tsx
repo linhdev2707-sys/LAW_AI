@@ -57,36 +57,36 @@ export default function ChatIndexPage() {
 
   return (
     <ChatShell>
-      <div className="flex flex-1 flex-col">
-        {error && (
-          <div className="border-b border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-200">
-            {error}
-          </div>
-        )}
-
-        <div className="flex-1">
-          {messages.length === 0 ? (
-            <EmptyState onSelect={handleSelect} />
-          ) : (
-            <MessageList
-              messages={messages}
-              sources={sources}
-              loading={streaming}
-            />
-          )}
+      {error && (
+        <div className="border-b border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-200">
+          {error}
         </div>
+      )}
 
-        <ChatInput
-          onSend={handleSelect}
-          onStop={stop}
-          disabled={false}
+      {messages.length === 0 ? (
+        <div className="flex flex-1 flex-col">
+          <div className="flex-1">
+            <EmptyState onSelect={handleSelect} />
+          </div>
+        </div>
+      ) : (
+        <MessageList
+          messages={messages}
+          sources={sources}
           loading={streaming}
-          placeholder="Nhắn cho iLaw…"
-          rateLimit={rateLimit}
-          mode={mode}
-          onModeChange={setMode}
         />
-      </div>
+      )}
+
+      <ChatInput
+        onSend={handleSelect}
+        onStop={stop}
+        disabled={false}
+        loading={streaming}
+        placeholder="Nhắn cho iLaw…"
+        rateLimit={rateLimit}
+        mode={mode}
+        onModeChange={setMode}
+      />
     </ChatShell>
   );
 }
