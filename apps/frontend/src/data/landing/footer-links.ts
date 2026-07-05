@@ -16,4 +16,5 @@ export const SUPPORT_LINKS: FooterLink[] = [
   { href: '#', label: 'Liên hệ hỗ trợ' },
   { href: '/pricing', label: 'Bảng giá & Gói dịch vụ' },
   { href: '#', label: 'Tài liệu hướng dẫn' },
+  { href: '/feedback', label: 'Đánh giá & Góp ý' },
 ];

@@ -9,6 +9,7 @@ import { Transaction } from '../modules/payment/entities/transaction.entity';
 import { DocumentVersion } from '../modules/rag/entities/document-version.entity';
 import { DocumentJob } from '../modules/rag/entities/document-job.entity';
 import { ProcessingLog } from '../modules/rag/entities/processing-log.entity';
+import { Feedback } from '../modules/feedback/entities/feedback.entity';
 
 /**
  * Build TypeORM options.
@@ -34,6 +35,7 @@ export const typeOrmModuleOptions = (configService: ConfigService): TypeOrmModul
       DocumentVersion,
       DocumentJob,
       ProcessingLog,
+      Feedback,
     ],
     // Glob matches migration files of the form "<timestamp>-<Name>.{ts,js}".
     // Avoids matching non-migration files (e.g. the standalone runner) in the

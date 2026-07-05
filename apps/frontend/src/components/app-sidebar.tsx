@@ -69,13 +69,9 @@ export function AppSidebar({ forceOpen = false, onClose }: AppSidebarProps) {
     });
   }, []);
 
-  // Effective width: on mobile (or when forceOpen is used as a drawer) we
-  // always show the expanded width so the drawer looks right.
   const expanded = forceOpen || !collapsed;
   const widthCls = expanded ? 'w-60' : 'w-16';
 
-  // Top-level nav items. `matches` is a prefix test so /chat/abc-123
-  // highlights the "Chat" item.
   const isAdmin = session?.user?.role === UserRole.ADMIN;
 
   const topItems: {
@@ -122,6 +118,12 @@ export function AppSidebar({ forceOpen = false, onClose }: AppSidebarProps) {
             icon: <BarChart3 className="h-4 w-4" />,
             matches: (p: string) => p.startsWith('/traffic'),
           },
+          {
+            href: '/feedback-admin',
+            label: 'Ý kiến đóng góp',
+            icon: <MessageSquare className="h-4 w-4" />,
+            matches: (p: string) => p.startsWith('/feedback-admin'),
+          },
         ]
       : []),
   ];
@@ -147,8 +149,6 @@ export function AppSidebar({ forceOpen = false, onClose }: AppSidebarProps) {
     <aside
       className={cn(
         'flex h-full flex-col border-r border-brand-outline-variant/15 bg-brand-surface-container text-brand-on-surface transition-[width] duration-200 ease-out',
-        // On mobile the rail is a slide-over drawer. On md+ it's a static
-        // column that participates in the parent flex layout.
         forceOpen
           ? 'fixed inset-y-0 left-0 z-50 w-60 shadow-2xl shadow-black/60 md:static md:z-auto md:shadow-none'
           : 'hidden md:flex',

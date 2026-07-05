@@ -18,6 +18,7 @@ import { KgModule } from './modules/kg/kg.module';
 import { InternalChatModule } from './modules/internal-chat/internal-chat.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { TrafficModule } from './modules/traffic/traffic.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
 import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.guard';
 
 @Module({
@@ -74,6 +75,7 @@ import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.
     InternalChatModule,
     PaymentModule,
     TrafficModule,
+    FeedbackModule,
   ],
   providers: [
     {

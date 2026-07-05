@@ -11,6 +11,7 @@ import { Transaction } from './modules/payment/entities/transaction.entity';
 import { DocumentVersion } from './modules/rag/entities/document-version.entity';
 import { DocumentJob } from './modules/rag/entities/document-job.entity';
 import { ProcessingLog } from './modules/rag/entities/processing-log.entity';
+import { Feedback } from './modules/feedback/entities/feedback.entity';
 
 // Load .env from the apps/backend folder (one level up from compiled /dist/data-source.js)
 loadEnv({ path: resolve(__dirname, '../.env') });
@@ -36,6 +37,7 @@ export const AppDataSource = new DataSource({
     DocumentVersion,
     DocumentJob,
     ProcessingLog,
+    Feedback,
   ],
   // Glob pattern is intentionally split into two (one per file extension)
   // instead of using brace expansion like `[0-9]*-*.{ts,js}`.
