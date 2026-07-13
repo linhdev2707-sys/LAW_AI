@@ -13,6 +13,8 @@ export class ApiError extends Error {
      * chat UI uses this to render a countdown and disable the input.
      */
     public readonly retryAfter?: number,
+    /** Stable application error code returned by the backend, when present. */
+    public readonly code?: string,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -50,8 +52,7 @@ export async function apiFetch<T = unknown>(
 
   // Detect FormData so we don't force a JSON Content-Type. Browsers must
   // set the multipart boundary themselves or the server can't parse it.
-  const isFormData =
-    typeof FormData !== 'undefined' && body instanceof FormData;
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
 
   const finalHeaders: Record<string, string> = {
     Accept: 'application/json',
@@ -86,7 +87,8 @@ export async function apiFetch<T = unknown>(
       res = await fetch(url, {
         ...rest,
         headers: retryHeaders,
-        body: body !== undefined ? (isFormData ? (body as FormData) : JSON.stringify(body)) : undefined,
+        body:
+          body !== undefined ? (isFormData ? (body as FormData) : JSON.stringify(body)) : undefined,
       });
     } else {
       // Refresh failed — the refresh-token is expired/invalid. Kick the
@@ -115,6 +117,7 @@ export async function apiFetch<T = unknown>(
         errBody.message || res.statusText,
         errBody.errors,
         Number.isFinite(retryAfter) ? retryAfter : undefined,
+        typeof errBody.error === 'string' ? errBody.error : undefined,
       );
     }
     throw new ApiError(
@@ -153,9 +156,10 @@ async function refreshAccessToken(): Promise<string | null> {
 
   refreshInFlight = (async () => {
     try {
-      const session = (await getSession()) as
-        | { accessToken?: string; refreshToken?: string }
-        | null;
+      const session = (await getSession()) as {
+        accessToken?: string;
+        refreshToken?: string;
+      } | null;
       const refreshToken = session?.refreshToken;
       if (!refreshToken) return null;
 
@@ -172,16 +176,14 @@ async function refreshAccessToken(): Promise<string | null> {
 
       if (!res.ok) return null;
 
-      const envelope = (await res.json().catch(() => null)) as
-        | {
-            success: boolean;
-            data?: {
-              accessToken: string;
-              refreshToken?: string;
-              expiresIn?: number;
-            };
-          }
-        | null;
+      const envelope = (await res.json().catch(() => null)) as {
+        success: boolean;
+        data?: {
+          accessToken: string;
+          refreshToken?: string;
+          expiresIn?: number;
+        };
+      } | null;
 
       const data = envelope?.data;
       if (!envelope?.success || !data?.accessToken) return null;

@@ -11,10 +11,7 @@ import {
 } from 'react';
 import { toast } from 'sonner';
 import { chatApi, type IMessage } from '@/lib/chat';
-import {
-  streamChatMessage,
-  type StreamSource,
-} from '@/lib/chat-stream';
+import { streamChatMessage, type StreamSource } from '@/lib/chat-stream';
 import { ApiError } from '@/lib/api';
 import { useRateLimit } from './use-rate-limit';
 import type { ChatMode } from '@law-ai/shared';
@@ -129,9 +126,7 @@ export function ChatStreamProvider({ children }: { children: ReactNode }) {
             onStart: ({ conversationId: cid, mode: startedMode }) => {
               setConversationId(cid);
               setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId ? { ...m, mode: startedMode } : m,
-                ),
+                prev.map((m) => (m.id === assistantId ? { ...m, mode: startedMode } : m)),
               );
             },
             onSources: ({ sources: s }) => {
@@ -146,35 +141,23 @@ export function ChatStreamProvider({ children }: { children: ReactNode }) {
             onToolCall: ({ tool, args }) => {
               setMessages((prev) =>
                 prev.map((m) =>
-                  m.id === assistantId
-                    ? { ...m, pendingToolCall: { tool, args } }
-                    : m,
+                  m.id === assistantId ? { ...m, pendingToolCall: { tool, args } } : m,
                 ),
               );
             },
             onMeta: ({ kind }) => {
               setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId ? { ...m, answerSource: kind } : m,
-                ),
+                prev.map((m) => (m.id === assistantId ? { ...m, answerSource: kind } : m)),
               );
             },
             onDelta: ({ content: chunk }) => {
               setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId
-                    ? { ...m, content: m.content + chunk }
-                    : m,
-                ),
+                prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + chunk } : m)),
               );
             },
             onDone: () => {
               setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId
-                    ? { ...m, pendingToolCall: undefined }
-                    : m,
-                ),
+                prev.map((m) => (m.id === assistantId ? { ...m, pendingToolCall: undefined } : m)),
               );
               acRef.current = null;
               inFlightRef.current = false;
@@ -196,11 +179,9 @@ export function ChatStreamProvider({ children }: { children: ReactNode }) {
         const message = e instanceof Error ? e.message : 'Failed to send';
         setError(message);
         setMessages((prev) =>
-          prev.filter(
-            (m) => m.id !== assistantId && m.id !== optimisticUser.id,
-          ),
+          prev.filter((m) => m.id !== assistantId && m.id !== optimisticUser.id),
         );
-        if (isApiError && e.status === 429) {
+        if (isApiError && e.status === 429 && e.code !== 'QUOTA_EXCEEDED') {
           const wait = e.retryAfter ?? 60;
           rateLimit.trigger(wait);
         } else {
@@ -230,11 +211,7 @@ export function ChatStreamProvider({ children }: { children: ReactNode }) {
     [conversationId, messages, sources, streaming, error, rateLimit, send, stop, load, reset],
   );
 
-  return (
-    <ChatStreamContext.Provider value={value}>
-      {children}
-    </ChatStreamContext.Provider>
-  );
+  return <ChatStreamContext.Provider value={value}>{children}</ChatStreamContext.Provider>;
 }
 
 export function useChatStream(): IChatStream {

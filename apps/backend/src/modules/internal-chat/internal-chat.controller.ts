@@ -1,5 +1,6 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req, Res } from '@nestjs/common';
+﻿import { Body, Controller, HttpCode, HttpStatus, Post, Req, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import type { Response, Request } from 'express';
 import { InternalChatService } from './internal-chat.service';
 import { InternalSendMessageDto } from './dto/internal-chat.dto';
@@ -16,6 +17,7 @@ import { InternalSendMessageDto } from './dto/internal-chat.dto';
 export class InternalChatController {
   constructor(private readonly service: InternalChatService) {}
 
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @Post('messages/stream')
   @HttpCode(HttpStatus.OK)
   async stream(

@@ -94,9 +94,7 @@ export async function streamChatMessage(
 ): Promise<AbortController> {
   const ac = new AbortController();
 
-  const session = (await getSession()) as
-    | { accessToken?: string }
-    | null;
+  const session = (await getSession()) as { accessToken?: string } | null;
   const token = session?.accessToken;
 
   const headers: Record<string, string> = {
@@ -123,9 +121,11 @@ export async function streamChatMessage(
 
   if (!res.ok || !res.body) {
     let detail = res.statusText;
+    let code: string | undefined;
     try {
       const errBody = await res.json();
       detail = errBody?.message ?? detail;
+      code = typeof errBody?.error === 'string' ? errBody.error : undefined;
     } catch {
       /* ignore */
     }
@@ -139,6 +139,7 @@ export async function streamChatMessage(
       detail,
       undefined,
       Number.isFinite(retryAfter) ? retryAfter : 60,
+      code,
     );
   }
 

@@ -1,26 +1,76 @@
-import { Injectable, ExecutionContext } from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
+﻿import { Injectable, ExecutionContext, Inject } from '@nestjs/common';
+import { ThrottlerGuard, getOptionsToken, getStorageToken } from '@nestjs/throttler';
+import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import type { IJwtPayload } from '@law-ai/shared';
+import { ConfigService } from '@nestjs/config';
 
 /**
  * ThrottlerGuard that uses the authenticated user's `sub` claim as the
  * tracking key when present, falling back to the client IP otherwise.
  *
- * This pairs with `ThrottlerModule.forRootAsync(...)` and is wired up as
- * the *global* throttler guard in AppModule. The standard IP-based key
- * is too coarse when many users share a NAT (offices, mobile carriers)
- * and would cause one abusive client to lock everyone else out.
+ * It dynamically overrides rate limit options (ttl, limit) at runtime based on
+ * the target Controller and Handler, drawing values from ConfigService.
  */
 @Injectable()
 export class ThrottlerBehindAuthGuard extends ThrottlerGuard {
+  constructor(
+    @Inject(getOptionsToken()) options: any,
+    @Inject(getStorageToken()) storageService: any,
+    reflector: Reflector,
+    private readonly config: ConfigService,
+    private readonly jwtService: JwtService,
+  ) {
+    super(options, storageService, reflector);
+  }
+
   protected override async getTracker(req: Request): Promise<string> {
     const user = req.user as IJwtPayload | undefined;
     if (user?.sub) return `user:${user.sub}`;
+
+    const authorization = req.headers.authorization;
+    const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+    if (token) {
+      try {
+        const payload = await this.jwtService.verifyAsync<IJwtPayload>(token);
+        if (payload.sub) return `user:${payload.sub}`;
+      } catch {
+        // Invalid or expired tokens are handled by the route's auth guard.
+      }
+    }
     // Fallback to client IP. x-forwarded-for is the standard header set
     // by load balancers / reverse proxies; Express has it normalised on
     // `req.ip` when `app.set('trust proxy', true)` is configured.
     return `ip:${req.ip ?? 'unknown'}`;
+  }
+
+  protected override async handleRequest(requestProps: any): Promise<boolean> {
+    const { context } = requestProps;
+    const controller = context.getClass();
+    const handler = context.getHandler();
+
+    if (
+      controller.name === 'ChatController' &&
+      (handler.name === 'send' || handler.name === 'stream')
+    ) {
+      requestProps.ttl = this.config.get<number>('app.rateLimit.chat.ttl') ?? 60_000;
+      requestProps.limit = this.config.get<number>('app.rateLimit.chat.max') ?? 20;
+      requestProps.blockDuration = requestProps.ttl;
+    } else if (
+      controller.name === 'AuthController' &&
+      (handler.name === 'register' || handler.name === 'login')
+    ) {
+      requestProps.ttl = this.config.get<number>('app.rateLimit.auth.ttl') ?? 60_000;
+      requestProps.limit = this.config.get<number>('app.rateLimit.auth.max') ?? 5;
+      requestProps.blockDuration = requestProps.ttl;
+    } else if (controller.name === 'InternalChatController' && handler.name === 'stream') {
+      requestProps.ttl = this.config.get<number>('app.rateLimit.internalChat.ttl') ?? 60_000;
+      requestProps.limit = this.config.get<number>('app.rateLimit.internalChat.max') ?? 5;
+      requestProps.blockDuration = requestProps.ttl;
+    }
+
+    return super.handleRequest(requestProps);
   }
 
   /**

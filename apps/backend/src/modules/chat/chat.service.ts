@@ -1,4 +1,11 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { Response, Request } from 'express';
@@ -10,10 +17,7 @@ import { LlmService } from '../llm/llm.service';
 import { PromptBuilder, IRetrievedSource } from '../llm/prompt.builder';
 import { AgentService, DeepAgentEvent } from './services/agent.service';
 import { DocumentLookupService, LookupEvent } from './services/document-lookup.service';
-import {
-  QuotaService,
-  QuotaExceededError,
-} from '../payment/quota.service';
+import { QuotaService, QuotaExceededError } from '../payment/quota.service';
 import { PlanNotAllowedError } from '../payment/plan-catalog';
 import type { IChatMessage } from '../llm/interfaces/chat-completion.types';
 
@@ -147,6 +151,7 @@ export class ChatService {
     userMessage: IMessageDto;
     assistantMessage: IMessageDto;
   }> {
+    await this.consumeQuota(userId, dto.mode ?? 'fast');
     const { conversation, userMsg } = await this.persistUserMessage(userId, dto);
 
     const reply = this.generateAssistantReply(dto.content);
@@ -163,6 +168,23 @@ export class ChatService {
       userMessage: this.toDto(userMsg),
       assistantMessage: this.toDto(assistantMsg),
     };
+  }
+
+  private async consumeQuota(userId: string, mode: SendMessageDto['mode']): Promise<void> {
+    try {
+      await this.quota.checkAndIncrement(userId, mode ?? 'fast');
+    } catch (error) {
+      if (error instanceof PlanNotAllowedError) {
+        throw new ForbiddenException({ error: error.code, message: error.message });
+      }
+      if (error instanceof QuotaExceededError) {
+        throw new HttpException(
+          { error: error.code, message: error.message },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+      throw error;
+    }
   }
 
   // ─── Streaming ─────────────────────────────────────────────────────
@@ -208,31 +230,28 @@ export class ChatService {
       // Surface the post-increment usage so the FE can show the pill.
       // (Sent as a normal JSON response via res.locals, then attached
       // to the first SSE event below.)
-      res.setHeader(
-        'X-Quota-Used',
-        String(quota.used),
-      );
-      res.setHeader(
-        'X-Quota-Limit',
-        String(quota.limit),
-      );
+      res.setHeader('X-Quota-Used', String(quota.used));
+      res.setHeader('X-Quota-Limit', String(quota.limit));
       res.setHeader('X-Quota-Plan', quota.plan.id);
     } catch (e) {
-      if (
-        e instanceof QuotaExceededError ||
-        e instanceof PlanNotAllowedError
-      ) {
+      if (e instanceof QuotaExceededError || e instanceof PlanNotAllowedError) {
         // Map domain errors to HTTP responses and roll back the
         // user-message we just persisted (it never executed).
         const status = e instanceof PlanNotAllowedError ? 403 : 429;
         res.statusCode = status;
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
-        res.end(JSON.stringify({
-          error: (e as { code?: string }).code,
-          message: (e as Error).message,
-        }));
+        res.end(
+          JSON.stringify({
+            error: (e as { code?: string }).code,
+            message: (e as Error).message,
+          }),
+        );
         // Best-effort cleanup of the user message we just wrote.
-        try { await this.msgRepo.delete({ id: userMsg.id }); } catch { /* ignore */ }
+        try {
+          await this.msgRepo.delete({ id: userMsg.id });
+        } catch {
+          /* ignore */
+        }
         return;
       }
       throw e;
@@ -318,7 +337,10 @@ export class ChatService {
       if (!searchBucket) {
         searchBucket = await this.classifyBucketForQuery(dto.content);
       }
-      const retrieved = await this.rag.retrieve(dto.content, searchBucket ? { bucketName: searchBucket } : undefined);
+      const retrieved = await this.rag.retrieve(
+        dto.content,
+        searchBucket ? { bucketName: searchBucket } : undefined,
+      );
       sources = retrieved.map((s) => ({
         index: s.index,
         name: s.documentName,
@@ -349,9 +371,7 @@ export class ChatService {
     // Score thresholds are intentionally conservative; the reranker
     // output is a calibrated probability so 0.4+ is usually solid.
     const LOW_SCORE_THRESHOLD = 0.4;
-    const topScore = sources.length > 0
-      ? Math.max(...sources.map((s) => s.score ?? 0))
-      : 0;
+    const topScore = sources.length > 0 ? Math.max(...sources.map((s) => s.score ?? 0)) : 0;
 
     const isLowConfidence = topScore < LOW_SCORE_THRESHOLD && !usedFallback;
 
@@ -401,8 +421,9 @@ export class ChatService {
     signal: AbortSignal,
     isAborted: () => boolean,
   ): Promise<void> {
-    const historyMessages: IChatMessage[] = (await this.loadHistory(conversation.id, userMsg.id))
-      .map((h) => ({ role: h.role as 'user' | 'assistant', content: h.content }));
+    const historyMessages: IChatMessage[] = (
+      await this.loadHistory(conversation.id, userMsg.id)
+    ).map((h) => ({ role: h.role as 'user' | 'assistant', content: h.content }));
 
     let full = '';
     let sources: IRetrievedSource[] = [];
@@ -502,11 +523,7 @@ export class ChatService {
     const sources: IRetrievedSource[] = [];
 
     try {
-      const stream = this.documentLookup.stream(
-        dto.content,
-        conversation.bucketName,
-        signal,
-      );
+      const stream = this.documentLookup.stream(dto.content, conversation.bucketName, signal);
 
       for await (const ev of stream) {
         if (isAborted()) break;

@@ -19,6 +19,7 @@ export const validationSchema = Joi.object({
   REDIS_PORT: Joi.number().default(6379),
   REDIS_PASSWORD: Joi.string().allow('').optional(),
   REDIS_DB: Joi.number().default(0),
+  TRUST_PROXY_HOPS: Joi.number().integer().min(0).default(0),
 
   JWT_SECRET: Joi.string().min(32).required(),
   JWT_EXPIRES_IN: Joi.string().default('15m'),
@@ -73,6 +74,14 @@ export const validationSchema = Joi.object({
   CHAT_RATE_LIMIT_TTL_MS: Joi.number().min(1_000).default(60_000),
   // Max chat requests per window per user/IP (default: 20).
   CHAT_RATE_LIMIT_MAX: Joi.number().min(1).default(20),
+
+  // Auth rate limits
+  AUTH_RATE_LIMIT_TTL_MS: Joi.number().min(1_000).default(60_000),
+  AUTH_RATE_LIMIT_MAX: Joi.number().min(1).default(5),
+
+  // Guest chat rate limits
+  INTERNAL_CHAT_RATE_LIMIT_TTL_MS: Joi.number().min(1_000).default(60_000),
+  INTERNAL_CHAT_RATE_LIMIT_MAX: Joi.number().min(1).default(5),
 
   // ─── Payment (Casso & VietQR) ──────────────────────────────────────
   CASSO_WEBHOOK_TOKEN: Joi.string().default('casso-secure-token'),

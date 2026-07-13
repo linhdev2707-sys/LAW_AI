@@ -24,6 +24,11 @@ async function bootstrap() {
     process.env.CORS_ORIGIN ||
     process.env.BACKEND_CORS_ORIGIN ||
     configService.get<string>('app.corsOrigin', 'http://localhost:3000');
+  const trustProxyHops = configService.get<number>('app.trustProxyHops', 0);
+
+  if (trustProxyHops > 0) {
+    app.getHttpAdapter().getInstance().set('trust proxy', trustProxyHops);
+  }
 
   // DEBUG: log effective CORS origin so we can see what the deployed BE
   // actually picked up from the env vars.
@@ -54,7 +59,13 @@ async function bootstrap() {
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
-    exposedHeaders: ['Authorization'],
+    exposedHeaders: [
+      'Authorization',
+      'Retry-After',
+      'X-Quota-Used',
+      'X-Quota-Limit',
+      'X-Quota-Plan',
+    ],
   });
 
   // Replace the default JSON body parser with one that also exposes the

@@ -34,6 +34,8 @@ export default registerAs('app', () => ({
     db: intEnv('REDIS_DB', 0),
   },
 
+  trustProxyHops: intEnv('TRUST_PROXY_HOPS', 0),
+
   jwt: {
     secret: process.env.JWT_SECRET || 'change-me-in-prod',
     expiresIn: process.env.JWT_EXPIRES_IN || '15m',
@@ -62,7 +64,7 @@ export default registerAs('app', () => ({
   // LegalEmbeddingService picks this up. Default = local Xenova bge-m3.
   // Set backend=cloudflare to use Workers AI (no model download).
   embedding: {
-    backend: process.env.EMBEDDING_BACKEND || 'local',     // 'local' | 'cloudflare'
+    backend: process.env.EMBEDDING_BACKEND || 'local', // 'local' | 'cloudflare'
     model: process.env.EMBEDDING_MODEL || 'Xenova/bge-m3',
     dim: intEnv('EMBEDDING_DIM', 1024),
     /** BGE-* (non-M3) recommends "Represent this sentence for searching
@@ -77,7 +79,7 @@ export default registerAs('app', () => ({
   // on first boot; flip RERANKER_ENABLED=true to turn on.
   reranker: {
     enabled: process.env.RERANKER_ENABLED === 'true',
-    backend: process.env.RERANKER_BACKEND || 'local',     // 'local' | 'cohere'
+    backend: process.env.RERANKER_BACKEND || 'local', // 'local' | 'cohere'
     model: process.env.RERANKER_MODEL || 'Xenova/bge-reranker-v2-m3',
     maxLength: intEnv('RERANKER_MAX_LENGTH', 512),
   },
@@ -144,7 +146,7 @@ export default registerAs('app', () => ({
     // threshold. BGE-M3 multilingual vectors typically sit in [-0.2, 0.9];
     // 0.30 is a reasonable floor for "loosely related" content. Set to 0
     // to disable.
-    minCosineScore: floatEnv('RAG_MIN_COSINE_SCORE', 0.30),
+    minCosineScore: floatEnv('RAG_MIN_COSINE_SCORE', 0.3),
     // Optional whitelist of bucket names the retriever is allowed to
     // search. Empty array = no filter (backward compatible). Used to
     // prevent chat from pulling chunks from corpora that were ingested
@@ -164,6 +166,14 @@ export default registerAs('app', () => ({
     chat: {
       ttl: intEnv('CHAT_RATE_LIMIT_TTL_MS', 60_000),
       max: intEnv('CHAT_RATE_LIMIT_MAX', 20),
+    },
+    auth: {
+      ttl: intEnv('AUTH_RATE_LIMIT_TTL_MS', 60000),
+      max: intEnv('AUTH_RATE_LIMIT_MAX', 5),
+    },
+    internalChat: {
+      ttl: intEnv('INTERNAL_CHAT_RATE_LIMIT_TTL_MS', 60000),
+      max: intEnv('INTERNAL_CHAT_RATE_LIMIT_MAX', 5),
     },
   },
   payment: {
