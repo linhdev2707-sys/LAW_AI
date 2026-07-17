@@ -86,14 +86,9 @@ export function DocumentTable({
                   />
                 </td>
                 <td className="py-3 pr-4 align-top">
-                  <p className="font-medium text-brand-on-surface">
-                    {d.name}
-                  </p>
+                  <p className="font-medium text-brand-on-surface">{d.name}</p>
                   {d.error && (
-                    <p
-                      className="mt-0.5 truncate text-xs text-red-300"
-                      title={d.error}
-                    >
+                    <p className="mt-0.5 truncate text-xs text-red-300" title={d.error}>
                       {d.error}
                     </p>
                   )}
@@ -114,30 +109,30 @@ export function DocumentTable({
                 <td className="py-3 pr-4 align-top text-brand-on-surface-variant">
                   {formatDateTime(d.createdAt)}
                 </td>
-                 <td className="py-3 text-right align-top">
-                   <div className="flex items-center justify-end gap-1">
-                     {onSyncClick && (d.status === 'pending' || d.status === 'failed') && (
-                       <Button
-                         variant="ghost"
-                         size="sm"
-                         onClick={() => onSyncClick(d)}
-                         className="text-brand-primary hover:bg-brand-primary/10 hover:text-brand-primary-variant"
-                       >
-                         <RefreshCw className="h-4 w-4 mr-1" />
-                         Đồng bộ
-                       </Button>
-                     )}
-                     <Button
-                       variant="ghost"
-                       size="sm"
-                       onClick={() => onDeleteClick(d)}
-                       className="text-red-300 hover:bg-red-500/10 hover:text-red-200"
-                     >
-                       <Trash2 className="h-4 w-4" />
-                       <span className="sr-only">Xoá</span>
-                     </Button>
-                   </div>
-                 </td>
+                <td className="py-3 text-right align-top">
+                  <div className="flex items-center justify-end gap-1">
+                    {onSyncClick && (d.status === 'pending' || d.status === 'failed') && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onSyncClick(d)}
+                        className="hover:text-brand-primary-variant text-brand-primary hover:bg-brand-primary/10"
+                      >
+                        <RefreshCw className="mr-1 h-4 w-4" />
+                        Đồng bộ
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDeleteClick(d)}
+                      className="text-red-300 hover:bg-red-500/10 hover:text-red-200"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Xoá</span>
+                    </Button>
+                  </div>
+                </td>
               </tr>
             );
           })}

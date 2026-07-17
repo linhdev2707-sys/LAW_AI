@@ -61,7 +61,7 @@ export function CheckoutModal({
       />
 
       {/* Modal Panel */}
-      <div className="glass-card relative w-full max-w-md overflow-hidden rounded-2xl border border-brand-tertiary/20 bg-brand-surface-container p-6 shadow-2xl backdrop-blur-xl animate-in zoom-in-95 duration-200">
+      <div className="glass-card relative w-full max-w-md overflow-hidden rounded-2xl border border-brand-tertiary/20 bg-brand-surface-container p-6 shadow-2xl backdrop-blur-xl duration-200 animate-in zoom-in-95">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -94,17 +94,20 @@ export function CheckoutModal({
 
 function SuccessView({ planName, onClose }: { planName: string; onClose: () => void }) {
   return (
-    <div className="py-6 text-center space-y-4">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+    <div className="space-y-4 py-6 text-center">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
         <CheckCircle2 className="h-10 w-10" />
       </div>
       <div>
-        <h3 className="font-headline text-xl font-bold text-brand-on-surface">Kích hoạt thành công!</h3>
+        <h3 className="font-headline text-xl font-bold text-brand-on-surface">
+          Kích hoạt thành công!
+        </h3>
         <p className="mt-2 text-sm text-brand-on-surface-variant">
-          Tài khoản của bạn đã được nâng cấp thành công lên gói <strong>{planName}</strong>. Vui lòng vào chat để trải nghiệm ngay.
+          Tài khoản của bạn đã được nâng cấp thành công lên gói <strong>{planName}</strong>. Vui
+          lòng vào chat để trải nghiệm ngay.
         </p>
       </div>
-      <div className="pt-4 flex gap-3">
+      <div className="flex gap-3 pt-4">
         <Button
           asChild
           className="flex-1 rounded-xl bg-gradient-to-r from-brand-primary to-brand-tertiary py-3 text-xs font-bold text-white"
@@ -161,18 +164,24 @@ function PaymentView({
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="font-headline text-lg font-bold text-brand-on-surface">Thanh toán chuyển khoản</h3>
-        <p className="text-xs text-brand-on-surface-variant">Quét mã QR qua ứng dụng ngân hàng của bạn để thanh toán tự động.</p>
+        <h3 className="font-headline text-lg font-bold text-brand-on-surface">
+          Thanh toán chuyển khoản
+        </h3>
+        <p className="text-xs text-brand-on-surface-variant">
+          Quét mã QR qua ứng dụng ngân hàng của bạn để thanh toán tự động.
+        </p>
       </div>
 
       {/* Plan detail summary */}
-      <div className="rounded-xl border border-brand-outline-variant/20 bg-white/[0.02] p-4 flex justify-between items-center text-sm">
+      <div className="flex items-center justify-between rounded-xl border border-brand-outline-variant/20 bg-white/[0.02] p-4 text-sm">
         <div>
-          <span className="text-brand-on-surface font-semibold">Gói {plan.name}</span>
-          <span className="block text-xs text-brand-on-surface-variant">Thời hạn sử dụng: {durationMonths} tháng</span>
+          <span className="font-semibold text-brand-on-surface">Gói {plan.name}</span>
+          <span className="block text-xs text-brand-on-surface-variant">
+            Thời hạn sử dụng: {durationMonths} tháng
+          </span>
         </div>
         <div className="text-right">
-          <span className="font-headline font-bold text-brand-secondary text-lg">
+          <span className="font-headline text-lg font-bold text-brand-secondary">
             {bankDetails?.amount ? bankDetails.amount.toLocaleString('vi-VN') : plan.price}
           </span>
           <span className="ml-1 text-sm font-semibold text-brand-on-surface-variant">VND</span>
@@ -197,62 +206,68 @@ function PaymentView({
       </div>
 
       {/* Transfer Info */}
-      <div className="space-y-2 text-xs font-body text-brand-on-surface-variant">
-        <div className="flex justify-between items-center border-b border-brand-outline-variant/10 pb-2">
+      <div className="space-y-2 font-body text-xs text-brand-on-surface-variant">
+        <div className="flex items-center justify-between border-b border-brand-outline-variant/10 pb-2">
           <span>Ngân hàng</span>
-          <span className="font-semibold text-brand-on-surface flex items-center gap-1">
+          <span className="flex items-center gap-1 font-semibold text-brand-on-surface">
             {bankId}
-            <button onClick={() => onCopy(bankId, 'bank')} className="p-0.5 text-brand-tertiary hover:bg-white/5 rounded">
-              <Copy className="h-3 w-3" />
-            </button>
-          </span>
-        </div>
-        <div className="flex justify-between items-center border-b border-brand-outline-variant/10 pb-2">
-          <span>Số tài khoản</span>
-          <span className="font-semibold text-brand-on-surface flex items-center gap-1 font-mono">
-            {accountNo}
-            <button onClick={() => onCopy(accountNo, 'acc')} className="p-0.5 text-brand-tertiary hover:bg-white/5 rounded">
-              <Copy className="h-3 w-3" />
-            </button>
-          </span>
-        </div>
-        <div className="flex justify-between items-center border-b border-brand-outline-variant/10 pb-2">
-          <span>Chủ tài khoản</span>
-          <span className="font-semibold text-brand-on-surface">{accountName}</span>
-        </div>
-        <div className="flex justify-between items-center border-b border-brand-outline-variant/10 pb-2">
-          <span>Số tiền</span>
-          <span className="font-semibold text-brand-secondary font-mono">
-            {bankDetails?.amount ? bankDetails.amount.toLocaleString('vi-VN') : plan.price}
-            <span className="ml-1 text-xs text-brand-on-surface-variant">VND</span>
-          </span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span>Nội dung chuyển khoản</span>
-          <span className="font-semibold text-brand-on-surface flex items-center gap-1 font-mono uppercase bg-brand-surface-container-highest px-2 py-0.5 rounded border border-brand-outline-variant/30 text-[11px]">
-            {fallbackDesc}
             <button
-              onClick={() => onCopy(fallbackDesc, 'desc')}
-              className="p-0.5 text-brand-tertiary hover:bg-white/5 rounded"
+              onClick={() => onCopy(bankId, 'bank')}
+              className="rounded p-0.5 text-brand-tertiary hover:bg-white/5"
             >
               <Copy className="h-3 w-3" />
             </button>
           </span>
         </div>
-        <p className="text-[10px] text-brand-tertiary text-center pt-1">
+        <div className="flex items-center justify-between border-b border-brand-outline-variant/10 pb-2">
+          <span>Số tài khoản</span>
+          <span className="flex items-center gap-1 font-mono font-semibold text-brand-on-surface">
+            {accountNo}
+            <button
+              onClick={() => onCopy(accountNo, 'acc')}
+              className="rounded p-0.5 text-brand-tertiary hover:bg-white/5"
+            >
+              <Copy className="h-3 w-3" />
+            </button>
+          </span>
+        </div>
+        <div className="flex items-center justify-between border-b border-brand-outline-variant/10 pb-2">
+          <span>Chủ tài khoản</span>
+          <span className="font-semibold text-brand-on-surface">{accountName}</span>
+        </div>
+        <div className="flex items-center justify-between border-b border-brand-outline-variant/10 pb-2">
+          <span>Số tiền</span>
+          <span className="font-mono font-semibold text-brand-secondary">
+            {bankDetails?.amount ? bankDetails.amount.toLocaleString('vi-VN') : plan.price}
+            <span className="ml-1 text-xs text-brand-on-surface-variant">VND</span>
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span>Nội dung chuyển khoản</span>
+          <span className="flex items-center gap-1 rounded border border-brand-outline-variant/30 bg-brand-surface-container-highest px-2 py-0.5 font-mono text-[11px] font-semibold uppercase text-brand-on-surface">
+            {fallbackDesc}
+            <button
+              onClick={() => onCopy(fallbackDesc, 'desc')}
+              className="rounded p-0.5 text-brand-tertiary hover:bg-white/5"
+            >
+              <Copy className="h-3 w-3" />
+            </button>
+          </span>
+        </div>
+        <p className="pt-1 text-center text-[10px] text-brand-tertiary">
           Chú ý: Hãy ghi đúng nội dung để hệ thống nhận diện và kích hoạt tự động.
         </p>
       </div>
 
       {/* Confirm Action */}
-      <div className="pt-2 flex gap-3">
+      <div className="flex gap-3 pt-2">
         <Button
           onClick={onConfirm}
           disabled={confirming}
           className="flex-1 rounded-xl bg-gradient-to-r from-brand-primary to-brand-tertiary py-3 text-xs font-bold text-white shadow-lg shadow-brand-primary/20 disabled:opacity-50"
         >
           {confirming ? (
-            <span className="flex items-center gap-2 justify-center">
+            <span className="flex items-center justify-center gap-2">
               <span className="h-3 w-3 animate-spin rounded-full border border-white border-t-transparent" />
               Đang đối soát...
             </span>

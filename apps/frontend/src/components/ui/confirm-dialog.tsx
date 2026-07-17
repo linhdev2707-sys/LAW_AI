@@ -93,14 +93,14 @@ export function ConfirmDialog({
       <div
         aria-hidden
         onClick={() => !loading && onOpenChange(false)}
-        className="absolute inset-0 animate-in fade-in-0 bg-black/70 backdrop-blur-sm duration-200"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm duration-200 animate-in fade-in-0"
       />
 
       {/* Panel */}
       <div
         className={cn(
           'relative w-full max-w-md overflow-hidden rounded-2xl border shadow-2xl shadow-black/60',
-          'animate-in fade-in-0 zoom-in-95 duration-200',
+          'duration-200 animate-in fade-in-0 zoom-in-95',
           isDanger
             ? 'border-red-400/30 bg-brand-surface-container'
             : 'border-brand-tertiary/25 bg-brand-surface-container',

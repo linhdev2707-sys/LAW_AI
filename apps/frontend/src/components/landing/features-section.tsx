@@ -53,17 +53,14 @@ export function FeaturesSection() {
               {f.badge && (
                 <div className="absolute right-10 top-10">
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-secondary/30 bg-brand-secondary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-brand-secondary">
-                    <span className="h-1.5 w-1.5 rounded-full bg-brand-secondary animate-pulse" />
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-secondary" />
                     {f.badge}
                   </span>
                 </div>
               )}
 
               <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-xl border border-brand-tertiary/20 bg-gradient-to-br from-brand-primary-container to-brand-surface-container-low shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:border-brand-tertiary/60 group-hover:shadow-lg group-hover:shadow-brand-tertiary/20">
-                <MaterialIcon
-                  name={f.icon}
-                  className="text-[32px] text-brand-tertiary"
-                />
+                <MaterialIcon name={f.icon} className="text-[32px] text-brand-tertiary" />
               </div>
 
               <h3 className="mb-4 font-headline text-headline-md font-medium text-brand-on-surface">
@@ -78,14 +75,14 @@ export function FeaturesSection() {
                   three cards' CTAs sit on the same baseline even when the
                   heading/description lengths differ. */}
               {f.badge ? (
-                <div className="mt-auto inline-flex items-center self-start font-label text-label-md text-brand-on-surface-variant/40 cursor-not-allowed select-none">
+                <div className="font-label mt-auto inline-flex cursor-not-allowed select-none items-center self-start text-label-md text-brand-on-surface-variant/40">
                   Tìm hiểu thêm
                   <MaterialIcon name="lock" className="ml-2 text-[18px] opacity-60" />
                 </div>
               ) : (
                 <a
                   href="#"
-                  className="mt-auto inline-flex items-center self-start font-label text-label-md text-brand-tertiary transition-all duration-300 group-hover:gap-3 hover:text-brand-primary"
+                  className="font-label mt-auto inline-flex items-center self-start text-label-md text-brand-tertiary transition-all duration-300 hover:text-brand-primary group-hover:gap-3"
                 >
                   Tìm hiểu thêm
                   <MaterialIcon name="arrow_forward" className="ml-2 text-[18px]" />

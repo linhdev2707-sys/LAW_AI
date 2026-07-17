@@ -16,25 +16,22 @@
  * by the FE without manual enum gymnastics.
  */
 export const CHAT_MODES = ['fast', 'deep', 'lookup'] as const;
-export type ChatMode = typeof CHAT_MODES[number];
+export type ChatMode = (typeof CHAT_MODES)[number];
 
 /**
  * Display metadata for each mode. Used by the ModePicker dropdown to
  * render the label + short description. Kept in the shared package so
  * BE (e.g. log lines, admin tools) and FE render the same strings.
  */
-export const CHAT_MODE_LABELS: Record<
-  ChatMode,
-  { label: string }
-> = {
+export const CHAT_MODE_LABELS: Record<ChatMode, { label: string }> = {
   fast: {
-    label: 'Nhanh'
+    label: 'Nhanh',
   },
   deep: {
-    label: 'Suy nghĩ sâu'
+    label: 'Suy nghĩ sâu',
   },
   lookup: {
-    label: 'Tra cứu văn bản'
+    label: 'Tra cứu văn bản',
   },
 };
 

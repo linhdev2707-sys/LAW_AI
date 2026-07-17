@@ -10,23 +10,20 @@ export function useConversation(initialId?: string) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(
-    async (id: string) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const conv = await chatApi.get(id);
-        setConversation(conv);
-      } catch (e: any) {
-        const message = e?.message ?? 'Failed to load conversation';
-        setError(message);
-        toast.error('Không tải được cuộc trò chuyện', { description: message });
-      } finally {
-        setLoading(false);
-      }
-    },
-    [],
-  );
+  const load = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const conv = await chatApi.get(id);
+      setConversation(conv);
+    } catch (e: any) {
+      const message = e?.message ?? 'Failed to load conversation';
+      setError(message);
+      toast.error('Không tải được cuộc trò chuyện', { description: message });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   /** Send a message and optimistically append the user + assistant replies. */
   const send = useCallback(

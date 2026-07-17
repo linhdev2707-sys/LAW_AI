@@ -5,7 +5,7 @@ export function SocialProof() {
   return (
     <section className="relative z-10 border-y border-brand-outline-variant/10 bg-brand-surface-container-lowest/60 py-stack-lg backdrop-blur-sm">
       <Container>
-        <p className="mb-stack-md text-center font-label text-label-md uppercase tracking-[0.2em] text-brand-on-surface-variant/70">
+        <p className="font-label mb-stack-md text-center text-label-md uppercase tracking-[0.2em] text-brand-on-surface-variant/70">
           Hỗ trợ đắc lực cho các nhu cầu pháp lý thường ngày
         </p>
       </Container>
@@ -36,17 +36,13 @@ export function SocialProof() {
 
 function CapabilityList({ 'aria-hidden': ariaHidden }: { 'aria-hidden'?: boolean } = {}) {
   return (
-    <ul
-      aria-hidden={ariaHidden}
-      className="flex shrink-0 items-center gap-stack-lg"
-    >
+    <ul aria-hidden={ariaHidden} className="flex shrink-0 items-center gap-stack-lg">
       {CAPABILITIES.map((cap) => (
         <li key={cap} className="flex items-center gap-stack-lg">
           <span
             className="font-headline text-headline-md font-medium tracking-wide"
             style={{
-              backgroundImage:
-                'linear-gradient(90deg, #818cf8 0%, #22d3ee 50%, #c4b5fd 100%)',
+              backgroundImage: 'linear-gradient(90deg, #818cf8 0%, #22d3ee 50%, #c4b5fd 100%)',
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
               color: 'transparent',

@@ -53,8 +53,15 @@ async function main() {
         }
 
         if (updated) {
-          await r2Service.putObject(bucket, 'manifest.json', JSON.stringify(manifest), 'application/json');
-          console.log(`  Successfully updated manifest.json in bucket ${bucket}. Removed ${removedCount} orphaned entries.`);
+          await r2Service.putObject(
+            bucket,
+            'manifest.json',
+            JSON.stringify(manifest),
+            'application/json',
+          );
+          console.log(
+            `  Successfully updated manifest.json in bucket ${bucket}. Removed ${removedCount} orphaned entries.`,
+          );
         } else {
           console.log(`  Manifest in bucket ${bucket} is clean.`);
         }

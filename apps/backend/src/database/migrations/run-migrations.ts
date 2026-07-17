@@ -31,7 +31,16 @@ const isProd = process.env.NODE_ENV === 'production';
 
 const baseOptions = {
   type: 'postgres' as const,
-  entities: [User, Conversation, Message, RagDocument, RagChunk, DocumentVersion, DocumentJob, ProcessingLog],
+  entities: [
+    User,
+    Conversation,
+    Message,
+    RagDocument,
+    RagChunk,
+    DocumentVersion,
+    DocumentJob,
+    ProcessingLog,
+  ],
   // Glob matches migration files of the form "<timestamp>-<Name>.{ts,js}"
   // (e.g. 1700000000000-InitialSchema.js). Excludes this runner itself,
   // which would otherwise recurse infinitely during migrations discovery.

@@ -5,7 +5,16 @@ import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { LogOut, User as UserIcon, LayoutDashboard, ChevronDown, MessageSquare, Database, Menu, X } from 'lucide-react';
+import {
+  LogOut,
+  User as UserIcon,
+  LayoutDashboard,
+  ChevronDown,
+  MessageSquare,
+  Database,
+  Menu,
+  X,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@law-ai/shared';
 import { Button } from '@/components/ui/button';
@@ -47,8 +56,7 @@ export function LandingNavbar() {
   }, [menuOpen]);
 
   const isLoggedIn = status === 'authenticated' && !!session?.user;
-  const userInitial =
-    (session?.user?.name || session?.user?.email || '?').charAt(0).toUpperCase();
+  const userInitial = (session?.user?.name || session?.user?.email || '?').charAt(0).toUpperCase();
   const userName = session?.user?.name || session?.user?.email || '';
   const userEmail = session?.user?.email || '';
   const isAdmin = session?.user?.role === UserRole.ADMIN;
@@ -83,7 +91,6 @@ export function LandingNavbar() {
             {[
               { href: '/', label: 'Nền tảng' },
               { href: '/solutions', label: 'Giải pháp' },
-              { href: '/pricing', label: 'Bảng giá' },
               { href: '/about', label: 'Về chúng tôi' },
             ].map((item) => {
               const isActive = item.href !== '#' && pathname === item.href;
@@ -91,8 +98,10 @@ export function LandingNavbar() {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`group relative font-body text-body-md transition-colors pb-1 ${
-                    isActive ? 'text-brand-on-surface' : 'text-brand-on-surface-variant hover:text-brand-tertiary'
+                  className={`group relative pb-1 font-body text-body-md transition-colors ${
+                    isActive
+                      ? 'text-brand-on-surface'
+                      : 'text-brand-on-surface-variant hover:text-brand-tertiary'
                   }`}
                 >
                   {item.label}
@@ -127,92 +136,90 @@ export function LandingNavbar() {
             {isLoggedIn ? (
               /* ── Logged-in: avatar dropdown ─────────────────────────────── */
               <div ref={menuRef} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setMenuOpen((v) => !v)}
-                    aria-haspopup="menu"
-                    aria-expanded={menuOpen}
-                    aria-label="Mở menu người dùng"
-                    className="flex items-center gap-2 rounded-full border border-brand-outline-variant/30 bg-brand-surface-container/60 py-1 pl-1 pr-2.5 text-sm transition-colors hover:border-brand-tertiary/50 hover:bg-brand-surface-container"
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen((v) => !v)}
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                  aria-label="Mở menu người dùng"
+                  className="flex items-center gap-2 rounded-full border border-brand-outline-variant/30 bg-brand-surface-container/60 py-1 pl-1 pr-2.5 text-sm transition-colors hover:border-brand-tertiary/50 hover:bg-brand-surface-container"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-primary to-brand-tertiary text-sm font-semibold text-white shadow-md shadow-brand-primary/20">
+                    {userInitial}
+                  </span>
+                  <span className="hidden max-w-[120px] truncate font-medium text-brand-on-surface md:inline">
+                    {userName}
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      'h-3.5 w-3.5 text-brand-on-surface-variant transition-transform',
+                      menuOpen && 'rotate-180',
+                    )}
+                  />
+                </button>
+
+                {menuOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right overflow-hidden rounded-xl border border-brand-outline-variant/20 bg-brand-surface-container/95 shadow-2xl shadow-black/40 backdrop-blur-xl"
                   >
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-primary to-brand-tertiary text-sm font-semibold text-white shadow-md shadow-brand-primary/20">
-                      {userInitial}
-                    </span>
-                    <span className="hidden max-w-[120px] truncate font-medium text-brand-on-surface md:inline">
-                      {userName}
-                    </span>
-                    <ChevronDown
-                      className={cn(
-                        'h-3.5 w-3.5 text-brand-on-surface-variant transition-transform',
-                        menuOpen && 'rotate-180',
-                      )}
-                    />
-                  </button>
-
-                  {menuOpen && (
-                    <div
-                      role="menu"
-                      className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right overflow-hidden rounded-xl border border-brand-outline-variant/20 bg-brand-surface-container/95 shadow-2xl shadow-black/40 backdrop-blur-xl"
-                    >
-                      {/* User info header */}
-                      <div className="border-b border-brand-outline-variant/10 px-4 py-3">
-                        <p className="truncate text-sm font-semibold text-brand-on-surface">
-                          {userName}
-                        </p>
-                        <p className="truncate text-xs text-brand-on-surface-variant">
-                          {userEmail}
-                        </p>
-                      </div>
-
-                      {/* Menu items */}
-                      <div className="p-1.5">
-                        <MenuItem
-                          icon={<LayoutDashboard className="h-4 w-4" />}
-                          label="Bảng điều khiển"
-                          onClick={() => {
-                            setMenuOpen(false);
-                            router.push('/dashboard');
-                          }}
-                        />
-                        <MenuItem
-                          icon={<UserIcon className="h-4 w-4" />}
-                          label="Hồ sơ"
-                          onClick={() => {
-                            setMenuOpen(false);
-                            router.push('/dashboard');
-                          }}
-                        />
-                        {isAdmin && (
-                          <MenuItem
-                            icon={<Database className="h-4 w-4" />}
-                            label="Quản lý Knowledge"
-                            onClick={() => {
-                              setMenuOpen(false);
-                              router.push('/knowledge');
-                            }}
-                          />
-                        )}
-                      </div>
-
-                      <div className="border-t border-brand-outline-variant/10 p-1.5">
-                        <MenuItem
-                          icon={<LogOut className="h-4 w-4" />}
-                          label="Đăng xuất"
-                          destructive
-                          onClick={() => {
-                            setMenuOpen(false);
-                            void signOut({ callbackUrl: '/' });
-                          }}
-                        />
-                      </div>
+                    {/* User info header */}
+                    <div className="border-b border-brand-outline-variant/10 px-4 py-3">
+                      <p className="truncate text-sm font-semibold text-brand-on-surface">
+                        {userName}
+                      </p>
+                      <p className="truncate text-xs text-brand-on-surface-variant">{userEmail}</p>
                     </div>
-                  )}
-                </div>
+
+                    {/* Menu items */}
+                    <div className="p-1.5">
+                      <MenuItem
+                        icon={<LayoutDashboard className="h-4 w-4" />}
+                        label="Bảng điều khiển"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          router.push('/dashboard');
+                        }}
+                      />
+                      <MenuItem
+                        icon={<UserIcon className="h-4 w-4" />}
+                        label="Hồ sơ"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          router.push('/dashboard');
+                        }}
+                      />
+                      {isAdmin && (
+                        <MenuItem
+                          icon={<Database className="h-4 w-4" />}
+                          label="Quản lý Knowledge"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            router.push('/knowledge');
+                          }}
+                        />
+                      )}
+                    </div>
+
+                    <div className="border-t border-brand-outline-variant/10 p-1.5">
+                      <MenuItem
+                        icon={<LogOut className="h-4 w-4" />}
+                        label="Đăng xuất"
+                        destructive
+                        onClick={() => {
+                          setMenuOpen(false);
+                          void signOut({ callbackUrl: '/' });
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
               /* ── Logged-out: single CTA → /chat nếu đã đăng nhập, /login nếu chưa ─ */
               <Button
                 asChild
-                className="rounded-full bg-gradient-to-r from-brand-primary to-brand-tertiary px-stack-md py-3 font-label text-label-md font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-primary/40"
+                className="font-label rounded-full bg-gradient-to-r from-brand-primary to-brand-tertiary px-stack-md py-3 text-label-md font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-primary/40"
               >
                 <Link href={chatHref}>Bắt đầu ngay</Link>
               </Button>
@@ -222,7 +229,7 @@ export function LandingNavbar() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="flex items-center justify-center p-2 rounded-md text-brand-on-surface-variant hover:bg-white/5 hover:text-brand-on-surface md:hidden"
+              className="flex items-center justify-center rounded-md p-2 text-brand-on-surface-variant hover:bg-white/5 hover:text-brand-on-surface md:hidden"
               aria-label="Mở menu"
             >
               <Menu className="h-6 w-6" />
@@ -240,10 +247,14 @@ export function LandingNavbar() {
             onClick={() => setMobileMenuOpen(false)}
           />
           {/* Drawer content */}
-          <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-brand-surface-container-high/95 p-6 shadow-2xl backdrop-blur-2xl transition-transform duration-300 border-l border-brand-outline-variant/20 flex flex-col">
+          <div className="fixed inset-y-0 right-0 flex w-full max-w-sm flex-col border-l border-brand-outline-variant/20 bg-brand-surface-container-high/95 p-6 shadow-2xl backdrop-blur-2xl transition-transform duration-300">
             {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-              <Link href="/" className="flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
+            <div className="mb-8 flex items-center justify-between">
+              <Link
+                href="/"
+                className="flex items-center gap-3"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 <Image
                   src="/logo.jpg"
                   alt="iLaw"
@@ -270,7 +281,6 @@ export function LandingNavbar() {
               {[
                 { href: '/', label: 'Nền tảng' },
                 { href: '/solutions', label: 'Giải pháp' },
-                { href: '/pricing', label: 'Bảng giá' },
                 { href: '/about', label: 'Về chúng tôi' },
               ].map((item) => {
                 const isActive = item.href !== '#' && pathname === item.href;
@@ -307,16 +317,18 @@ export function LandingNavbar() {
             <div className="my-6 border-t border-brand-outline-variant/10" />
 
             {/* User / CTA Action Section */}
-            <div className="flex flex-col gap-4 mt-auto">
+            <div className="mt-auto flex flex-col gap-4">
               {isLoggedIn ? (
                 <>
                   {/* User profile details */}
-                  <div className="flex items-center gap-3 px-2 py-3 rounded-xl bg-white/5 mb-2">
+                  <div className="mb-2 flex items-center gap-3 rounded-xl bg-white/5 px-2 py-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-primary to-brand-tertiary text-sm font-semibold text-white shadow-md">
                       {userInitial}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-brand-on-surface">{userName}</p>
+                      <p className="truncate text-sm font-semibold text-brand-on-surface">
+                        {userName}
+                      </p>
                       <p className="truncate text-xs text-brand-on-surface-variant">{userEmail}</p>
                     </div>
                   </div>
@@ -325,7 +337,7 @@ export function LandingNavbar() {
                   <Button
                     asChild
                     variant="ghost"
-                    className="justify-start gap-3 h-12 rounded-xl text-brand-on-surface hover:bg-white/5 w-full"
+                    className="h-12 w-full justify-start gap-3 rounded-xl text-brand-on-surface hover:bg-white/5"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Link href="/dashboard">
@@ -337,7 +349,7 @@ export function LandingNavbar() {
                     <Button
                       asChild
                       variant="ghost"
-                      className="justify-start gap-3 h-12 rounded-xl text-brand-on-surface hover:bg-white/5 w-full"
+                      className="h-12 w-full justify-start gap-3 rounded-xl text-brand-on-surface hover:bg-white/5"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <Link href="/knowledge">
@@ -347,11 +359,11 @@ export function LandingNavbar() {
                     </Button>
                   )}
 
-                  <div className="border-t border-brand-outline-variant/10 my-2 pt-2" />
+                  <div className="my-2 border-t border-brand-outline-variant/10 pt-2" />
 
                   <Button
                     variant="ghost"
-                    className="justify-start gap-3 h-12 rounded-xl text-red-300 hover:bg-red-500/10 hover:text-red-200 w-full"
+                    className="h-12 w-full justify-start gap-3 rounded-xl text-red-300 hover:bg-red-500/10 hover:text-red-200"
                     onClick={() => {
                       setMobileMenuOpen(false);
                       void signOut({ callbackUrl: '/' });
@@ -364,7 +376,7 @@ export function LandingNavbar() {
               ) : (
                 <Button
                   asChild
-                  className="w-full h-12 rounded-xl bg-gradient-to-r from-brand-primary to-brand-tertiary text-white shadow-lg shadow-brand-primary/30"
+                  className="h-12 w-full rounded-xl bg-gradient-to-r from-brand-primary to-brand-tertiary text-white shadow-lg shadow-brand-primary/30"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Link href={chatHref}>Bắt đầu ngay</Link>
@@ -374,6 +386,24 @@ export function LandingNavbar() {
           </div>
         </div>
       )}
+
+      {/* Beta Banner */}
+      <div className="w-full overflow-hidden border-t border-amber-500/20 bg-amber-500/10 py-2.5">
+        <div className="flex w-max animate-marquee text-xs font-bold uppercase tracking-wider text-amber-400">
+          <div className="flex shrink-0 gap-20 px-10">
+            <span>
+              ⚠️ Hệ thống iLaw đang hoạt động trong giai đoạn thử nghiệm (Beta) • Vui lòng kiểm
+              chứng kỹ các thông tin quan trọng và tham khảo ý kiến luật sư khi cần thiết
+            </span>
+          </div>
+          <div className="flex shrink-0 gap-20 px-10">
+            <span>
+              ⚠️ Hệ thống iLaw đang hoạt động trong giai đoạn thử nghiệm (Beta) • Vui lòng kiểm
+              chứng kỹ các thông tin quan trọng và tham khảo ý kiến luật sư khi cần thiết
+            </span>
+          </div>
+        </div>
+      </div>
     </header>
   );
 }

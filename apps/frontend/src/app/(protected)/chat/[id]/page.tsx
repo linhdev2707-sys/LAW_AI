@@ -16,17 +16,8 @@ export default function ChatConversationPage() {
   const router = useRouter();
   const search = useSearchParams();
   const id = params?.id;
-  const {
-    conversationId,
-    messages,
-    sources,
-    streaming,
-    error,
-    load,
-    send,
-    stop,
-    rateLimit,
-  } = useChatStream();
+  const { conversationId, messages, sources, streaming, error, load, send, stop, rateLimit } =
+    useChatStream();
   const [refreshKey, setRefreshKey] = useState(0);
 
   /**
@@ -120,11 +111,7 @@ export default function ChatConversationPage() {
               </div>
             </div>
           ) : (
-            <MessageList
-              messages={messages}
-              sources={sources}
-              loading={streaming}
-            />
+            <MessageList messages={messages} sources={sources} loading={streaming} />
           )}
 
           <ChatInput

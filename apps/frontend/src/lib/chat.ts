@@ -64,6 +64,5 @@ export const chatApi = {
       method: 'POST',
       body: { content, conversationId },
     }),
-  remove: (id: string) =>
-    apiFetch<void>(`/api/v1/chat/conversations/${id}`, { method: 'DELETE' }),
+  remove: (id: string) => apiFetch<void>(`/api/v1/chat/conversations/${id}`, { method: 'DELETE' }),
 };

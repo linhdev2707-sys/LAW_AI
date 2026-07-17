@@ -28,7 +28,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-lawai}']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-lawai} -d ${POSTGRES_DB:-law_ai}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -76,10 +76,10 @@ services:
     networks:
       - law-ai-network
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
   frontend:
     build:
@@ -108,10 +108,10 @@ services:
     networks:
       - law-ai-network
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
   ocr-service:
     build:
@@ -123,10 +123,10 @@ services:
     networks:
       - law-ai-network
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
   redis:
     image: redis:7-alpine
@@ -142,10 +142,10 @@ services:
       timeout: 5s
       retries: 5
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
 volumes:
   postgres_data:

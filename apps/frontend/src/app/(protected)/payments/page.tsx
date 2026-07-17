@@ -138,7 +138,8 @@ export default function AdminPaymentPage() {
               Thống kê & Quản lý Thanh toán
             </h1>
             <p className="mt-1 text-sm text-brand-on-surface-variant">
-              Theo dõi doanh thu, lịch sử nâng cấp gói cước và trạng thái thanh toán qua VietQR/Casso.
+              Theo dõi doanh thu, lịch sử nâng cấp gói cước và trạng thái thanh toán qua
+              VietQR/Casso.
             </p>
           </div>
         </header>
@@ -147,7 +148,10 @@ export default function AdminPaymentPage() {
         {loadingStats ? (
           <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="glass-card animate-pulse rounded-2xl border border-brand-tertiary/15 p-6 h-28" />
+              <div
+                key={i}
+                className="glass-card h-28 animate-pulse rounded-2xl border border-brand-tertiary/15 p-6"
+              />
             ))}
           </div>
         ) : errorStats ? (
@@ -172,7 +176,7 @@ export default function AdminPaymentPage() {
                   </span>
                 </div>
                 <div className="mt-4">
-                  <h3 className="font-display text-2xl font-bold text-brand-on-surface leading-none">
+                  <h3 className="font-display text-2xl font-bold leading-none text-brand-on-surface">
                     {formatVND(stats.totalRevenue)}
                   </h3>
                   <p className="mt-1.5 text-xs text-brand-on-surface-variant/70">
@@ -192,7 +196,7 @@ export default function AdminPaymentPage() {
                   </span>
                 </div>
                 <div className="mt-4">
-                  <h3 className="font-display text-2xl font-bold text-brand-on-surface leading-none">
+                  <h3 className="font-display text-2xl font-bold leading-none text-brand-on-surface">
                     {stats.countsByStatus.completed}
                   </h3>
                   <p className="mt-1.5 text-xs text-brand-on-surface-variant/70">
@@ -238,13 +242,14 @@ export default function AdminPaymentPage() {
                   </span>
                 </div>
                 <div className="mt-4">
-                  <h3 className="font-display text-2xl font-bold text-brand-on-surface leading-none">
+                  <h3 className="font-display text-2xl font-bold leading-none text-brand-on-surface">
                     {stats.monthlyTrend.length > 0
                       ? formatVND(stats.monthlyTrend[stats.monthlyTrend.length - 1]?.revenue || 0)
                       : formatVND(0)}
                   </h3>
                   <p className="mt-1.5 text-xs text-brand-on-surface-variant/70">
-                    Tháng: {stats.monthlyTrend.length > 0
+                    Tháng:{' '}
+                    {stats.monthlyTrend.length > 0
                       ? stats.monthlyTrend[stats.monthlyTrend.length - 1]?.month
                       : 'N/A'}
                   </p>
@@ -263,7 +268,7 @@ export default function AdminPaymentPage() {
           />
 
           {/* Table Toolbar */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-brand-tertiary/15 px-6 py-5">
+          <div className="flex flex-col justify-between gap-4 border-b border-brand-tertiary/15 px-6 py-5 md:flex-row md:items-center">
             {/* Search input */}
             <div className="group relative w-full md:max-w-xs">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-on-surface-variant/60 transition-colors group-focus-within:text-brand-tertiary" />
@@ -272,7 +277,7 @@ export default function AdminPaymentPage() {
                 placeholder="Mã chuyển khoản hoặc email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 border-brand-outline-variant/30 bg-brand-surface-container-lowest/60 focus-visible:border-brand-tertiary focus-visible:ring-brand-tertiary/30"
+                className="border-brand-outline-variant/30 bg-brand-surface-container-lowest/60 pl-9 focus-visible:border-brand-tertiary focus-visible:ring-brand-tertiary/30"
               />
             </div>
 
@@ -311,13 +316,9 @@ export default function AdminPaymentPage() {
                 size="sm"
                 onClick={refreshAll}
                 disabled={loadingList}
-                className="text-brand-on-surface-variant hover:bg-white/5 hover:text-brand-tertiary h-10 px-3"
+                className="h-10 px-3 text-brand-on-surface-variant hover:bg-white/5 hover:text-brand-tertiary"
               >
-                {loadingList ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  'Làm mới'
-                )}
+                {loadingList ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Làm mới'}
               </Button>
             </div>
           </div>
@@ -345,26 +346,26 @@ export default function AdminPaymentPage() {
             ) : (
               <>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full border-collapse text-left">
                     <thead>
                       <tr className="border-b border-brand-outline-variant/20 font-body text-xs font-semibold uppercase tracking-wider text-brand-on-surface-variant/80">
                         <th className="pb-3 pr-4">Mã đơn</th>
-                        <th className="pb-3 px-4">Khách hàng</th>
-                        <th className="pb-3 px-4">Gói cước</th>
-                        <th className="pb-3 px-4">Số tiền</th>
-                        <th className="pb-3 px-4 text-center">Trạng thái</th>
-                        <th className="pb-3 px-4">Ngày tạo</th>
-                        <th className="pb-3 px-4">Ngày thanh toán</th>
+                        <th className="px-4 pb-3">Khách hàng</th>
+                        <th className="px-4 pb-3">Gói cước</th>
+                        <th className="px-4 pb-3">Số tiền</th>
+                        <th className="px-4 pb-3 text-center">Trạng thái</th>
+                        <th className="px-4 pb-3">Ngày tạo</th>
+                        <th className="px-4 pb-3">Ngày thanh toán</th>
                         <th className="pb-3 pl-4 text-right">Hành động</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-brand-outline-variant/10 text-sm font-body">
+                    <tbody className="divide-y divide-brand-outline-variant/10 font-body text-sm">
                       {transactions.map((tx) => (
-                        <tr key={tx.id} className="hover:bg-white/[0.02] transition-colors">
-                          <td className="py-3.5 pr-4 font-mono font-bold text-[11px] text-brand-tertiary">
+                        <tr key={tx.id} className="transition-colors hover:bg-white/[0.02]">
+                          <td className="py-3.5 pr-4 font-mono text-[11px] font-bold text-brand-tertiary">
                             {tx.code}
                           </td>
-                          <td className="py-3.5 px-4">
+                          <td className="px-4 py-3.5">
                             <div className="font-medium text-brand-on-surface">
                               {tx.userFullName || 'N/A'}
                             </div>
@@ -372,31 +373,47 @@ export default function AdminPaymentPage() {
                               {tx.userEmail || 'N/A'}
                             </div>
                           </td>
-                          <td className="py-3.5 px-4">
-                            <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${getPlanBadgeClass(tx.plan)}`}>
+                          <td className="px-4 py-3.5">
+                            <span
+                              className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${getPlanBadgeClass(tx.plan)}`}
+                            >
                               {getPlanDisplayName(tx.plan)}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 font-mono font-bold text-brand-secondary">
+                          <td className="px-4 py-3.5 font-mono font-bold text-brand-secondary">
                             {formatVND(tx.amount)}
                           </td>
-                          <td className="py-3.5 px-4 text-center">
-                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${getStatusBadgeClass(tx.status)}`}>
-                              {tx.status === 'completed' && <CheckCircle className="h-3 w-3 shrink-0" />}
+                          <td className="px-4 py-3.5 text-center">
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${getStatusBadgeClass(tx.status)}`}
+                            >
+                              {tx.status === 'completed' && (
+                                <CheckCircle className="h-3 w-3 shrink-0" />
+                              )}
                               {tx.status === 'pending' && <Clock className="h-3 w-3 shrink-0" />}
-                              {tx.status === 'approval_pending' && <Clock className="h-3 w-3 shrink-0 animate-pulse" />}
+                              {tx.status === 'approval_pending' && (
+                                <Clock className="h-3 w-3 shrink-0 animate-pulse" />
+                              )}
                               {tx.status === 'failed' && <XCircle className="h-3 w-3 shrink-0" />}
-                              {tx.status === 'completed' ? 'Thành công' : tx.status === 'failed' ? 'Thất bại' : tx.status === 'approval_pending' ? 'Chờ duyệt' : 'Chờ xử lý'}
+                              {tx.status === 'completed'
+                                ? 'Thành công'
+                                : tx.status === 'failed'
+                                  ? 'Thất bại'
+                                  : tx.status === 'approval_pending'
+                                    ? 'Chờ duyệt'
+                                    : 'Chờ xử lý'}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 text-xs text-brand-on-surface-variant/80">
+                          <td className="px-4 py-3.5 text-xs text-brand-on-surface-variant/80">
                             {new Date(tx.createdAt).toLocaleString('vi-VN')}
                           </td>
-                          <td className="py-3.5 px-4 text-xs text-brand-on-surface-variant/80">
+                          <td className="px-4 py-3.5 text-xs text-brand-on-surface-variant/80">
                             {tx.paidAt ? (
                               <div>
                                 <div>{new Date(tx.paidAt).toLocaleString('vi-VN')}</div>
-                                <div className="text-[10px] text-slate-500 font-mono">ID: {tx.transactionId || '-'}</div>
+                                <div className="font-mono text-[10px] text-slate-500">
+                                  ID: {tx.transactionId || '-'}
+                                </div>
                               </div>
                             ) : (
                               <span className="text-slate-600">-</span>
@@ -412,7 +429,7 @@ export default function AdminPaymentPage() {
                                   size="sm"
                                   onClick={() => onApprove(tx.code)}
                                   disabled={!!approvingCode || !!rejectingCode}
-                                  className="h-7 rounded-md bg-emerald-500/10 px-2.5 text-xs font-semibold text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/20 hover:text-emerald-300"
+                                  className="h-7 rounded-md border border-emerald-500/25 bg-emerald-500/10 px-2.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300"
                                 >
                                   {approvingCode === tx.code ? (
                                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -425,7 +442,7 @@ export default function AdminPaymentPage() {
                                   size="sm"
                                   onClick={() => onReject(tx.code)}
                                   disabled={!!approvingCode || !!rejectingCode}
-                                  className="h-7 rounded-md bg-rose-500/10 px-2.5 text-xs font-semibold text-rose-400 border border-rose-500/25 hover:bg-rose-500/20 hover:text-rose-300"
+                                  className="h-7 rounded-md border border-rose-500/25 bg-rose-500/10 px-2.5 text-xs font-semibold text-rose-400 hover:bg-rose-500/20 hover:text-rose-300"
                                 >
                                   {rejectingCode === tx.code ? (
                                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -446,7 +463,8 @@ export default function AdminPaymentPage() {
                 {totalPages > 1 && (
                   <div className="mt-6 flex items-center justify-between border-t border-brand-outline-variant/10 pt-4 text-sm text-brand-on-surface-variant">
                     <div>
-                      Trang <span className="font-semibold text-brand-on-surface">{page}</span> / {totalPages} (Tổng cộng {total} giao dịch)
+                      Trang <span className="font-semibold text-brand-on-surface">{page}</span> /{' '}
+                      {totalPages} (Tổng cộng {total} giao dịch)
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
@@ -514,11 +532,13 @@ function CustomSelect({
         className="flex h-10 w-full items-center justify-between rounded-lg border border-brand-outline-variant/30 bg-brand-surface-container-lowest/60 px-3 py-2 text-sm text-brand-on-surface transition-all hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-brand-tertiary/30"
       >
         <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
-        <ChevronDown className={`h-4 w-4 shrink-0 text-brand-on-surface-variant/70 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-brand-on-surface-variant/70 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 right-0 z-50 mt-1.5 max-h-60 overflow-y-auto rounded-lg border border-brand-outline-variant/20 bg-brand-surface-container-low p-1 shadow-xl backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="absolute left-0 right-0 z-50 mt-1.5 max-h-60 overflow-y-auto rounded-lg border border-brand-outline-variant/20 bg-brand-surface-container-low p-1 shadow-xl backdrop-blur-xl duration-150 animate-in fade-in slide-in-from-top-1">
           {options.map((opt) => (
             <button
               key={opt.value}
@@ -529,7 +549,7 @@ function CustomSelect({
               }}
               className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
                 opt.value === value
-                  ? 'bg-brand-primary text-white font-semibold'
+                  ? 'bg-brand-primary font-semibold text-white'
                   : 'text-brand-on-surface-variant hover:bg-white/5 hover:text-brand-on-surface'
               }`}
             >

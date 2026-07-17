@@ -58,9 +58,7 @@ export function useUserAdmin(isAdmin: boolean) {
     try {
       await userAdminApi.update(id, { role: newRole });
       toast.success('Đã cập nhật vai trò người dùng');
-      setUsers((prev) =>
-        prev.map((u) => (u.id === id ? { ...u, role: newRole } : u))
-      );
+      setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, role: newRole } : u)));
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : 'Cập nhật thất bại';
       toast.error('Cập nhật vai trò thất bại', { description: msg });
@@ -71,9 +69,7 @@ export function useUserAdmin(isAdmin: boolean) {
     try {
       await userAdminApi.update(id, { isActive: newStatus });
       toast.success(newStatus ? 'Đã kích hoạt tài khoản' : 'Đã khoá tài khoản');
-      setUsers((prev) =>
-        prev.map((u) => (u.id === id ? { ...u, isActive: newStatus } : u))
-      );
+      setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, isActive: newStatus } : u)));
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : 'Cập nhật thất bại';
       toast.error('Cập nhật trạng thái thất bại', { description: msg });
@@ -97,7 +93,12 @@ export function useUserAdmin(isAdmin: boolean) {
     }
   }
 
-  async function onCreateUser(dto: { email: string; password?: string; fullName: string; role?: UserRole }) {
+  async function onCreateUser(dto: {
+    email: string;
+    password?: string;
+    fullName: string;
+    role?: UserRole;
+  }) {
     try {
       await userAdminApi.create(dto);
       toast.success('Đã thêm người dùng mới');

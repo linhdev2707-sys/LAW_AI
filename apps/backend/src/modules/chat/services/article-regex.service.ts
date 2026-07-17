@@ -31,11 +31,17 @@ export class ArticleRegexService {
    * use the `\p{L}` Unicode property class (case-insensitive flag) so
    *   "[Đd]iều" is not needed.
    */
-  private readonly patterns: Array<{ re: RegExp; apply: (m: RegExpMatchArray) => Partial<IArticleReference> }> = [
+  private readonly patterns: Array<{
+    re: RegExp;
+    apply: (m: RegExpMatchArray) => Partial<IArticleReference>;
+  }> = [
     // "Điều 12 khoản 3" / "Điều 12.3"
     {
       re: /\bĐiều\s+(\d+)(?:\s+khoản\s+(\d+))?/iu,
-      apply: (m) => ({ article: parseInt(m[1]!, 10), clause: m[2] ? parseInt(m[2], 10) : undefined }),
+      apply: (m) => ({
+        article: parseInt(m[1]!, 10),
+        clause: m[2] ? parseInt(m[2], 10) : undefined,
+      }),
     },
     // "khoản 3 Điều 12" — clause-first variant
     {

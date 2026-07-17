@@ -92,8 +92,10 @@ export const authOptions: NextAuthOptions = {
         if ((session as any).name) token.name = (session as any).name;
         if ((session as any).accessToken) token.accessToken = (session as any).accessToken;
         if ((session as any).refreshToken) token.refreshToken = (session as any).refreshToken;
-        if ((session as any).subscriptionPlan) token.subscriptionPlan = (session as any).subscriptionPlan;
-        if ((session as any).subscriptionExpiresAt) token.subscriptionExpiresAt = (session as any).subscriptionExpiresAt;
+        if ((session as any).subscriptionPlan)
+          token.subscriptionPlan = (session as any).subscriptionPlan;
+        if ((session as any).subscriptionExpiresAt)
+          token.subscriptionExpiresAt = (session as any).subscriptionExpiresAt;
         if ((session as any).role) token.role = (session as any).role;
         return token;
       }

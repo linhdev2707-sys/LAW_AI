@@ -157,9 +157,7 @@ export class DocumentParserService {
       const text = await this.fromPdfWithPdfParse(buffer);
       if (text.trim().length >= MIN_USEFUL_TEXT) return text;
     } catch (e) {
-      this.logger.warn(
-        `pdf-parse failed, trying BT/ET fallback: ${(e as Error).message}`,
-      );
+      this.logger.warn(`pdf-parse failed, trying BT/ET fallback: ${(e as Error).message}`);
     }
 
     // Stage B — raw BT...ET content-stream walker. Recovers text from
@@ -167,9 +165,7 @@ export class DocumentParserService {
     // independent.
     const fallbackText = this.fromPdfRawTextStreams(buffer);
     if (fallbackText.trim().length >= MIN_USEFUL_TEXT) {
-      this.logger.log(
-        'Recovered PDF text via raw BT/ET scan — pdf-parse missed it',
-      );
+      this.logger.log('Recovered PDF text via raw BT/ET scan — pdf-parse missed it');
       return fallbackText;
     }
 
@@ -273,7 +269,10 @@ export class DocumentParserService {
   private readStringOperandBefore(block: string, opIndex: number): string | null {
     // Strip trailing whitespace between operand and operator.
     let i = opIndex - 1;
-    while (i >= 0 && (block[i] === ' ' || block[i] === '\t' || block[i] === '\n' || block[i] === '\r')) {
+    while (
+      i >= 0 &&
+      (block[i] === ' ' || block[i] === '\t' || block[i] === '\n' || block[i] === '\r')
+    ) {
       i--;
     }
     if (i < 0) return null;
@@ -322,15 +321,33 @@ export class DocumentParserService {
       if (c === '\\' && i + 1 < raw.length) {
         const next = raw[i + 1];
         switch (next) {
-          case 'n': out += '\n'; break;
-          case 'r': out += '\r'; break;
-          case 't': out += '\t'; break;
-          case 'b': out += '\b'; break;
-          case 'f': out += '\f'; break;
-          case '(': out += '('; break;
-          case ')': out += ')'; break;
-          case '\\': out += '\\'; break;
-          default: out += next; break;
+          case 'n':
+            out += '\n';
+            break;
+          case 'r':
+            out += '\r';
+            break;
+          case 't':
+            out += '\t';
+            break;
+          case 'b':
+            out += '\b';
+            break;
+          case 'f':
+            out += '\f';
+            break;
+          case '(':
+            out += '(';
+            break;
+          case ')':
+            out += ')';
+            break;
+          case '\\':
+            out += '\\';
+            break;
+          default:
+            out += next;
+            break;
         }
         i++;
       } else {
@@ -455,9 +472,9 @@ export class DocumentParserService {
     // Replace tags with space/newlines so words don't run together.
     let cleaned = raw
       .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // remove scripts
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')   // remove styles
-      .replace(/<[^>]+>/g, ' ')                        // remove HTML tags
-      .replace(/&nbsp;/g, ' ')                         // decode basic entities
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // remove styles
+      .replace(/<[^>]+>/g, ' ') // remove HTML tags
+      .replace(/&nbsp;/g, ' ') // decode basic entities
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&amp;/g, '&')

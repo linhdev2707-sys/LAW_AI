@@ -91,7 +91,7 @@ export class RetrieverService {
     this.candidateK = config.get<number>('app.rag.candidateK', 50);
     this.topK = config.get<number>('app.rag.topK', 5);
     this.fusionK = config.get<number>('app.rag.fusionK', 60);
-    this.minCosineScore = config.get<number>('app.rag.minCosineScore', 0.30);
+    this.minCosineScore = config.get<number>('app.rag.minCosineScore', 0.3);
     this.allowedBuckets = config.get<string[]>('app.rag.allowedBuckets', []);
   }
 
@@ -127,7 +127,10 @@ export class RetrieverService {
    *
    * Backward-compat: `filtersOrBucket` may be a plain bucket string.
    */
-  async retrieve(query: string, filtersOrBucket?: IRetrieverFilters | string): Promise<IScoredChunk[]> {
+  async retrieve(
+    query: string,
+    filtersOrBucket?: IRetrieverFilters | string,
+  ): Promise<IScoredChunk[]> {
     const trimmed = query.trim();
     if (!trimmed) return [];
     if (!this.embeddings.isReady()) {
@@ -135,9 +138,10 @@ export class RetrieverService {
       return [];
     }
 
-    const filters: IRetrieverFilters = typeof filtersOrBucket === 'string'
-      ? { bucketName: filtersOrBucket }
-      : (filtersOrBucket ?? {});
+    const filters: IRetrieverFilters =
+      typeof filtersOrBucket === 'string'
+        ? { bucketName: filtersOrBucket }
+        : (filtersOrBucket ?? {});
 
     // 1) Embed query
     const [qVec] = await this.embeddings.embedQueries([trimmed]);
@@ -152,9 +156,7 @@ export class RetrieverService {
     //    at boot. The unused `where` instance is built with the
     //    appropriate offset to keep SQL indices unique.
     const usePg = this.usePgVector;
-    const vectorWhere = usePg
-      ? this.buildWhere(filters, 2)
-      : this.buildWhere(filters, 1);
+    const vectorWhere = usePg ? this.buildWhere(filters, 2) : this.buildWhere(filters, 1);
     const bm25Where = this.buildWhere(filters, 2);
 
     // 3) Vector search
@@ -220,15 +222,24 @@ export class RetrieverService {
     const vecLit = `[${qVec.join(',')}]`;
     const statusIdx = 1 + 1 + where.params.length;
     const limitIdx = statusIdx + 1;
-    const rows = await this.dataSource.query<Array<{
-      id: string; document_id: string; document_name: string;
-      content: string; breadcrumb: string;
-      law_name: string | null; law_number: string | null;
-      chapter: string | null; section: string | null;
-      article: string; clause: string | null; point: string | null;
-      embedding: string | null;
-      cosine: number;
-    }>>(
+    const rows = await this.dataSource.query<
+      Array<{
+        id: string;
+        document_id: string;
+        document_name: string;
+        content: string;
+        breadcrumb: string;
+        law_name: string | null;
+        law_number: string | null;
+        chapter: string | null;
+        section: string | null;
+        article: string;
+        clause: string | null;
+        point: string | null;
+        embedding: string | null;
+        cosine: number;
+      }>
+    >(
       `
       SELECT c.id, c.document_id, d.name AS document_name,
              c.raw_text AS content, c.breadcrumb,
@@ -280,14 +291,23 @@ export class RetrieverService {
     // here (we slice in Node after scoring) but we keep the param
     // bound so the SQL stays uniform across search paths.
     const statusIdx = 1 + where.params.length;
-    const rows = await this.dataSource.query<Array<{
-      id: string; document_id: string; document_name: string;
-      content: string; breadcrumb: string;
-      law_name: string | null; law_number: string | null;
-      chapter: string | null; section: string | null;
-      article: string; clause: string | null; point: string | null;
-      embedding: string | null;
-    }>>(
+    const rows = await this.dataSource.query<
+      Array<{
+        id: string;
+        document_id: string;
+        document_name: string;
+        content: string;
+        breadcrumb: string;
+        law_name: string | null;
+        law_number: string | null;
+        chapter: string | null;
+        section: string | null;
+        article: string;
+        clause: string | null;
+        point: string | null;
+        embedding: string | null;
+      }>
+    >(
       `
       SELECT c.id, c.document_id, d.name AS document_name,
              c.raw_text AS content, c.breadcrumb,
@@ -352,19 +372,26 @@ export class RetrieverService {
     // $1 + 1 + where.params.length = $2 + where.params.length.
     const statusIdx = 1 + 1 + where.params.length;
     const limitIdx = statusIdx + 1;
-    const selectEmbedding = this.usePgVector
-      ? 'c.embedding_vec::text AS embedding'
-      : 'c.embedding';
+    const selectEmbedding = this.usePgVector ? 'c.embedding_vec::text AS embedding' : 'c.embedding';
 
-    const rows = await this.dataSource.query<Array<{
-      id: string; document_id: string; document_name: string;
-      content: string; breadcrumb: string;
-      law_name: string | null; law_number: string | null;
-      chapter: string | null; section: string | null;
-      article: string; clause: string | null; point: string | null;
-      embedding: string | null;
-      rank: number;
-    }>>(
+    const rows = await this.dataSource.query<
+      Array<{
+        id: string;
+        document_id: string;
+        document_name: string;
+        content: string;
+        breadcrumb: string;
+        law_name: string | null;
+        law_number: string | null;
+        chapter: string | null;
+        section: string | null;
+        article: string;
+        clause: string | null;
+        point: string | null;
+        embedding: string | null;
+        rank: number;
+      }>
+    >(
       `
       SELECT c.id, c.document_id, d.name AS document_name,
              c.raw_text AS content, c.breadcrumb,
@@ -387,9 +414,7 @@ export class RetrieverService {
       let vec: number[] = [];
       if (r.embedding) {
         try {
-          vec = this.usePgVector
-            ? parsePgVector(r.embedding)
-            : JSON.parse(r.embedding);
+          vec = this.usePgVector ? parsePgVector(r.embedding) : JSON.parse(r.embedding);
         } catch {
           vec = [];
         }
@@ -485,15 +510,23 @@ export class RetrieverService {
 
 function parsePgVector(val: string | null): number[] {
   if (!val) return [];
-  return val.substring(1, val.length - 1).split(',').map(Number);
+  return val
+    .substring(1, val.length - 1)
+    .split(',')
+    .map(Number);
 }
 
 function cosine(a: number[], b: number[]): number {
   if (a.length !== b.length || a.length === 0) return 0;
-  let dot = 0, na = 0, nb = 0;
+  let dot = 0,
+    na = 0,
+    nb = 0;
   for (let i = 0; i < a.length; i++) {
-    const ai = a[i]!; const bi = b[i]!;
-    dot += ai * bi; na += ai * ai; nb += bi * bi;
+    const ai = a[i]!;
+    const bi = b[i]!;
+    dot += ai * bi;
+    na += ai * ai;
+    nb += bi * bi;
   }
   const d = Math.sqrt(na) * Math.sqrt(nb);
   return d === 0 ? 0 : dot / d;

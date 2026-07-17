@@ -196,33 +196,32 @@ export function useRagAdmin(isAdmin: boolean) {
     if (selectedIds.size === 0 || bulkSyncing) return;
     setBulkSyncing(true);
     const ids = Array.from(selectedIds);
-    
+
     // Filter only documents that are in pending or failed state
-    const docsToSync = docs.filter(d => ids.includes(d.id) && (d.status === 'pending' || d.status === 'failed'));
+    const docsToSync = docs.filter(
+      (d) => ids.includes(d.id) && (d.status === 'pending' || d.status === 'failed'),
+    );
     if (docsToSync.length === 0) {
       toast.info('Không có tài liệu nào cần đồng bộ', {
-        description: 'Chỉ đồng bộ các tài liệu ở trạng thái "Chưa đồng bộ" hoặc "Lỗi".'
+        description: 'Chỉ đồng bộ các tài liệu ở trạng thái "Chưa đồng bộ" hoặc "Lỗi".',
       });
       setBulkSyncing(false);
       return;
     }
 
     try {
-      toast.promise(
-        Promise.all(docsToSync.map(d => ragAdminApi.sync(d.id))),
-        {
-          loading: `Đang khởi chạy đồng bộ cho ${docsToSync.length} tài liệu...`,
-          success: () => {
-            void refreshDocs();
-            setSelectedIds(new Set()); // clear selection
-            return `Đã bắt đầu đồng bộ cho ${docsToSync.length} tài liệu.`;
-          },
-          error: (err) => {
-            const msg = err instanceof ApiError ? err.message : 'Lỗi đồng bộ hàng loạt';
-            return `Đồng bộ hàng loạt thất bại: ${msg}`;
-          }
-        }
-      );
+      toast.promise(Promise.all(docsToSync.map((d) => ragAdminApi.sync(d.id))), {
+        loading: `Đang khởi chạy đồng bộ cho ${docsToSync.length} tài liệu...`,
+        success: () => {
+          void refreshDocs();
+          setSelectedIds(new Set()); // clear selection
+          return `Đã bắt đầu đồng bộ cho ${docsToSync.length} tài liệu.`;
+        },
+        error: (err) => {
+          const msg = err instanceof ApiError ? err.message : 'Lỗi đồng bộ hàng loạt';
+          return `Đồng bộ hàng loạt thất bại: ${msg}`;
+        },
+      });
     } catch (e) {
       // Handled by toast.promise
     } finally {

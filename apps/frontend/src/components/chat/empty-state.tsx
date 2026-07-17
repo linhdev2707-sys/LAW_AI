@@ -57,7 +57,8 @@ export function EmptyState({ onSelect }: { onSelect?: (text: string) => void }) 
           />
         </div>
         <h1 className="font-headline text-2xl font-semibold md:text-3xl">
-          {greeting}{userName}!
+          {greeting}
+          {userName}!
         </h1>
         <p className="mt-2 max-w-md text-sm text-brand-on-surface-variant">
           Tôi có thể giúp gì cho bạn hôm nay?
@@ -88,8 +89,8 @@ export function EmptyState({ onSelect }: { onSelect?: (text: string) => void }) 
           })}
         </div> */}
 
-        {/* Helper hint */}
-        {/* <p className="mt-6 text-center text-xs text-brand-on-surface-variant/50">
+      {/* Helper hint */}
+      {/* <p className="mt-6 text-center text-xs text-brand-on-surface-variant/50">
           Mẹo: nhấn <kbd className="rounded border border-brand-outline-variant/30 bg-white/5 px-1.5 py-0.5 font-mono text-[10px]">Enter</kbd> để gửi, <kbd className="rounded border border-brand-outline-variant/30 bg-white/5 px-1.5 py-0.5 font-mono text-[10px]">Shift + Enter</kbd> để xuống dòng
         </p> */}
     </div>

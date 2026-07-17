@@ -87,9 +87,7 @@ export const ragAdminApi = {
    * partial failures (e.g. one doc belongs to a different bucket and
    * R2 delete failed).
    */
-  async bulkDelete(
-    ids: string[],
-  ): Promise<{ id: string; ok: boolean; error?: string }[]> {
+  async bulkDelete(ids: string[]): Promise<{ id: string; ok: boolean; error?: string }[]> {
     return apiFetch<{ id: string; ok: boolean; error?: string }[]>(
       '/api/v1/admin/rag/documents/bulk-delete',
       { method: 'POST', body: { ids } },

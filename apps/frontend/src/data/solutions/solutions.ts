@@ -1,12 +1,7 @@
 // Solutions offered on the public marketing page. To add or modify a
 // solution card, edit this file — the page renders the array unchanged.
 
-import {
-  MessageSquare,
-  FileSearch,
-  PenTool,
-  FileText,
-} from 'lucide-react';
+import { MessageSquare, FileSearch, PenTool, FileText } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export interface SolutionItem {

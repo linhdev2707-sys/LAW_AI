@@ -58,9 +58,7 @@ export async function POST(req: Request) {
 
     // Pick the cookie name based on whether we're in dev (http) or prod (https).
     const isProd = process.env.NODE_ENV === 'production';
-    const cookieName = isProd
-      ? '__Secure-next-auth.session-token'
-      : 'next-auth.session-token';
+    const cookieName = isProd ? '__Secure-next-auth.session-token' : 'next-auth.session-token';
 
     const response = NextResponse.json({ ok: true });
     response.cookies.set({

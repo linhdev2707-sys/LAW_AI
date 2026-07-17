@@ -7,6 +7,7 @@ import { DisclaimerSection } from '@/components/landing/disclaimer-section';
 import { LandingFooter } from '@/components/landing/landing-footer';
 import { LandingScroll } from '@/components/landing/landing-scroll';
 import { FloatingChatbox } from '@/components/landing/floating-chatbox';
+import { NewsSection } from '@/components/landing/news-section';
 
 export default function HomePage() {
   return (
@@ -17,6 +18,7 @@ export default function HomePage() {
       <LandingHero />
       <SocialProof />
       <FeaturesSection />
+      <NewsSection />
       <CtaSection />
       <DisclaimerSection />
       <LandingFooter />

@@ -83,10 +83,7 @@ export default function KnowledgePage() {
     }
   }, [docs.length, totalPages, currentPage]);
 
-  const pendingDoc = useMemo(
-    () => docs.find((d) => d.status === 'ocr_pending') ?? null,
-    [docs],
-  );
+  const pendingDoc = useMemo(() => docs.find((d) => d.status === 'ocr_pending') ?? null, [docs]);
   const { status: polledStatus, error: pollError } = useOcrStatusPolling(
     pendingDoc?.id ?? null,
     !!pendingDoc,
@@ -130,7 +127,7 @@ export default function KnowledgePage() {
             <Database className="h-3.5 w-3.5 text-brand-tertiary" />
             Quản trị
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="font-display text-3xl font-bold tracking-tight text-brand-on-surface">
                 Quản lý Knowledge
@@ -163,9 +160,7 @@ export default function KnowledgePage() {
                 Tài liệu đã tải lên
               </h2>
               <p className="mt-1 text-sm text-brand-on-surface-variant">
-                {loading
-                  ? 'Đang tải…'
-                  : `${docs.length} tài liệu trong cơ sở tri thức`}
+                {loading ? 'Đang tải…' : `${docs.length} tài liệu trong cơ sở tri thức`}
               </p>
             </div>
             <Button
@@ -177,11 +172,7 @@ export default function KnowledgePage() {
               disabled={loading}
               className="text-brand-on-surface-variant hover:bg-white/5 hover:text-brand-tertiary"
             >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                'Làm mới'
-              )}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Làm mới'}
             </Button>
           </div>
           <div className="p-6">
@@ -201,7 +192,9 @@ export default function KnowledgePage() {
               </div>
             ) : docs.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-brand-outline-variant/30 bg-white/5 p-8 text-center text-sm text-brand-on-surface-variant">
-                <span className="mb-2 text-brand-on-surface-variant">Chưa có tài liệu nào trong cơ sở tri thức.</span>
+                <span className="mb-2 text-brand-on-surface-variant">
+                  Chưa có tài liệu nào trong cơ sở tri thức.
+                </span>
                 <button
                   onClick={() => setShowUploadDialog(true)}
                   className="mt-2 inline-flex items-center gap-1.5 text-xs text-brand-tertiary transition-colors hover:text-brand-primary"
@@ -276,9 +269,11 @@ export default function KnowledgePage() {
                 />
 
                 {totalPages > 1 && (
-                  <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-brand-outline-variant/10 pt-4">
+                  <div className="mt-6 flex flex-col items-center justify-between gap-4 border-t border-brand-outline-variant/10 pt-4 sm:flex-row">
                     <p className="text-xs text-brand-on-surface-variant">
-                      Hiển thị {(currentPage - 1) * PAGE_SIZE + 1} - {Math.min(currentPage * PAGE_SIZE, docs.length)} trong tổng số {docs.length} tài liệu
+                      Hiển thị {(currentPage - 1) * PAGE_SIZE + 1} -{' '}
+                      {Math.min(currentPage * PAGE_SIZE, docs.length)} trong tổng số {docs.length}{' '}
+                      tài liệu
                     </p>
                     <div className="flex items-center gap-2">
                       <Button

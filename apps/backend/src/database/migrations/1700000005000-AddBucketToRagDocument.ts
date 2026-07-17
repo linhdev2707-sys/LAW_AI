@@ -30,9 +30,7 @@ export class AddBucketToRagDocument1700000005000 implements MigrationInterface {
       `ALTER TABLE "rag_documents" ADD COLUMN IF NOT EXISTS "bucket_name" varchar(100) NOT NULL DEFAULT 'law-documents'`,
     );
     // Drop the default so new rows must provide a value (entity requires it).
-    await queryRunner.query(
-      `ALTER TABLE "rag_documents" ALTER COLUMN "bucket_name" DROP DEFAULT`,
-    );
+    await queryRunner.query(`ALTER TABLE "rag_documents" ALTER COLUMN "bucket_name" DROP DEFAULT`);
 
     // bucket_region — entity has default 'auto'; keep DB default too.
     await queryRunner.query(

@@ -70,7 +70,7 @@ export function RegisterForm() {
 
   return (
     <div className="relative w-full max-w-md">
-      <div className="relative max-h-[calc(100vh-9rem)] overflow-y-auto rounded-2xl border border-brand-tertiary/25 bg-brand-surface-container/80 p-6 shadow-2xl shadow-black/40 backdrop-blur-xl md:p-8 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+      <div className="relative max-h-[calc(100vh-9rem)] overflow-y-auto rounded-2xl border border-brand-tertiary/25 bg-brand-surface-container/80 p-6 shadow-2xl shadow-black/40 backdrop-blur-xl [scrollbar-width:none] md:p-8 [&::-webkit-scrollbar]:hidden">
         {/* Top accent line */}
         <div
           aria-hidden
@@ -78,10 +78,7 @@ export function RegisterForm() {
         />
 
         {/* Brand */}
-        <Link
-          href="/"
-          className="mb-6 flex items-center gap-3 transition-opacity hover:opacity-80"
-        >
+        <Link href="/" className="mb-6 flex items-center gap-3 transition-opacity hover:opacity-80">
           <Image
             src="/logo.jpg"
             alt="iLaw"
@@ -209,16 +206,12 @@ export function RegisterForm() {
                     <div
                       key={i}
                       className={`h-1 flex-1 rounded-full transition-colors ${
-                        i < strength.score
-                          ? strength.color
-                          : 'bg-brand-outline-variant/20'
+                        i < strength.score ? strength.color : 'bg-brand-outline-variant/20'
                       }`}
                     />
                   ))}
                 </div>
-                <p className="text-xs text-brand-on-surface-variant">
-                  {strength.label}
-                </p>
+                <p className="text-xs text-brand-on-surface-variant">{strength.label}</p>
                 <ul className="space-y-0.5 text-xs text-brand-on-surface-variant/80">
                   <Requirement met={strength.checks.length} text="Ít nhất 8 ký tự" />
                   <Requirement met={strength.checks.upper} text="Có chữ hoa (A-Z)" />
@@ -240,7 +233,7 @@ export function RegisterForm() {
           <Button
             type="submit"
             disabled={loading}
-            className="group h-11 w-full rounded-full bg-gradient-to-r from-brand-primary to-brand-tertiary font-label text-label-md font-semibold text-white shadow-lg shadow-brand-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-primary/50 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70"
+            className="font-label group h-11 w-full rounded-full bg-gradient-to-r from-brand-primary to-brand-tertiary text-label-md font-semibold text-white shadow-lg shadow-brand-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-primary/50 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {loading ? (
               <>
@@ -293,9 +286,7 @@ export function RegisterForm() {
 function Requirement({ met, text }: { met: boolean; text: string }) {
   return (
     <li
-      className={`flex items-center gap-1.5 transition-colors ${
-        met ? 'text-brand-tertiary' : ''
-      }`}
+      className={`flex items-center gap-1.5 transition-colors ${met ? 'text-brand-tertiary' : ''}`}
     >
       <MaterialIcon
         name={met ? 'check_circle' : 'radio_button_unchecked'}

@@ -13,11 +13,14 @@ export const userAdminApi = {
     params.set('limit', String(query.limit));
     if (query.search) params.set('search', query.search);
     if (query.role) params.set('role', query.role);
-    
+
     return apiFetch<IPaginatedResult<IUser>>(`/api/v1/users?${params.toString()}`);
   },
 
-  async update(id: string, dto: { fullName?: string; role?: UserRole; isActive?: boolean }): Promise<IUser> {
+  async update(
+    id: string,
+    dto: { fullName?: string; role?: UserRole; isActive?: boolean },
+  ): Promise<IUser> {
     return apiFetch<IUser>(`/api/v1/users/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       body: dto,
@@ -30,7 +33,12 @@ export const userAdminApi = {
     });
   },
 
-  async create(dto: { email: string; password?: string; fullName: string; role?: UserRole }): Promise<IUser> {
+  async create(dto: {
+    email: string;
+    password?: string;
+    fullName: string;
+    role?: UserRole;
+  }): Promise<IUser> {
     // Admin creates user: first register standard user, then update role if role !== USER
     // Wait, the API auth/register does not support registering password-less accounts, so we'll pass a password.
     // If not provided, we generate a random password.
@@ -43,7 +51,7 @@ export const userAdminApi = {
         fullName: dto.fullName,
       },
     });
-    
+
     const user = regRes.user;
     if (dto.role && dto.role !== 'user') {
       return this.update(user.id, { role: dto.role });

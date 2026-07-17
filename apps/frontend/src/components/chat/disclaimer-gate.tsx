@@ -104,7 +104,7 @@ export function DisclaimerGate() {
       {/* Backdrop — not clickable to dismiss; the user must accept to proceed. */}
       <div
         aria-hidden
-        className="absolute inset-0 animate-in fade-in-0 bg-black/75 backdrop-blur-md duration-200"
+        className="absolute inset-0 bg-black/75 backdrop-blur-md duration-200 animate-in fade-in-0"
       />
 
       {/* Panel */}
@@ -113,7 +113,7 @@ export function DisclaimerGate() {
         className={cn(
           'relative flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border',
           'border-amber-500/30 bg-brand-surface-container shadow-2xl shadow-black/70',
-          'animate-in fade-in-0 zoom-in-95 duration-200',
+          'duration-200 animate-in fade-in-0 zoom-in-95',
           'max-h-[calc(100vh-3rem)]',
         )}
       >
@@ -142,8 +142,8 @@ export function DisclaimerGate() {
               id="disclaimer-gate-desc"
               className="mt-1 text-sm leading-relaxed text-brand-on-surface-variant"
             >
-              Trước khi bắt đầu trò chuyện với iLaw, vui lòng đọc kỹ các điều khoản
-              dưới đây và xác nhận bạn đã hiểu rõ.
+              Trước khi bắt đầu trò chuyện với iLaw, vui lòng đọc kỹ các điều khoản dưới đây và xác
+              nhận bạn đã hiểu rõ.
             </p>
           </div>
           {/* No close (×) — the user must explicitly accept to proceed. */}
@@ -234,13 +234,10 @@ export function DisclaimerGate() {
                 />
                 <span className="text-sm leading-relaxed text-brand-on-surface-variant">
                   Tôi đã đọc, hiểu rõ và{' '}
-                  <span className="font-semibold text-brand-on-surface">
-                    đồng ý chấp nhận
-                  </span>{' '}
-                  toàn bộ điều khoản miễn trừ trách nhiệm nêu trên. Tôi hiểu rằng
-                  iLaw chỉ là công cụ hỗ trợ nghiên cứu, không thay thế luật
-                  sư, và tôi sẽ tự chịu trách nhiệm về các quyết định pháp lý
-                  của mình.
+                  <span className="font-semibold text-brand-on-surface">đồng ý chấp nhận</span> toàn
+                  bộ điều khoản miễn trừ trách nhiệm nêu trên. Tôi hiểu rằng iLaw chỉ là công cụ hỗ
+                  trợ nghiên cứu, không thay thế luật sư, và tôi sẽ tự chịu trách nhiệm về các quyết
+                  định pháp lý của mình.
                 </span>
               </label>
             </div>
@@ -261,8 +258,8 @@ export function DisclaimerGate() {
             </button>
 
             <p className="mt-3 text-center text-[11px] text-brand-on-surface-variant/60">
-              Xác nhận này sẽ được lưu trên trình duyệt này. Bạn chỉ cần thực
-              hiện một lần cho đến khi nội dung miễn trừ được cập nhật.
+              Xác nhận này sẽ được lưu trên trình duyệt này. Bạn chỉ cần thực hiện một lần cho đến
+              khi nội dung miễn trừ được cập nhật.
             </p>
           </div>
         </form>

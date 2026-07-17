@@ -48,22 +48,23 @@ pnpm dev
 ```
 
 Sau khi chạy:
+
 - **Backend**: http://localhost:4000 (Swagger: http://localhost:4000/api/docs)
 - **Frontend**: http://localhost:3000
 
 ## 📜 Scripts (root)
 
-| Script | Mô tả |
-|---|---|
-| `pnpm dev` | Chạy FE + BE song song (turbo) |
-| `pnpm build` | Build tất cả apps/packages |
-| `pnpm lint` | Lint toàn bộ |
-| `pnpm type-check` | TypeScript check |
-| `pnpm format` | Format code với Prettier |
-| `pnpm db:up` | Khởi động Postgres |
-| `pnpm db:down` | Dừng Postgres |
-| `pnpm db:migrate` | Chạy TypeORM migrations |
-| `pnpm db:migrate:generate -- <name>` | Tạo migration mới từ entities |
+| Script                               | Mô tả                          |
+| ------------------------------------ | ------------------------------ |
+| `pnpm dev`                           | Chạy FE + BE song song (turbo) |
+| `pnpm build`                         | Build tất cả apps/packages     |
+| `pnpm lint`                          | Lint toàn bộ                   |
+| `pnpm type-check`                    | TypeScript check               |
+| `pnpm format`                        | Format code với Prettier       |
+| `pnpm db:up`                         | Khởi động Postgres             |
+| `pnpm db:down`                       | Dừng Postgres                  |
+| `pnpm db:migrate`                    | Chạy TypeORM migrations        |
+| `pnpm db:migrate:generate -- <name>` | Tạo migration mới từ entities  |
 
 ## 🔐 Authentication flow
 
@@ -133,6 +134,7 @@ pnpm --filter @law-ai/ocr-worker deploy
 ```
 
 Sau khi deploy:
+
 - Worker chạy cron mỗi 1 phút, list R2 `ocr-inbox/`, OCR file mới
 - Backend env phải có `OCR_CALLBACK_SECRET` (cùng giá trị với Worker)
 

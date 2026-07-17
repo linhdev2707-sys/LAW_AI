@@ -3,7 +3,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { ApiError } from '@/lib/api';
-import { paymentAdminApi, type IAdminTransaction, type IAdminPaymentStats } from '@/lib/payment-admin';
+import {
+  paymentAdminApi,
+  type IAdminTransaction,
+  type IAdminPaymentStats,
+} from '@/lib/payment-admin';
 
 export function usePaymentAdmin(isAdmin: boolean) {
   const [transactions, setTransactions] = useState<IAdminTransaction[]>([]);
@@ -81,41 +85,47 @@ export function usePaymentAdmin(isAdmin: boolean) {
   const [approvingCode, setApprovingCode] = useState<string | null>(null);
   const [rejectingCode, setRejectingCode] = useState<string | null>(null);
 
-  const onApprove = useCallback(async (code: string) => {
-    setApprovingCode(code);
-    try {
-      const promise = paymentAdminApi.approve(code);
-      toast.promise(promise, {
-        loading: `Đang duyệt giao dịch ${code}...`,
-        success: `Giao dịch ${code} đã được duyệt thành công!`,
-        error: (err) => err?.message || `Lỗi khi duyệt giao dịch ${code}`,
-      });
-      await promise;
-      await refreshAll();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setApprovingCode(null);
-    }
-  }, [refreshAll]);
+  const onApprove = useCallback(
+    async (code: string) => {
+      setApprovingCode(code);
+      try {
+        const promise = paymentAdminApi.approve(code);
+        toast.promise(promise, {
+          loading: `Đang duyệt giao dịch ${code}...`,
+          success: `Giao dịch ${code} đã được duyệt thành công!`,
+          error: (err) => err?.message || `Lỗi khi duyệt giao dịch ${code}`,
+        });
+        await promise;
+        await refreshAll();
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setApprovingCode(null);
+      }
+    },
+    [refreshAll],
+  );
 
-  const onReject = useCallback(async (code: string) => {
-    setRejectingCode(code);
-    try {
-      const promise = paymentAdminApi.reject(code);
-      toast.promise(promise, {
-        loading: `Đang từ chối giao dịch ${code}...`,
-        success: `Giao dịch ${code} đã bị từ chối!`,
-        error: (err) => err?.message || `Lỗi khi từ chối giao dịch ${code}`,
-      });
-      await promise;
-      await refreshAll();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setRejectingCode(null);
-    }
-  }, [refreshAll]);
+  const onReject = useCallback(
+    async (code: string) => {
+      setRejectingCode(code);
+      try {
+        const promise = paymentAdminApi.reject(code);
+        toast.promise(promise, {
+          loading: `Đang từ chối giao dịch ${code}...`,
+          success: `Giao dịch ${code} đã bị từ chối!`,
+          error: (err) => err?.message || `Lỗi khi từ chối giao dịch ${code}`,
+        });
+        await promise;
+        await refreshAll();
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setRejectingCode(null);
+      }
+    },
+    [refreshAll],
+  );
 
   return {
     transactions,

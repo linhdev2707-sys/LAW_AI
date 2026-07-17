@@ -21,7 +21,11 @@ export class LegalEmbeddingService implements OnModuleInit {
   private readonly model: string;
   private readonly prefixEnabled: boolean;
   private readonly backend: 'local' | 'cloudflare';
-  private handle: { module: typeof import('@xenova/transformers'); model: any; tokenizer: any } | null = null;
+  private handle: {
+    module: typeof import('@xenova/transformers');
+    model: any;
+    tokenizer: any;
+  } | null = null;
   private cfAccountId = '';
   private cfApiToken = '';
 
@@ -29,7 +33,10 @@ export class LegalEmbeddingService implements OnModuleInit {
     this.dim = config.get<number>('app.embedding.dim', 1024);
     this.model = config.get<string>('app.embedding.model', 'Xenova/bge-m3');
     this.prefixEnabled = config.get<boolean>('app.embedding.useBgePrefix', false);
-    this.backend = config.get<string>('app.embedding.backend', 'local') === 'cloudflare' ? 'cloudflare' : 'local';
+    this.backend =
+      config.get<string>('app.embedding.backend', 'local') === 'cloudflare'
+        ? 'cloudflare'
+        : 'local';
     this.cfAccountId = config.get<string>('app.cloudflare.accountId', '');
     this.cfApiToken = config.get<string>('app.cloudflare.apiToken', '');
   }
@@ -43,8 +50,12 @@ export class LegalEmbeddingService implements OnModuleInit {
       return;
     }
     const t0 = Date.now();
-    const dynamicImport = new Function('m', 'return import(m)') as <T = unknown>(m: string) => Promise<T>;
-    const mod = (await dynamicImport('@xenova/transformers')) as typeof import('@xenova/transformers');
+    const dynamicImport = new Function('m', 'return import(m)') as <T = unknown>(
+      m: string,
+    ) => Promise<T>;
+    const mod = (await dynamicImport(
+      '@xenova/transformers',
+    )) as typeof import('@xenova/transformers');
     if (process.env.EMBEDDING_CACHE_DIR) mod.env.cacheDir = process.env.EMBEDDING_CACHE_DIR;
     if (process.env.HF_ENDPOINT) mod.env.remoteHost = process.env.HF_ENDPOINT;
     const [model, tokenizer] = await Promise.all([
@@ -70,12 +81,15 @@ export class LegalEmbeddingService implements OnModuleInit {
   buildEmbeddingText(chunk: ILegalChunk): string {
     const parts: string[] = [];
     if (this.prefixEnabled) parts.push('passage:');
-    if (chunk.lawName)    parts.push(`Văn bản: ${chunk.lawName}${chunk.lawNumber ? ' (số ' + chunk.lawNumber + ')' : ''}.`);
-    if (chunk.chapter)    parts.push(`Chương ${chunk.chapter}.`);
-    if (chunk.section)    parts.push(`Mục ${chunk.section}.`);
-    if (chunk.article)    parts.push(`Điều ${chunk.article}.`);
-    if (chunk.clause)     parts.push(`Khoản ${chunk.clause}.`);
-    if (chunk.point)      parts.push(`Điểm ${chunk.point}.`);
+    if (chunk.lawName)
+      parts.push(
+        `Văn bản: ${chunk.lawName}${chunk.lawNumber ? ' (số ' + chunk.lawNumber + ')' : ''}.`,
+      );
+    if (chunk.chapter) parts.push(`Chương ${chunk.chapter}.`);
+    if (chunk.section) parts.push(`Mục ${chunk.section}.`);
+    if (chunk.article) parts.push(`Điều ${chunk.article}.`);
+    if (chunk.clause) parts.push(`Khoản ${chunk.clause}.`);
+    if (chunk.point) parts.push(`Điểm ${chunk.point}.`);
     parts.push(chunk.rawText);
     return parts.join(' ');
   }

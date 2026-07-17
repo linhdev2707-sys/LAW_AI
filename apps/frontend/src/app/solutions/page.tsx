@@ -20,7 +20,7 @@ export default function SolutionsPage() {
     <div className="min-h-screen overflow-x-hidden bg-brand-background text-brand-on-surface">
       <LandingNavbar />
 
-      <main className="relative pt-32 pb-24">
+      <main className="relative pb-24 pt-32">
         {/* Soft radial backdrop glow */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,229,255,0.22),transparent_60%)]" />
 
@@ -31,11 +31,11 @@ export default function SolutionsPage() {
               <Sparkles className="h-3.5 w-3.5" />
               Giải pháp
             </div>
-            <h1 className="mt-4 font-headline text-4xl sm:text-5xl md:text-6xl font-bold leading-tight tracking-tight text-brand-on-surface">
+            <h1 className="mt-4 font-headline text-4xl font-bold leading-tight tracking-tight text-brand-on-surface sm:text-5xl md:text-6xl">
               Giải pháp AI pháp lý cho mọi đối tượng
             </h1>
-            <div className="beam-gradient h-1 w-24 rounded-full mt-6 mx-auto opacity-70" />
-            <p className="mt-6 mx-auto max-w-2xl text-base md:text-lg leading-relaxed text-brand-on-surface-variant">
+            <div className="beam-gradient mx-auto mt-6 h-1 w-24 rounded-full opacity-70" />
+            <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-brand-on-surface-variant md:text-lg">
               iLaw cung cấp một bộ công cụ AI giúp bạn tiếp cận pháp luật nhanh hơn, dễ hiểu hơn –
               dù bạn là người dân, doanh nghiệp hay chuyên gia pháp lý.
             </p>
@@ -48,7 +48,7 @@ export default function SolutionsPage() {
               return (
                 <div
                   key={item.title}
-                  className="group glass-card relative overflow-hidden rounded-2xl border border-brand-outline-variant/20 bg-brand-surface-container-low/40 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand-tertiary/40 hover:shadow-xl hover:shadow-brand-tertiary/10"
+                  className="glass-card group relative overflow-hidden rounded-2xl border border-brand-outline-variant/20 bg-brand-surface-container-low/40 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand-tertiary/40 hover:shadow-xl hover:shadow-brand-tertiary/10"
                 >
                   <div className="mb-4">
                     <span

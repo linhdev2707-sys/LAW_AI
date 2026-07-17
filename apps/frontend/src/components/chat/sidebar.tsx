@@ -4,7 +4,18 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, MessageSquare, Trash2, LogOut, X, Search, Settings, Sparkles, LayoutDashboard, Database } from 'lucide-react';
+import {
+  Plus,
+  MessageSquare,
+  Trash2,
+  LogOut,
+  X,
+  Search,
+  Settings,
+  Sparkles,
+  LayoutDashboard,
+  Database,
+} from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -233,7 +244,7 @@ export function Sidebar({ open, onClose, refreshKey }: SidebarProps) {
                             <button
                               type="button"
                               onClick={(e) => requestDelete(c.id, e)}
-                              className="rounded p-1 text-brand-on-surface-variant opacity-0 transition-all hover:bg-white/10 hover:text-red-300 group-hover:opacity-100 focus:opacity-100"
+                              className="rounded p-1 text-brand-on-surface-variant opacity-0 transition-all hover:bg-white/10 hover:text-red-300 focus:opacity-100 group-hover:opacity-100"
                               aria-label="Xoá cuộc trò chuyện"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -328,7 +339,9 @@ function EmptyHistory({ onNew }: { onNew: () => void }) {
   );
 }
 
-function groupByRecency(items: IConversationListItem[]): { label: string; items: IConversationListItem[] }[] {
+function groupByRecency(
+  items: IConversationListItem[],
+): { label: string; items: IConversationListItem[] }[] {
   const now = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;
   const today: IConversationListItem[] = [];

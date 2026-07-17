@@ -32,8 +32,8 @@ export function LawyerCtaCard() {
         </div>
 
         <p className="mb-5 text-sm leading-relaxed text-brand-on-surface-variant">
-          Kết nối trực tiếp với đội ngũ Luật sư đối tác uy tín để được tư vấn chuyên sâu
-          và hỗ trợ giải quyết hồ sơ pháp lý thực tế.
+          Kết nối trực tiếp với đội ngũ Luật sư đối tác uy tín để được tư vấn chuyên sâu và hỗ trợ
+          giải quyết hồ sơ pháp lý thực tế.
         </p>
 
         <ul className="mb-6 space-y-2.5 text-sm text-brand-on-surface-variant">

@@ -37,9 +37,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-brand-background text-brand-on-surface">
-      {!isChatRoute && (
-        <AppSidebar forceOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      )}
+      {!isChatRoute && <AppSidebar forceOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />}
 
       {!isChatRoute && drawerOpen && (
         <div

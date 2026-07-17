@@ -38,7 +38,12 @@ export class AnalyzeProcessor extends WorkerHost {
       bullmqJobId: job.id,
     });
 
-    await this.queueService.logStep(jobId, 'analyze', ProcessingLogLevel.INFO, 'Đang tiến hành phân tích định dạng tệp.');
+    await this.queueService.logStep(
+      jobId,
+      'analyze',
+      ProcessingLogLevel.INFO,
+      'Đang tiến hành phân tích định dạng tệp.',
+    );
 
     try {
       const doc = await this.docRepo.findOne({ where: { id: documentId } });

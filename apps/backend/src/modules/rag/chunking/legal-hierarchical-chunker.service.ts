@@ -66,11 +66,7 @@ export class LegalHierarchicalChunkerService {
    *     using the same sliding window as the legacy chunker.
    *  4) If parse FAILS (no Điều detected) → fall back to flat chunking.
    */
-  chunk(
-    rawText: string,
-    lawName: string,
-    lawNumber?: string,
-  ): ILegalChunk[] {
+  chunk(rawText: string, lawName: string, lawNumber?: string): ILegalChunk[] {
     const cleaned = rawText.replace(/\r\n/g, '\n').trim();
     if (!cleaned) return [];
 
@@ -78,9 +74,7 @@ export class LegalHierarchicalChunkerService {
     const articles = this.structureParser.flattenArticles(structure);
 
     if (articles.length === 0) {
-      this.logger.warn(
-        `[${lawName}] No legal structure detected — falling back to flat chunking`,
-      );
+      this.logger.warn(`[${lawName}] No legal structure detected — falling back to flat chunking`);
       return this.flatFallback(cleaned, lawName, lawNumber);
     }
 
@@ -115,7 +109,11 @@ export class LegalHierarchicalChunkerService {
             }),
           );
         } else {
-          for (const sub of this.splitLong(articleText, this.cfg.hardMaxTokens, this.cfg.overlapTokens)) {
+          for (const sub of this.splitLong(
+            articleText,
+            this.cfg.hardMaxTokens,
+            this.cfg.overlapTokens,
+          )) {
             chunks.push(
               this.makeChunk({
                 chunkIndex: idx++,
@@ -204,7 +202,13 @@ export class LegalHierarchicalChunkerService {
     fullText: string,
   ): Array<{ text: string; point?: string; charStart: number; charEnd: number }> {
     if (khoan.diemList.length <= 1) {
-      return [{ text: fullText.slice(khoan.charStart, khoan.charEnd), charStart: khoan.charStart, charEnd: khoan.charEnd }];
+      return [
+        {
+          text: fullText.slice(khoan.charStart, khoan.charEnd),
+          charStart: khoan.charStart,
+          charEnd: khoan.charEnd,
+        },
+      ];
     }
 
     const out: Array<{ text: string; point?: string; charStart: number; charEnd: number }> = [];

@@ -101,9 +101,7 @@ export function ChatInput({
   const remaining = maxLength - value.length;
   const isNearLimit = remaining < 200;
   const isOverLimit = remaining < 0;
-  const effectivePlaceholder = isRateLimited
-    ? `Đang chờ hết giới hạn tốc độ…`
-    : placeholder;
+  const effectivePlaceholder = isRateLimited ? `Đang chờ hết giới hạn tốc độ…` : placeholder;
 
   return (
     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand-background via-brand-background/95 to-transparent pt-8">
@@ -119,10 +117,8 @@ export function ChatInput({
             <AlertCircle className="h-3.5 w-3.5 shrink-0" />
             <span>
               Bạn đang gửi quá nhanh. Vui lòng đợi{' '}
-              <span className="font-mono font-semibold">
-                {rateLimit.secondsRemaining}s
-              </span>{' '}
-              trước khi gửi tin nhắn tiếp theo.
+              <span className="font-mono font-semibold">{rateLimit.secondsRemaining}s</span> trước
+              khi gửi tin nhắn tiếp theo.
             </span>
           </div>
         )}
@@ -137,35 +133,38 @@ export function ChatInput({
         >
           {/* Mode picker onboarding tutorial tooltip */}
           {showTour && (
-            <div className="absolute bottom-[52px] left-2 z-40 w-72 rounded-xl border border-brand-primary/30 bg-brand-surface-container-high p-4 shadow-xl shadow-black/50 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+            <div className="absolute bottom-[52px] left-2 z-40 w-72 rounded-xl border border-brand-primary/30 bg-brand-surface-container-high p-4 shadow-xl shadow-black/50 duration-300 animate-in fade-in-0 slide-in-from-bottom-2">
               {/* Small downward pointing arrow */}
-              <div className="absolute bottom-[-6px] left-[14px] h-3 w-3 rotate-45 border-r border-b border-brand-primary/30 bg-brand-surface-container-high" />
-              
+              <div className="absolute bottom-[-6px] left-[14px] h-3 w-3 rotate-45 border-b border-r border-brand-primary/30 bg-brand-surface-container-high" />
+
               <div className="space-y-2">
                 <div className="flex items-start justify-between">
                   <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-brand-primary">
                     💡 Chế Độ Trả Lời AI
                   </h4>
                 </div>
-                <p className="text-xs text-brand-on-surface-variant leading-relaxed font-body">
+                <p className="font-body text-xs leading-relaxed text-brand-on-surface-variant">
                   Nhấp vào đây để chuyển đổi chế độ phản hồi của AI phù hợp với nhu cầu của bạn:
                 </p>
-                <ul className="space-y-1 text-[11px] text-brand-on-surface-variant/80 font-body">
+                <ul className="space-y-1 font-body text-[11px] text-brand-on-surface-variant/80">
                   <li className="flex items-center gap-1.5">
-                    <span className="font-bold text-brand-on-surface">⚡ Nhanh</span>: Trò chuyện phản hồi tức thì
+                    <span className="font-bold text-brand-on-surface">⚡ Nhanh</span>: Trò chuyện
+                    phản hồi tức thì
                   </li>
                   <li className="flex items-center gap-1.5">
-                    <span className="font-bold text-brand-on-surface">🧠 Sâu</span>: Lập luận chi tiết (Admin)
+                    <span className="font-bold text-brand-on-surface">🧠 Sâu</span>: Lập luận chi
+                    tiết (Admin)
                   </li>
                   <li className="flex items-center gap-1.5">
-                    <span className="font-bold text-brand-on-surface">📖 Tra cứu</span>: Chỉ trích dẫn điều luật gốc
+                    <span className="font-bold text-brand-on-surface">📖 Tra cứu</span>: Chỉ trích
+                    dẫn điều luật gốc
                   </li>
                 </ul>
-                <div className="pt-2 flex justify-end">
+                <div className="flex justify-end pt-2">
                   <button
                     type="button"
                     onClick={dismissTour}
-                    className="rounded bg-brand-primary px-2.5 py-1 text-[11px] font-bold text-white shadow hover:bg-brand-primary/95 transition-all font-body"
+                    className="rounded bg-brand-primary px-2.5 py-1 font-body text-[11px] font-bold text-white shadow transition-all hover:bg-brand-primary/95"
                   >
                     Tôi đã hiểu
                   </button>

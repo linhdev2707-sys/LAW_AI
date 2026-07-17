@@ -17,10 +17,7 @@ export class FeedbackController {
 
   @Post()
   @UseGuards(OptionalJwtAuthGuard)
-  create(
-    @CurrentUser('sub') userId: string | undefined,
-    @Body() dto: CreateFeedbackDto,
-  ) {
+  create(@CurrentUser('sub') userId: string | undefined, @Body() dto: CreateFeedbackDto) {
     return this.feedbackService.create(userId || null, dto);
   }
 

@@ -19,6 +19,7 @@ import { InternalChatModule } from './modules/internal-chat/internal-chat.module
 import { PaymentModule } from './modules/payment/payment.module';
 import { TrafficModule } from './modules/traffic/traffic.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
+import { NewsModule } from './modules/news/news.module';
 import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.guard';
 
 @Module({
@@ -76,6 +77,7 @@ import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.
     PaymentModule,
     TrafficModule,
     FeedbackModule,
+    NewsModule,
   ],
   providers: [
     {

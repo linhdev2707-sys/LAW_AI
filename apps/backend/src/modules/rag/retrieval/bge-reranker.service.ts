@@ -22,13 +22,18 @@ export class BgeRerankerService implements OnModuleInit {
   private readonly maxLength: number;
   private readonly backend: 'local' | 'cohere';
   private readonly enabled: boolean;
-  private handle: { module: typeof import('@xenova/transformers'); model: any; tokenizer: any } | null = null;
+  private handle: {
+    module: typeof import('@xenova/transformers');
+    model: any;
+    tokenizer: any;
+  } | null = null;
   private cohereKey = '';
 
   constructor(private readonly config: ConfigService) {
     this.model = config.get<string>('app.reranker.model', 'Xenova/bge-reranker-v2-m3');
     this.maxLength = config.get<number>('app.reranker.maxLength', 512);
-    this.backend = config.get<string>('app.reranker.backend', 'local') === 'cohere' ? 'cohere' : 'local';
+    this.backend =
+      config.get<string>('app.reranker.backend', 'local') === 'cohere' ? 'cohere' : 'local';
     this.cohereKey = config.get<string>('app.cohere.apiKey', '');
     this.enabled = config.get<boolean>('app.reranker.enabled', true);
   }
@@ -40,15 +45,21 @@ export class BgeRerankerService implements OnModuleInit {
     }
     if (this.backend === 'cohere') {
       if (!this.cohereKey) {
-        this.logger.warn('Cohere reranker selected but COHERE_API_KEY is empty — reranker will be a no-op');
+        this.logger.warn(
+          'Cohere reranker selected but COHERE_API_KEY is empty — reranker will be a no-op',
+        );
         return;
       }
       this.logger.log('Reranker: Cohere rerank-v3.5');
       return;
     }
     try {
-      const dynamicImport = new Function('m', 'return import(m)') as <T = unknown>(m: string) => Promise<T>;
-      const mod = (await dynamicImport('@xenova/transformers')) as typeof import('@xenova/transformers');
+      const dynamicImport = new Function('m', 'return import(m)') as <T = unknown>(
+        m: string,
+      ) => Promise<T>;
+      const mod = (await dynamicImport(
+        '@xenova/transformers',
+      )) as typeof import('@xenova/transformers');
       if (process.env.EMBEDDING_CACHE_DIR) mod.env.cacheDir = process.env.EMBEDDING_CACHE_DIR;
       if (process.env.HF_ENDPOINT) mod.env.remoteHost = process.env.HF_ENDPOINT;
       const [model, tokenizer] = await Promise.all([
@@ -109,7 +120,11 @@ export class BgeRerankerService implements OnModuleInit {
 
   // ─────────────────────────────────────────────────────────────────────
 
-  private async rerankLocal(query: string, chunks: IScoredChunk[], topN: number): Promise<IScoredChunk[]> {
+  private async rerankLocal(
+    query: string,
+    chunks: IScoredChunk[],
+    topN: number,
+  ): Promise<IScoredChunk[]> {
     if (!this.handle) throw new Error('Reranker not loaded');
     const { model, tokenizer } = this.handle;
     const pairs = chunks.map((c) => [query, c.content] as [string, string]);
@@ -137,7 +152,11 @@ export class BgeRerankerService implements OnModuleInit {
       .map(({ c, s }, i) => ({ ...c, score: s, index: i + 1 }));
   }
 
-  private async rerankCohere(query: string, chunks: IScoredChunk[], topN: number): Promise<IScoredChunk[]> {
+  private async rerankCohere(
+    query: string,
+    chunks: IScoredChunk[],
+    topN: number,
+  ): Promise<IScoredChunk[]> {
     const docs = chunks.map((c) => c.content);
     const res = await fetch('https://api.cohere.ai/v1/rerank', {
       method: 'POST',
@@ -154,7 +173,9 @@ export class BgeRerankerService implements OnModuleInit {
       }),
     });
     if (!res.ok) throw new Error(`Cohere rerank failed: ${res.status}`);
-    const body = (await res.json()) as { results: Array<{ index: number; relevance_score: number }> };
+    const body = (await res.json()) as {
+      results: Array<{ index: number; relevance_score: number }>;
+    };
     return body.results
       .map((r) => ({ ...chunks[r.index]!, score: r.relevance_score }))
       .sort((a, b) => b.score - a.score)

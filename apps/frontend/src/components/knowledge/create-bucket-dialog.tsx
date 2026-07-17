@@ -12,11 +12,7 @@ interface CreateBucketDialogProps {
   onSubmit: (name: string) => Promise<boolean>;
 }
 
-export function CreateBucketDialog({
-  open,
-  onOpenChange,
-  onSubmit,
-}: CreateBucketDialogProps) {
+export function CreateBucketDialog({ open, onOpenChange, onSubmit }: CreateBucketDialogProps) {
   const [bucketName, setBucketName] = useState('');
   const [creating, setCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -51,11 +47,11 @@ export function CreateBucketDialog({
       <div
         aria-hidden
         onClick={() => !creating && onOpenChange(false)}
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in-0 duration-200"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm duration-200 animate-in fade-in-0"
       />
       <form
         onSubmit={handleSubmit}
-        className="relative w-full max-w-md overflow-hidden rounded-2xl border border-brand-tertiary/25 bg-brand-surface-container shadow-2xl shadow-black/60 animate-in fade-in-0 zoom-in-95 duration-200"
+        className="relative w-full max-w-md overflow-hidden rounded-2xl border border-brand-tertiary/25 bg-brand-surface-container shadow-2xl shadow-black/60 duration-200 animate-in fade-in-0 zoom-in-95"
       >
         <div
           aria-hidden
@@ -81,8 +77,8 @@ export function CreateBucketDialog({
                 Tạo bucket R2 mới
               </h2>
               <p className="mt-1 text-sm text-brand-on-surface-variant">
-                Bucket sẽ được tạo trên R2 và dùng để chứa tài liệu. Tên phải
-                là duy nhất trên toàn Cloudflare.
+                Bucket sẽ được tạo trên R2 và dùng để chứa tài liệu. Tên phải là duy nhất trên toàn
+                Cloudflare.
               </p>
             </div>
           </div>
@@ -101,13 +97,11 @@ export function CreateBucketDialog({
             />
             {bucketName && !valid && (
               <p className="text-xs text-amber-300">
-                Tên phải 3-63 ký tự, chỉ gồm chữ thường, số và dấu gạch ngang,
-                bắt đầu và kết thúc bằng chữ/số.
+                Tên phải 3-63 ký tự, chỉ gồm chữ thường, số và dấu gạch ngang, bắt đầu và kết thúc
+                bằng chữ/số.
               </p>
             )}
-            {valid && (
-              <p className="text-xs text-emerald-300">Tên hợp lệ.</p>
-            )}
+            {valid && <p className="text-xs text-emerald-300">Tên hợp lệ.</p>}
           </div>
 
           <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">

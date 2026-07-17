@@ -12,7 +12,7 @@ export const AGENT_TOOL_NAMES = {
   EFFECTIVE_DATE_CHECK: 'effectiveDateCheck',
 } as const;
 
-export type AgentToolName = typeof AGENT_TOOL_NAMES[keyof typeof AGENT_TOOL_NAMES];
+export type AgentToolName = (typeof AGENT_TOOL_NAMES)[keyof typeof AGENT_TOOL_NAMES];
 
 /** OpenAI-compatible tool definition (DeepSeek reuses this format). */
 export interface IToolDefinition {

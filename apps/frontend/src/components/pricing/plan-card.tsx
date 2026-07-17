@@ -28,7 +28,7 @@ export function PlanCard({ plan, isCurrent, loading, onSelect }: PlanCardProps) 
       }`}
     >
       {plan.isPopular && (
-        <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-gradient-to-r from-brand-primary to-brand-tertiary px-4 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-lg">
+        <span className="absolute -top-3.5 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-gradient-to-r from-brand-primary to-brand-tertiary px-4 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-lg">
           <Sparkles className="h-3 w-3" />
           Phổ biến nhất
         </span>
@@ -53,10 +53,8 @@ export function PlanCard({ plan, isCurrent, loading, onSelect }: PlanCardProps) 
 
       {/* Price block */}
       <div
-        className={`mb-6 min-w-0 rounded-xl p-4 flex flex-col justify-center ${
-          plan.isPopular
-            ? 'bg-white/5 ring-1 ring-brand-primary/30'
-            : 'bg-white/[0.02]'
+        className={`mb-6 flex min-w-0 flex-col justify-center rounded-xl p-4 ${
+          plan.isPopular ? 'bg-white/5 ring-1 ring-brand-primary/30' : 'bg-white/[0.02]'
         }`}
       >
         {plan.originalPrice && (
@@ -65,7 +63,7 @@ export function PlanCard({ plan, isCurrent, loading, onSelect }: PlanCardProps) 
               {plan.originalPrice} VND
             </span>
             {plan.discountPercent && (
-              <span className="rounded bg-brand-primary/10 border border-brand-primary/20 px-1 py-0.5 text-[10px] font-bold text-brand-primary">
+              <span className="rounded border border-brand-primary/20 bg-brand-primary/10 px-1 py-0.5 text-[10px] font-bold text-brand-primary">
                 Giảm {plan.discountPercent}%
               </span>
             )}
@@ -105,16 +103,16 @@ export function PlanCard({ plan, isCurrent, loading, onSelect }: PlanCardProps) 
         className={`w-full rounded-xl py-3 text-sm font-bold transition-all ${
           plan.isPopular
             ? 'bg-gradient-to-r from-brand-primary to-brand-tertiary text-white shadow-lg shadow-brand-primary/30 hover:shadow-xl hover:shadow-brand-primary/50'
-            : 'border border-brand-outline-variant/30 bg-white/5 text-brand-on-surface hover:bg-brand-tertiary/10 hover:border-brand-tertiary/50 hover:text-brand-tertiary'
-        } disabled:opacity-50 disabled:hover:bg-white/5 disabled:hover:text-brand-on-surface disabled:hover:border-brand-outline-variant/30`}
+            : 'border border-brand-outline-variant/30 bg-white/5 text-brand-on-surface hover:border-brand-tertiary/50 hover:bg-brand-tertiary/10 hover:text-brand-tertiary'
+        } disabled:opacity-50 disabled:hover:border-brand-outline-variant/30 disabled:hover:bg-white/5 disabled:hover:text-brand-on-surface`}
       >
-        {isCurrent || (plan.id === 'free' && (!isCurrent))
+        {isCurrent || (plan.id === 'free' && !isCurrent)
           ? 'Gói hiện tại'
           : loading
-          ? 'Đang xử lý...'
-          : plan.id === 'free'
-          ? 'Gói mặc định'
-          : `Chọn gói ${plan.name}`}
+            ? 'Đang xử lý...'
+            : plan.id === 'free'
+              ? 'Gói mặc định'
+              : `Chọn gói ${plan.name}`}
       </Button>
     </div>
   );

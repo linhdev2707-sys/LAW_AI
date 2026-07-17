@@ -19,9 +19,7 @@ export function ChatLink({
 }: ChatLinkProps) {
   const { status } = useSession();
   const href =
-    status === 'authenticated'
-      ? returnTo
-      : `/login?callbackUrl=${encodeURIComponent(returnTo)}`;
+    status === 'authenticated' ? returnTo : `/login?callbackUrl=${encodeURIComponent(returnTo)}`;
 
   if (asButton) {
     return (

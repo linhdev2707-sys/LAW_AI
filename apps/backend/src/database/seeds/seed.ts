@@ -23,7 +23,16 @@ const AppDataSource = new DataSource(
     ? {
         type: 'postgres',
         url: databaseUrl,
-        entities: [User, Conversation, Message, RagDocument, RagChunk, DocumentVersion, DocumentJob, ProcessingLog],
+        entities: [
+          User,
+          Conversation,
+          Message,
+          RagDocument,
+          RagChunk,
+          DocumentVersion,
+          DocumentJob,
+          ProcessingLog,
+        ],
         ssl: isProd ? { rejectUnauthorized: false } : false,
       }
     : {
@@ -33,7 +42,16 @@ const AppDataSource = new DataSource(
         username: process.env.DATABASE_USER || 'lawai',
         password: process.env.DATABASE_PASSWORD || 'lawai_password',
         database: process.env.DATABASE_NAME || 'law_ai',
-        entities: [User, Conversation, Message, RagDocument, RagChunk, DocumentVersion, DocumentJob, ProcessingLog],
+        entities: [
+          User,
+          Conversation,
+          Message,
+          RagDocument,
+          RagChunk,
+          DocumentVersion,
+          DocumentJob,
+          ProcessingLog,
+        ],
       },
 );
 

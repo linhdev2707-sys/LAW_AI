@@ -3,13 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import {
-  AlertTriangle,
-  Loader2,
-  Plus,
-  Users,
-  Search,
-} from 'lucide-react';
+import { AlertTriangle, Loader2, Plus, Users, Search } from 'lucide-react';
 import { UserRole } from '@law-ai/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -90,7 +84,7 @@ export default function UserAdminPage() {
             <Users className="h-3.5 w-3.5 text-brand-tertiary" />
             Quản trị
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="font-display text-3xl font-bold tracking-tight text-brand-on-surface">
                 Quản lý Người dùng
@@ -116,9 +110,9 @@ export default function UserAdminPage() {
             aria-hidden
             className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-tertiary to-transparent"
           />
-          
+
           {/* Table Toolbar */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-brand-tertiary/15 px-6 py-5">
+          <div className="flex flex-col justify-between gap-4 border-b border-brand-tertiary/15 px-6 py-5 md:flex-row md:items-center">
             {/* Search */}
             <div className="group relative w-full md:max-w-xs">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-on-surface-variant/60 transition-colors group-focus-within:text-brand-tertiary" />
@@ -127,10 +121,10 @@ export default function UserAdminPage() {
                 placeholder="Tìm kiếm theo tên người dùng…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 border-brand-outline-variant/30 bg-brand-surface-container-lowest/60 focus-visible:border-brand-tertiary focus-visible:ring-brand-tertiary/30"
+                className="border-brand-outline-variant/30 bg-brand-surface-container-lowest/60 pl-9 focus-visible:border-brand-tertiary focus-visible:ring-brand-tertiary/30"
               />
             </div>
-            
+
             {/* Filters and Refresh */}
             <div className="flex items-center gap-3">
               <select
@@ -143,7 +137,7 @@ export default function UserAdminPage() {
                 <option value={UserRole.LAWYER}>Luật sư (Lawyer)</option>
                 <option value={UserRole.ADMIN}>Quản trị viên (Admin)</option>
               </select>
-              
+
               <Button
                 variant="ghost"
                 size="sm"
@@ -151,13 +145,9 @@ export default function UserAdminPage() {
                   void refreshUsers();
                 }}
                 disabled={loading}
-                className="text-brand-on-surface-variant hover:bg-white/5 hover:text-brand-tertiary h-10"
+                className="h-10 text-brand-on-surface-variant hover:bg-white/5 hover:text-brand-tertiary"
               >
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  'Làm mới'
-                )}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Làm mới'}
               </Button>
             </div>
           </div>
@@ -191,12 +181,13 @@ export default function UserAdminPage() {
                   onUpdateStatus={onUpdateUserStatus}
                   onDeleteClick={setPendingDelete}
                 />
-                
+
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
                   <div className="mt-6 flex items-center justify-between border-t border-brand-outline-variant/10 pt-4 text-sm text-brand-on-surface-variant">
                     <div>
-                      Trang <span className="font-medium text-brand-on-surface">{page}</span> / {totalPages} (Tổng cộng {total} người dùng)
+                      Trang <span className="font-medium text-brand-on-surface">{page}</span> /{' '}
+                      {totalPages} (Tổng cộng {total} người dùng)
                     </div>
                     <div className="flex items-center gap-2">
                       <Button

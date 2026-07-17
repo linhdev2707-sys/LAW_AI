@@ -3,10 +3,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { chatApi, type IMessage } from '@/lib/chat';
-import {
-  streamChatMessage,
-  type StreamSource,
-} from '@/lib/chat-stream';
+import { streamChatMessage, type StreamSource } from '@/lib/chat-stream';
 import { ApiError } from '@/lib/api';
 import { useRateLimit } from './use-rate-limit';
 import type { ChatMode } from '@law-ai/shared';
@@ -97,9 +94,7 @@ export function useConversationStream() {
               // Stamp the mode on the placeholder so the badge renders
               // immediately (before any delta arrives).
               setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId ? { ...m, mode: startedMode } : m,
-                ),
+                prev.map((m) => (m.id === assistantId ? { ...m, mode: startedMode } : m)),
               );
             },
             onSources: ({ sources: s }) => {
@@ -119,9 +114,7 @@ export function useConversationStream() {
               // is iterating. Replaced on each subsequent tool call.
               setMessages((prev) =>
                 prev.map((m) =>
-                  m.id === assistantId
-                    ? { ...m, pendingToolCall: { tool, args } }
-                    : m,
+                  m.id === assistantId ? { ...m, pendingToolCall: { tool, args } } : m,
                 ),
               );
             },
@@ -129,28 +122,18 @@ export function useConversationStream() {
               // Stamp the assistant placeholder with where this answer
               // came from so `MessageBubble` can render the right badge.
               setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId ? { ...m, answerSource: kind } : m,
-                ),
+                prev.map((m) => (m.id === assistantId ? { ...m, answerSource: kind } : m)),
               );
             },
             onDelta: ({ content: chunk }) => {
               setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId
-                    ? { ...m, content: m.content + chunk }
-                    : m,
-                ),
+                prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + chunk } : m)),
               );
             },
             onDone: () => {
               // Clear any in-flight tool-call indicator on completion.
               setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId
-                    ? { ...m, pendingToolCall: undefined }
-                    : m,
-                ),
+                prev.map((m) => (m.id === assistantId ? { ...m, pendingToolCall: undefined } : m)),
               );
               acRef.current = null;
               inFlightRef.current = false;
@@ -175,9 +158,7 @@ export function useConversationStream() {
 
         // Roll back the optimistic user message + placeholder
         setMessages((prev) =>
-          prev.filter(
-            (m) => m.id !== assistantId && m.id !== optimisticUser.id,
-          ),
+          prev.filter((m) => m.id !== assistantId && m.id !== optimisticUser.id),
         );
 
         // 429 — surface a soft ban so the UI can disable the input and

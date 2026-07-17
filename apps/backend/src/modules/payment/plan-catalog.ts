@@ -32,15 +32,15 @@ export const PLAN_CATALOG: Record<IPlanDefinition['id'], IPlanDefinition> = {
   free: {
     id: 'free',
     displayName: 'Miễn phí',
-    monthlyQuota: 12,
+    monthlyQuota: -1,
     priceVnd: 0,
-    allowedModes: ['fast'],
+    allowedModes: ['fast', 'deep', 'lookup'],
     tagline: 'Dùng thử các tính năng cơ bản',
   },
   basic: {
     id: 'basic',
     displayName: 'Cơ bản',
-    monthlyQuota: 72,
+    monthlyQuota: -1,
     priceVnd: 49_000,
     allowedModes: ['fast', 'deep', 'lookup'],
     tagline: 'Suy nghĩ sâu + truy vấn nhanh',
@@ -48,7 +48,7 @@ export const PLAN_CATALOG: Record<IPlanDefinition['id'], IPlanDefinition> = {
   pro: {
     id: 'pro',
     displayName: 'Plus',
-    monthlyQuota: 192,
+    monthlyQuota: -1,
     priceVnd: 99_000,
     allowedModes: ['fast', 'deep', 'lookup'],
     tagline: 'Dành cho người dùng thường xuyên',
@@ -56,7 +56,7 @@ export const PLAN_CATALOG: Record<IPlanDefinition['id'], IPlanDefinition> = {
   premium: {
     id: 'premium',
     displayName: 'Pro',
-    monthlyQuota: 600,
+    monthlyQuota: -1,
     priceVnd: 249_000,
     allowedModes: ['fast', 'deep', 'lookup'],
     tagline: 'Không giới hạn cho luật sư & doanh nghiệp',
@@ -90,10 +90,13 @@ export function resolveEffectivePlan(
  */
 export class PlanNotAllowedError extends Error {
   readonly code = 'PLAN_NOT_ALLOWED';
-  constructor(public readonly plan: IPlanDefinition, public readonly mode: ChatMode) {
+  constructor(
+    public readonly plan: IPlanDefinition,
+    public readonly mode: ChatMode,
+  ) {
     super(
       `Gói "${plan.displayName}" không hỗ trợ chế độ "${mode}". ` +
-      `Vui lòng nâng cấp gói để sử dụng.`,
+        `Vui lòng nâng cấp gói để sử dụng.`,
     );
   }
 }

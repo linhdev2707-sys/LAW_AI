@@ -45,7 +45,7 @@ export function ModePicker({ value, onChange, disabled }: ModePickerProps) {
           aria-label={`Chọn chế độ chat: ${CHAT_MODE_LABELS[value].label}`}
           title={`Chế độ: ${CHAT_MODE_LABELS[value].label}`}
           className={cn(
-            'ml-2 mb-2 flex h-9 w-9 items-center justify-center rounded-lg',
+            'mb-2 ml-2 flex h-9 w-9 items-center justify-center rounded-lg',
             'text-brand-on-surface-variant transition-colors',
             'hover:bg-white/5 hover:text-brand-tertiary',
             'data-[state=open]:bg-white/5 data-[state=open]:text-brand-tertiary',
@@ -90,13 +90,18 @@ export function ModePicker({ value, onChange, disabled }: ModePickerProps) {
                   'text-sm outline-none transition-colors',
                   isLocked
                     ? 'opacity-60 hover:bg-white/5'
-                    : 'data-[highlighted]:bg-white/5 focus:bg-white/5',
+                    : 'focus:bg-white/5 data-[highlighted]:bg-white/5',
                 )}
               >
                 <Icon className="mt-0.5 h-4 w-4 shrink-0 text-brand-tertiary" />
                 <div className="flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className={cn('font-medium', isLocked ? 'text-brand-on-surface-variant' : 'text-brand-on-surface')}>
+                    <span
+                      className={cn(
+                        'font-medium',
+                        isLocked ? 'text-brand-on-surface-variant' : 'text-brand-on-surface',
+                      )}
+                    >
                       {CHAT_MODE_LABELS[m].label}
                     </span>
                     {isLocked ? (
@@ -105,7 +110,7 @@ export function ModePicker({ value, onChange, disabled }: ModePickerProps) {
                       <Check className="h-3.5 w-3.5 text-brand-tertiary" />
                     ) : null}
                   </div>
-                  <span className="block text-[11px] text-brand-on-surface-variant/60 mt-0.5 font-normal">
+                  <span className="mt-0.5 block text-[11px] font-normal text-brand-on-surface-variant/60">
                     {DESCRIPTIONS[m]}
                   </span>
                 </div>

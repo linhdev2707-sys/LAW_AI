@@ -11,7 +11,6 @@ import { isChatMode, type ChatMode } from '@law-ai/shared';
 
 const MODE_STORAGE_KEY = 'chat:mode';
 
-
 export default function ChatIndexPage() {
   const router = useRouter();
   const { conversationId, send, streaming, stop, messages, sources, error, rateLimit } =
@@ -23,8 +22,7 @@ export default function ChatIndexPage() {
     try {
       const stored = window.localStorage.getItem(MODE_STORAGE_KEY);
       if (isChatMode(stored)) setMode(stored);
-    } catch {
-    }
+    } catch {}
   }, []);
   useEffect(() => {
     try {
@@ -39,11 +37,7 @@ export default function ChatIndexPage() {
       navigatedRef.current = true;
       if (typeof window !== 'undefined') {
         try {
-          window.history.replaceState(
-            window.history.state,
-            '',
-            `/chat/${conversationId}`,
-          );
+          window.history.replaceState(window.history.state, '', `/chat/${conversationId}`);
         } catch {
           router.replace(`/chat/${conversationId}`);
         }
@@ -70,11 +64,7 @@ export default function ChatIndexPage() {
           </div>
         </div>
       ) : (
-        <MessageList
-          messages={messages}
-          sources={sources}
-          loading={streaming}
-        />
+        <MessageList messages={messages} sources={sources} loading={streaming} />
       )}
 
       <ChatInput

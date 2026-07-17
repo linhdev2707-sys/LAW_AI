@@ -118,7 +118,12 @@ async function callOcr(env: Env, pdfBytes: Uint8Array, filename: string): Promis
     throw new Error(`OCR Service HTTP ${res.status}: ${errorText}`);
   }
 
-  const json = (await res.json()) as { success: boolean; text: string; filename?: string; detail?: string };
+  const json = (await res.json()) as {
+    success: boolean;
+    text: string;
+    filename?: string;
+    detail?: string;
+  };
   if (!json.success || !json.text) {
     throw new Error(`OCR Service failed: ${json.detail || 'unknown error'}`);
   }
@@ -216,7 +221,11 @@ async function processObject(env: Env, key: string, size: number): Promise<void>
         // (likely because it is running an older version that does not accept the 'error' field).
         // We treat this as a permanent failure to avoid an infinite retry loop.
         if (res.status === 400) {
-          log('warn', 'Backend returned 400 Bad Request. Treating as permanent failure to prevent infinite loop.', { documentId });
+          log(
+            'warn',
+            'Backend returned 400 Bad Request. Treating as permanent failure to prevent infinite loop.',
+            { documentId },
+          );
           return;
         }
       }

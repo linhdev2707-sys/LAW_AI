@@ -5,10 +5,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { DocumentJob, DocumentJobStatus } from '../../entities/document-job.entity';
 import { DocumentVersion, DocumentVersionStatus } from '../../entities/document-version.entity';
-import { RagDocument, RagDocumentStatus, RagDocumentType, RagLegalStatus } from '../../entities/rag-document.entity';
+import {
+  RagDocument,
+  RagDocumentStatus,
+  RagDocumentType,
+  RagLegalStatus,
+} from '../../entities/rag-document.entity';
 import { RagQueueService } from '../rag-queue.service';
 import { LegalHierarchicalChunkerService } from '../../chunking/legal-hierarchical-chunker.service';
-import { MetadataEnricherService, IEnrichmentResult } from '../../parsers/metadata-enricher.service';
+import {
+  MetadataEnricherService,
+  IEnrichmentResult,
+} from '../../parsers/metadata-enricher.service';
 import { ReferenceExtractorService } from '../../parsers/reference-extractor.service';
 import { bulkInsertChunks } from '../../rag-chunk-insert.helper';
 import { ProcessingLogLevel } from '../../entities/processing-log.entity';
@@ -49,7 +57,12 @@ export class ChunkProcessor extends WorkerHost {
       if (!version) throw new Error(`Không tìm thấy phiên bản tài liệu ${versionId}`);
 
       // 1. Parallel: Extract legal references and enrich metadata using LLM
-      await this.queueService.logStep(jobId, 'chunk', ProcessingLogLevel.INFO, 'Đang phân tích cấu trúc pháp lý và làm giàu metadata bằng AI.');
+      await this.queueService.logStep(
+        jobId,
+        'chunk',
+        ProcessingLogLevel.INFO,
+        'Đang phân tích cấu trúc pháp lý và làm giàu metadata bằng AI.',
+      );
       const [refs, enrichment] = await Promise.all([
         Promise.resolve(this.refExtractor.extract(text)),
         this.enricher.enrich({
@@ -74,7 +87,12 @@ export class ChunkProcessor extends WorkerHost {
       });
 
       // 2. Perform chunking
-      await this.queueService.logStep(jobId, 'chunk', ProcessingLogLevel.INFO, 'Bắt đầu chia nhỏ văn bản theo quy chuẩn Điều/Khoản/Điểm.');
+      await this.queueService.logStep(
+        jobId,
+        'chunk',
+        ProcessingLogLevel.INFO,
+        'Bắt đầu chia nhỏ văn bản theo quy chuẩn Điều/Khoản/Điểm.',
+      );
       const lawName = enrichment.lawName ?? doc.name;
       const chunks = this.chunker.chunk(text, lawName, enrichment.lawNumber ?? undefined);
 

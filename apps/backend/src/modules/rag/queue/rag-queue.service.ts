@@ -25,16 +25,24 @@ export class RagQueueService {
     @InjectRepository(RagDocument) private readonly docRepo: Repository<RagDocument>,
   ) {}
 
-  async logStep(jobId: string, step: string, level: ProcessingLogLevel, message: string, durationMs?: number): Promise<void> {
+  async logStep(
+    jobId: string,
+    step: string,
+    level: ProcessingLogLevel,
+    message: string,
+    durationMs?: number,
+  ): Promise<void> {
     const cleanMessage = message.slice(0, 5000);
     this.logger.log(`[Job ${jobId}] [${step}] [${level.toUpperCase()}] ${cleanMessage}`);
-    await this.logRepo.save(this.logRepo.create({
-      jobId,
-      step,
-      level,
-      message: cleanMessage,
-      durationMs: durationMs ?? null,
-    }));
+    await this.logRepo.save(
+      this.logRepo.create({
+        jobId,
+        step,
+        level,
+        message: cleanMessage,
+        durationMs: durationMs ?? null,
+      }),
+    );
   }
 
   async startIngestion(documentId: string, versionId: string): Promise<DocumentJob> {
@@ -42,33 +50,44 @@ export class RagQueueService {
     await this.docRepo.update(documentId, { status: RagDocumentStatus.PARSING, error: null });
 
     // 1. Create a job record
-    const job = await this.jobRepo.save(this.jobRepo.create({
-      documentId,
-      versionId,
-      queueName: 'analyze',
-      status: DocumentJobStatus.PENDING,
-      progress: 0,
-      currentStep: 'analyze',
-      retries: 0,
-      maxRetries: 3,
-    }));
+    const job = await this.jobRepo.save(
+      this.jobRepo.create({
+        documentId,
+        versionId,
+        queueName: 'analyze',
+        status: DocumentJobStatus.PENDING,
+        progress: 0,
+        currentStep: 'analyze',
+        retries: 0,
+        maxRetries: 3,
+      }),
+    );
 
-    await this.logStep(job.id, 'analyze', ProcessingLogLevel.INFO, 'Khởi tạo tiến trình ingestion cho tài liệu.');
+    await this.logStep(
+      job.id,
+      'analyze',
+      ProcessingLogLevel.INFO,
+      'Khởi tạo tiến trình ingestion cho tài liệu.',
+    );
 
     // 2. Add job to analyze queue
-    const bullJob = await this.analyzeQueue.add('analyze', {
-      documentId,
-      versionId,
-      jobId: job.id,
-    }, {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 5000,
+    const bullJob = await this.analyzeQueue.add(
+      'analyze',
+      {
+        documentId,
+        versionId,
+        jobId: job.id,
       },
-      removeOnComplete: true,
-      removeOnFail: false,
-    });
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
+    );
 
     // 3. Update job record with BullMQ job ID
     job.bullmqJobId = bullJob.id ?? null;
@@ -93,21 +112,25 @@ export class RagQueueService {
 
     await this.logStep(jobId, 'ocr', ProcessingLogLevel.INFO, 'Đẩy tài liệu sang hàng đợi OCR.');
 
-    const bullJob = await this.ocrQueue.add('ocr', {
-      documentId,
-      versionId,
-      jobId,
-      r2Key: version.r2Key,
-      bucketName: doc.bucketName,
-    }, {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 5000,
+    const bullJob = await this.ocrQueue.add(
+      'ocr',
+      {
+        documentId,
+        versionId,
+        jobId,
+        r2Key: version.r2Key,
+        bucketName: doc.bucketName,
       },
-      removeOnComplete: true,
-      removeOnFail: false,
-    });
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
+    );
 
     await this.jobRepo.update(jobId, {
       bullmqJobId: bullJob.id ?? null,
@@ -122,28 +145,42 @@ export class RagQueueService {
       progress: 20,
     });
 
-    await this.logStep(jobId, 'extract', ProcessingLogLevel.INFO, 'Đẩy tài liệu sang hàng đợi trích xuất văn bản.');
-
-    const bullJob = await this.extractQueue.add('extract', {
-      documentId,
-      versionId,
+    await this.logStep(
       jobId,
-    }, {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 5000,
+      'extract',
+      ProcessingLogLevel.INFO,
+      'Đẩy tài liệu sang hàng đợi trích xuất văn bản.',
+    );
+
+    const bullJob = await this.extractQueue.add(
+      'extract',
+      {
+        documentId,
+        versionId,
+        jobId,
       },
-      removeOnComplete: true,
-      removeOnFail: false,
-    });
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
+    );
 
     await this.jobRepo.update(jobId, {
       bullmqJobId: bullJob.id ?? null,
     });
   }
 
-  async enqueueChunk(documentId: string, versionId: string, jobId: string, text: string): Promise<void> {
+  async enqueueChunk(
+    documentId: string,
+    versionId: string,
+    jobId: string,
+    text: string,
+  ): Promise<void> {
     await this.jobRepo.update(jobId, {
       queueName: 'chunk',
       currentStep: 'chunk',
@@ -151,22 +188,31 @@ export class RagQueueService {
       progress: 50,
     });
 
-    await this.logStep(jobId, 'chunk', ProcessingLogLevel.INFO, `Trích xuất văn bản thành công (độ dài: ${text.length} ký tự). Đẩy sang hàng đợi phân nhỏ (Chunking).`);
-
-    const bullJob = await this.chunkQueue.add('chunk', {
-      documentId,
-      versionId,
+    await this.logStep(
       jobId,
-      text,
-    }, {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 5000,
+      'chunk',
+      ProcessingLogLevel.INFO,
+      `Trích xuất văn bản thành công (độ dài: ${text.length} ký tự). Đẩy sang hàng đợi phân nhỏ (Chunking).`,
+    );
+
+    const bullJob = await this.chunkQueue.add(
+      'chunk',
+      {
+        documentId,
+        versionId,
+        jobId,
+        text,
       },
-      removeOnComplete: true,
-      removeOnFail: false,
-    });
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
+    );
 
     await this.jobRepo.update(jobId, {
       bullmqJobId: bullJob.id ?? null,
@@ -181,21 +227,30 @@ export class RagQueueService {
       progress: 75,
     });
 
-    await this.logStep(jobId, 'embed', ProcessingLogLevel.INFO, 'Hoàn thành phân nhỏ văn bản. Đẩy sang hàng đợi tính toán vector nhúng (Embedding).');
-
-    const bullJob = await this.embedQueue.add('embed', {
-      documentId,
-      versionId,
+    await this.logStep(
       jobId,
-    }, {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 5000,
+      'embed',
+      ProcessingLogLevel.INFO,
+      'Hoàn thành phân nhỏ văn bản. Đẩy sang hàng đợi tính toán vector nhúng (Embedding).',
+    );
+
+    const bullJob = await this.embedQueue.add(
+      'embed',
+      {
+        documentId,
+        versionId,
+        jobId,
       },
-      removeOnComplete: true,
-      removeOnFail: false,
-    });
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
+    );
 
     await this.jobRepo.update(jobId, {
       bullmqJobId: bullJob.id ?? null,
@@ -208,7 +263,11 @@ export class RagQueueService {
       throw new NotFoundException(`Không tìm thấy DocumentJob với ID ${jobId}`);
     }
 
-    if (job.status === DocumentJobStatus.COMPLETED || job.status === DocumentJobStatus.FAILED || job.status === DocumentJobStatus.CANCELLED) {
+    if (
+      job.status === DocumentJobStatus.COMPLETED ||
+      job.status === DocumentJobStatus.FAILED ||
+      job.status === DocumentJobStatus.CANCELLED
+    ) {
       throw new BadRequestException(`Không thể hủy job đã kết thúc với trạng thái: ${job.status}`);
     }
 
@@ -216,11 +275,11 @@ export class RagQueueService {
     if (job.bullmqJobId) {
       try {
         const queueMap: Record<string, Queue> = {
-          'analyze': this.analyzeQueue,
-          'ocr': this.ocrQueue,
+          analyze: this.analyzeQueue,
+          ocr: this.ocrQueue,
           'text-extract': this.extractQueue,
-          'chunk': this.chunkQueue,
-          'embed': this.embedQueue,
+          chunk: this.chunkQueue,
+          embed: this.embedQueue,
         };
         const queue = queueMap[job.queueName];
         if (queue) {
@@ -246,7 +305,12 @@ export class RagQueueService {
       error: 'Bị huỷ bởi người dùng.',
     });
 
-    await this.logStep(jobId, job.currentStep, ProcessingLogLevel.WARN, 'Tiến trình bị hủy bởi người dùng.');
+    await this.logStep(
+      jobId,
+      job.currentStep,
+      ProcessingLogLevel.WARN,
+      'Tiến trình bị hủy bởi người dùng.',
+    );
   }
 
   async retryJob(jobId: string): Promise<void> {
@@ -256,7 +320,9 @@ export class RagQueueService {
     }
 
     if (job.status !== DocumentJobStatus.FAILED && job.status !== DocumentJobStatus.CANCELLED) {
-      throw new BadRequestException(`Chỉ có thể chạy lại các job thất bại hoặc bị hủy. Trạng thái hiện tại: ${job.status}`);
+      throw new BadRequestException(
+        `Chỉ có thể chạy lại các job thất bại hoặc bị hủy. Trạng thái hiện tại: ${job.status}`,
+      );
     }
 
     // Reset status and retry count
@@ -265,7 +331,12 @@ export class RagQueueService {
     job.retries += 1;
     await this.jobRepo.save(job);
 
-    await this.logStep(jobId, job.currentStep, ProcessingLogLevel.INFO, `Kích hoạt chạy lại job (Lần chạy lại thứ: ${job.retries}).`);
+    await this.logStep(
+      jobId,
+      job.currentStep,
+      ProcessingLogLevel.INFO,
+      `Kích hoạt chạy lại job (Lần chạy lại thứ: ${job.retries}).`,
+    );
 
     // Route based on where it failed
     if (job.currentStep === 'analyze') {
@@ -293,7 +364,7 @@ export class RagQueueService {
       where: { id: jobId },
       relations: ['logs'],
       order: {
-        logs: { createdAt: 'ASC' }
+        logs: { createdAt: 'ASC' },
       } as any,
     });
     if (!job) {

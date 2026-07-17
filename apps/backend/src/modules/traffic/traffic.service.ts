@@ -43,56 +43,42 @@ export class TrafficService {
 
     try {
       // Fetch both historical (Core) and Realtime reports in parallel
-      const [
-        [aggregateResponse],
-        [dailyResponse],
-        [realtimeResponse],
-        [realtimePagesResponse]
-      ] = await Promise.all([
-        // 1. Core Aggregate (sessions, avg duration)
-        this.client.runReport({
-          property: `properties/${this.propertyId}`,
-          dateRanges: [{ startDate: '14daysAgo', endDate: 'today' }],
-          metrics: [
-            { name: 'sessions' },
-            { name: 'averageSessionDuration' },
-          ],
-        }),
-        // 2. Core Daily visits (for chart)
-        this.client.runReport({
-          property: `properties/${this.propertyId}`,
-          dateRanges: [{ startDate: '13daysAgo', endDate: 'today' }],
-          dimensions: [{ name: 'date' }],
-          metrics: [{ name: 'sessions' }],
-          orderBys: [
-            {
-              dimension: {
-                dimensionName: 'date',
+      const [[aggregateResponse], [dailyResponse], [realtimeResponse], [realtimePagesResponse]] =
+        await Promise.all([
+          // 1. Core Aggregate (sessions, avg duration)
+          this.client.runReport({
+            property: `properties/${this.propertyId}`,
+            dateRanges: [{ startDate: '14daysAgo', endDate: 'today' }],
+            metrics: [{ name: 'sessions' }, { name: 'averageSessionDuration' }],
+          }),
+          // 2. Core Daily visits (for chart)
+          this.client.runReport({
+            property: `properties/${this.propertyId}`,
+            dateRanges: [{ startDate: '13daysAgo', endDate: 'today' }],
+            dimensions: [{ name: 'date' }],
+            metrics: [{ name: 'sessions' }],
+            orderBys: [
+              {
+                dimension: {
+                  dimensionName: 'date',
+                },
+                desc: false,
               },
-              desc: false,
-            },
-          ],
-        }),
-        // 3. Realtime aggregate metrics (active users & page views in last 30 min)
-        this.client.runRealtimeReport({
-          property: `properties/${this.propertyId}`,
-          metrics: [
-            { name: 'activeUsers' },
-            { name: 'screenPageViews' }
-          ],
-        }),
-        // 4. Realtime Top Pages
-        this.client.runRealtimeReport({
-          property: `properties/${this.propertyId}`,
-          dimensions: [
-            { name: 'unifiedScreenName' }
-          ],
-          metrics: [
-            { name: 'screenPageViews' }
-          ],
-          limit: 10
-        })
-      ]);
+            ],
+          }),
+          // 3. Realtime aggregate metrics (active users & page views in last 30 min)
+          this.client.runRealtimeReport({
+            property: `properties/${this.propertyId}`,
+            metrics: [{ name: 'activeUsers' }, { name: 'screenPageViews' }],
+          }),
+          // 4. Realtime Top Pages
+          this.client.runRealtimeReport({
+            property: `properties/${this.propertyId}`,
+            dimensions: [{ name: 'unifiedScreenName' }],
+            metrics: [{ name: 'screenPageViews' }],
+            limit: 10,
+          }),
+        ]);
 
       // Parse Core Aggregate Metrics (historical)
       const aggRow = aggregateResponse?.rows?.[0];
@@ -165,7 +151,10 @@ export class TrafficService {
         isRealData: true,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch data from Google Analytics API, falling back to mock data', error);
+      this.logger.error(
+        'Failed to fetch data from Google Analytics API, falling back to mock data',
+        error,
+      );
       return this.getMockTrafficStats();
     }
   }

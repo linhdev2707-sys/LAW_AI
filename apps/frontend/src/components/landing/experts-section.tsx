@@ -94,16 +94,14 @@ export function ExpertsSection() {
                 </div>
               </div>
               <h3 className="mb-1 font-headline text-2xl text-brand-on-surface">{e.name}</h3>
-              <p className="mb-4 font-label text-label-sm font-semibold uppercase tracking-widest text-brand-on-surface">
+              <p className="font-label mb-4 text-label-sm font-semibold uppercase tracking-widest text-brand-on-surface">
                 {e.role}
               </p>
               <Stars rating={e.rating} />
               <p className="mb-8 mt-2 font-body text-body-md italic leading-relaxed text-brand-on-surface-variant">
                 &ldquo;{e.quote}&rdquo;
               </p>
-              <Button
-                className="w-full rounded-full bg-gradient-to-r from-brand-primary to-brand-tertiary px-6 py-3 font-label text-label-md font-semibold text-white shadow-lg shadow-brand-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-primary/50"
-              >
+              <Button className="font-label w-full rounded-full bg-gradient-to-r from-brand-primary to-brand-tertiary px-6 py-3 text-label-md font-semibold text-white shadow-lg shadow-brand-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-primary/50">
                 Xem hồ sơ
                 <MaterialIcon name="arrow_forward" className="ml-2 text-[18px]" />
               </Button>

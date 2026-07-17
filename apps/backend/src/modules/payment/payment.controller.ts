@@ -38,19 +38,13 @@ export class PaymentController {
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  getStatus(
-    @CurrentUser('sub') userId: string,
-    @Param('code') code: string,
-  ) {
+  getStatus(@CurrentUser('sub') userId: string, @Param('code') code: string) {
     return this.paymentService.getStatus(userId, code);
   }
 
   @Post('casso-webhook')
   @HttpCode(HttpStatus.OK)
-  async cassoWebhook(
-    @Headers('secure-token') secureToken: string,
-    @Body() body: any,
-  ) {
+  async cassoWebhook(@Headers('secure-token') secureToken: string, @Body() body: any) {
     return this.paymentService.handleCassoWebhook(secureToken, body);
   }
 
@@ -88,10 +82,7 @@ export class PaymentController {
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  confirmTransfer(
-    @CurrentUser('sub') userId: string,
-    @Param('code') code: string,
-  ) {
+  confirmTransfer(@CurrentUser('sub') userId: string, @Param('code') code: string) {
     return this.paymentService.confirmTransfer(userId, code);
   }
 

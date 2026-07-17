@@ -29,9 +29,7 @@ export function SourceChip({ index, source, onClick }: SourceChipProps) {
       )}
     >
       <FileText className="h-3 w-3 text-brand-tertiary" />
-      <span className="font-mono text-[10px] text-brand-tertiary/80">
-        [{index}]
-      </span>
+      <span className="font-mono text-[10px] text-brand-tertiary/80">[{index}]</span>
       <span className="max-w-[180px] truncate">{source.name}</span>
     </button>
   );

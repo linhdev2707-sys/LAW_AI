@@ -9,14 +9,15 @@ import { UserRole } from '@law-ai/shared';
 interface CreateUserDialogProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onSubmit: (dto: { email: string; password?: string; fullName: string; role?: UserRole }) => Promise<boolean>;
+  onSubmit: (dto: {
+    email: string;
+    password?: string;
+    fullName: string;
+    role?: UserRole;
+  }) => Promise<boolean>;
 }
 
-export function CreateUserDialog({
-  open,
-  onOpenChange,
-  onSubmit,
-}: CreateUserDialogProps) {
+export function CreateUserDialog({ open, onOpenChange, onSubmit }: CreateUserDialogProps) {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,7 +41,7 @@ export function CreateUserDialog({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!email.trim() || !fullName.trim() || creating) return;
-    
+
     setCreating(true);
     const success = await onSubmit({
       email: email.trim(),
@@ -63,11 +64,11 @@ export function CreateUserDialog({
       <div
         aria-hidden
         onClick={() => !creating && onOpenChange(false)}
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in-0 duration-200"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm duration-200 animate-in fade-in-0"
       />
       <form
         onSubmit={handleSubmit}
-        className="relative w-full max-w-md overflow-hidden rounded-2xl border border-brand-tertiary/25 bg-brand-surface-container shadow-2xl shadow-black/60 animate-in fade-in-0 zoom-in-95 duration-200"
+        className="relative w-full max-w-md overflow-hidden rounded-2xl border border-brand-tertiary/25 bg-brand-surface-container shadow-2xl shadow-black/60 duration-200 animate-in fade-in-0 zoom-in-95"
       >
         <div
           aria-hidden

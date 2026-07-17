@@ -109,11 +109,13 @@ export class PipelineTables1700000010000 implements MigrationInterface {
   public async down(q: QueryRunner): Promise<void> {
     await q.query(`DROP TABLE IF EXISTS "processing_logs"`);
     await q.query(`DROP TABLE IF EXISTS "document_jobs"`);
-    
+
     await q.query(`ALTER TABLE "rag_chunks" DROP CONSTRAINT IF EXISTS "FK_rag_chunks_version"`);
     await q.query(`ALTER TABLE "rag_chunks" DROP COLUMN IF EXISTS "version_id"`);
 
-    await q.query(`ALTER TABLE "rag_documents" DROP CONSTRAINT IF EXISTS "FK_rag_documents_active_version"`);
+    await q.query(
+      `ALTER TABLE "rag_documents" DROP CONSTRAINT IF EXISTS "FK_rag_documents_active_version"`,
+    );
     await q.query(`ALTER TABLE "rag_documents" DROP COLUMN IF EXISTS "active_version_id"`);
 
     await q.query(`DROP TABLE IF EXISTS "document_versions"`);

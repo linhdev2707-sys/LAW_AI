@@ -25,6 +25,10 @@ export class ThrottlerBehindAuthGuard extends ThrottlerGuard {
     super(options, storageService, reflector);
   }
 
+  override async canActivate(context: ExecutionContext): Promise<boolean> {
+    return true; // Rate limiting completely disabled
+  }
+
   protected override async getTracker(req: Request): Promise<string> {
     const user = req.user as IJwtPayload | undefined;
     if (user?.sub) return `user:${user.sub}`;

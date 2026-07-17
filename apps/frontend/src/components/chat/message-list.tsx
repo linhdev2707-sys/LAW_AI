@@ -31,7 +31,11 @@ export function MessageList({ messages, sources, loading }: MessageListProps) {
   }
 
   return (
-    <div ref={scrollRef} onScroll={onScroll} className="relative flex-1 overflow-y-auto bg-brand-background">
+    <div
+      ref={scrollRef}
+      onScroll={onScroll}
+      className="relative flex-1 overflow-y-auto bg-brand-background"
+    >
       {messages.length === 0 && !loading ? (
         <div className="flex h-full items-center justify-center px-4 py-20 text-center text-brand-on-surface-variant">
           <p>Bắt đầu cuộc trò chuyện bằng cách gửi tin nhắn bên dưới.</p>

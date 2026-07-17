@@ -14,7 +14,7 @@ export function DisclaimerSection() {
 
       <Container className="relative">
         <div className="mb-16 flex flex-col items-center text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-1.5 font-label text-label-md font-medium uppercase tracking-widest text-amber-600 dark:text-amber-400">
+          <div className="font-label mb-6 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-1.5 text-label-md font-medium uppercase tracking-widest text-amber-600 dark:text-amber-400">
             <MaterialIcon name="warning" className="text-[18px]" />
             Miễn trừ trách nhiệm
           </div>
@@ -26,9 +26,9 @@ export function DisclaimerSection() {
           </h2>
           <div className="beam-gradient h-1 w-24 rounded-full opacity-70" />
           <p className="mt-8 max-w-3xl font-body text-body-md leading-relaxed text-brand-on-surface-variant">
-            Trước khi sử dụng iLaw, vui lòng đọc kỹ các điều khoản miễn trừ trách nhiệm dưới
-            đây. Bằng việc tiếp tục truy cập và sử dụng dịch vụ, bạn xác nhận đã hiểu và đồng ý
-            với những giới hạn được nêu ra.
+            Trước khi sử dụng iLaw, vui lòng đọc kỹ các điều khoản miễn trừ trách nhiệm dưới đây.
+            Bằng việc tiếp tục truy cập và sử dụng dịch vụ, bạn xác nhận đã hiểu và đồng ý với những
+            giới hạn được nêu ra.
           </p>
         </div>
 

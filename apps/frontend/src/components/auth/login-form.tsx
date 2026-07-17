@@ -46,7 +46,7 @@ export function LoginForm() {
 
   return (
     <div className="relative w-full max-w-md">
-      <div className="relative max-h-[calc(100vh-9rem)] overflow-y-auto rounded-2xl border border-brand-tertiary/25 bg-brand-surface-container/80 p-6 shadow-2xl shadow-black/40 backdrop-blur-xl md:p-8 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+      <div className="relative max-h-[calc(100vh-9rem)] overflow-y-auto rounded-2xl border border-brand-tertiary/25 bg-brand-surface-container/80 p-6 shadow-2xl shadow-black/40 backdrop-blur-xl [scrollbar-width:none] md:p-8 [&::-webkit-scrollbar]:hidden">
         {/* Top accent line */}
         <div
           aria-hidden
@@ -54,10 +54,7 @@ export function LoginForm() {
         />
 
         {/* Brand */}
-        <Link
-          href="/"
-          className="mb-6 flex items-center gap-3 transition-opacity hover:opacity-80"
-        >
+        <Link href="/" className="mb-6 flex items-center gap-3 transition-opacity hover:opacity-80">
           <Image
             src="/logo.jpg"
             alt="iLaw"
@@ -170,7 +167,7 @@ export function LoginForm() {
           <Button
             type="submit"
             disabled={loading}
-            className="group h-11 w-full rounded-full bg-gradient-to-r from-brand-primary to-brand-tertiary font-label text-label-md font-semibold text-white shadow-lg shadow-brand-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-primary/50 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70"
+            className="font-label group h-11 w-full rounded-full bg-gradient-to-r from-brand-primary to-brand-tertiary text-label-md font-semibold text-white shadow-lg shadow-brand-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-primary/50 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {loading ? (
               <>

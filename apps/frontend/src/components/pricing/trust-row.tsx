@@ -35,7 +35,9 @@ function TrustCard({ item }: { item: PricingTrustItem }) {
 
   return (
     <div className="glass-card flex items-center gap-3 rounded-xl border border-brand-outline-variant/20 bg-brand-surface-container-low/40 p-4">
-      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tone.wrapper}`}>
+      <span
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tone.wrapper}`}
+      >
         <Icon className={`h-5 w-5 ${tone.icon}`} />
       </span>
       <div>

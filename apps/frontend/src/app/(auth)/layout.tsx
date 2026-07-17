@@ -25,10 +25,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           backgroundImage:
             'linear-gradient(rgba(0,229,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.6) 1px, transparent 1px)',
           backgroundSize: '56px 56px',
-          maskImage:
-            'radial-gradient(ellipse at center, black 30%, transparent 75%)',
-          WebkitMaskImage:
-            'radial-gradient(ellipse at center, black 30%, transparent 75%)',
+          maskImage: 'radial-gradient(ellipse at center, black 30%, transparent 75%)',
+          WebkitMaskImage: 'radial-gradient(ellipse at center, black 30%, transparent 75%)',
         }}
       />
 
@@ -43,7 +41,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[320px] w-[320px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-secondary/8 blur-[120px]"
+        className="bg-brand-secondary/8 pointer-events-none absolute left-1/2 top-1/2 h-[320px] w-[320px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]"
       />
 
       {/* Layer 4 — subtle noise to break up the gradient banding */}

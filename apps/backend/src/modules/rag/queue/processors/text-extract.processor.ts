@@ -37,7 +37,12 @@ export class TextExtractProcessor extends WorkerHost {
       bullmqJobId: job.id,
     });
 
-    await this.queueService.logStep(jobId, 'extract', ProcessingLogLevel.INFO, 'Bắt đầu trích xuất văn bản từ tài liệu.');
+    await this.queueService.logStep(
+      jobId,
+      'extract',
+      ProcessingLogLevel.INFO,
+      'Bắt đầu trích xuất văn bản từ tài liệu.',
+    );
 
     try {
       const doc = await this.docRepo.findOne({ where: { id: documentId } });

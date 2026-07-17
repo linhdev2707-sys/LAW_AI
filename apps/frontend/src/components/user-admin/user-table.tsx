@@ -47,17 +47,15 @@ export function UserTable({
                       {(u.fullName || u.email || '?').charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-medium text-brand-on-surface flex items-center gap-1.5">
+                      <p className="flex items-center gap-1.5 font-medium text-brand-on-surface">
                         {u.fullName}
                         {isSelf && (
-                          <span className="rounded bg-brand-primary/10 px-1.5 py-0.5 text-[10px] text-brand-primary font-semibold">
+                          <span className="rounded bg-brand-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-brand-primary">
                             Bạn
                           </span>
                         )}
                       </p>
-                      <p className="truncate text-xs text-brand-on-surface-variant">
-                        {u.email}
-                      </p>
+                      <p className="truncate text-xs text-brand-on-surface-variant">{u.email}</p>
                     </div>
                   </div>
                 </td>
@@ -78,9 +76,15 @@ export function UserTable({
                       disabled={isSelf}
                       className="rounded border border-brand-outline-variant/30 bg-transparent px-2 py-1 text-xs text-brand-on-surface focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-tertiary disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      <option value={UserRole.USER} className="bg-brand-surface-container">Người dùng</option>
-                      <option value={UserRole.LAWYER} className="bg-brand-surface-container">Luật sư</option>
-                      <option value={UserRole.ADMIN} className="bg-brand-surface-container">Quản trị viên</option>
+                      <option value={UserRole.USER} className="bg-brand-surface-container">
+                        Người dùng
+                      </option>
+                      <option value={UserRole.LAWYER} className="bg-brand-surface-container">
+                        Luật sư
+                      </option>
+                      <option value={UserRole.ADMIN} className="bg-brand-surface-container">
+                        Quản trị viên
+                      </option>
                     </select>
                   </div>
                 </td>

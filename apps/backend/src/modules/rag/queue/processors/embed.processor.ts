@@ -64,7 +64,9 @@ export class EmbedProcessor extends WorkerHost {
       // 2. Compute vectors
       const vectors = await this.embeddings.embedChunks(chunks as any);
       if (vectors.length !== chunks.length) {
-        throw new Error(`Kích thước danh sách vector không khớp: nhận được ${vectors.length} cho ${chunks.length} chunks.`);
+        throw new Error(
+          `Kích thước danh sách vector không khớp: nhận được ${vectors.length} cho ${chunks.length} chunks.`,
+        );
       }
 
       await this.queueService.logStep(

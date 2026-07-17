@@ -21,10 +21,7 @@ export const PLANS: PricingPlan[] = [
     price: '0',
     priceVal: 0,
     period: 'tháng',
-    features: [
-      'Trò chuyện với AI để giải đáp thắc mắc',
-      'Câu trả lời nhanh và dễ hiểu',
-    ],
+    features: ['Trò chuyện với AI để giải đáp thắc mắc', 'Câu trả lời nhanh và dễ hiểu'],
   },
   {
     id: 'basic',

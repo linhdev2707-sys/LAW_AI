@@ -21,8 +21,12 @@ export function MaterialIcon({ name, className, filled, ariaLabel }: MaterialIco
       className={cn('material-symbols-outlined leading-none', className)}
       style={
         filled
-          ? ({ fontVariationSettings: '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24' } as React.CSSProperties)
-          : ({ fontVariationSettings: '"FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24' } as React.CSSProperties)
+          ? ({
+              fontVariationSettings: '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24',
+            } as React.CSSProperties)
+          : ({
+              fontVariationSettings: '"FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24',
+            } as React.CSSProperties)
       }
     >
       {name}

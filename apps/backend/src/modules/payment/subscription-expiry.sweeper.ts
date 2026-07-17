@@ -24,9 +24,7 @@ import { User } from '../user/entities/user.entity';
 export class SubscriptionExpirySweeper {
   private readonly logger = new Logger(SubscriptionExpirySweeper.name);
 
-  constructor(
-    @InjectRepository(User) private readonly userRepo: Repository<User>,
-  ) {}
+  constructor(@InjectRepository(User) private readonly userRepo: Repository<User>) {}
 
   @Cron(CronExpression.EVERY_HOUR)
   async sweep(): Promise<void> {
@@ -42,18 +40,14 @@ export class SubscriptionExpirySweeper {
         { subscriptionPlan: 'free' },
       );
 
-      const changed = (result.affected ?? 0);
+      const changed = result.affected ?? 0;
       if (changed > 0) {
-        this.logger.log(
-          `Downgraded ${changed} expired subscription(s) to 'free'`,
-        );
+        this.logger.log(`Downgraded ${changed} expired subscription(s) to 'free'`);
       } else {
         this.logger.debug('Subscription expiry sweep: no expired users');
       }
     } catch (e) {
-      this.logger.error(
-        `Subscription expiry sweep failed: ${(e as Error).message}`,
-      );
+      this.logger.error(`Subscription expiry sweep failed: ${(e as Error).message}`);
     }
   }
 }

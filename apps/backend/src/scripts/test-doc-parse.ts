@@ -8,12 +8,12 @@ async function main() {
   if (data.length > 0) {
     const text = data[0].text;
     console.log('Original String length:', text.length);
-    
+
     // Convert to UTF-8 Buffer
     const buf = Buffer.from(text, 'utf8');
     console.log('UTF-8 Buffer length:', buf.length);
     console.log('First 16 bytes of buffer:', buf.subarray(0, 16).toString('hex'));
-    
+
     // Try to extract using WordExtractor
     try {
       const extractor = new WordExtractor();

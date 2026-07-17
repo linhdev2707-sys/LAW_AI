@@ -73,12 +73,7 @@ export function MessageBubble({ message, sources, loading }: MessageBubbleProps)
         </div>
 
         {/* Body (col 2) */}
-        <div
-          className={cn(
-            'min-w-0',
-            isUser ? 'order-2 flex flex-col items-end' : 'order-2',
-          )}
-        >
+        <div className={cn('min-w-0', isUser ? 'order-2 flex flex-col items-end' : 'order-2')}>
           {/* Mode + answer-source badge row — only for AI messages, shown after loading is complete */}
           {!isUser && !loading && message.mode && <ModeBadge mode={message.mode} />}
 
@@ -110,11 +105,11 @@ export function MessageBubble({ message, sources, loading }: MessageBubbleProps)
             <div
               className={cn(
                 'prose prose-invert max-w-none px-1 text-[15px] leading-7 text-brand-on-surface',
-                '[&_p]:my-3 [&_ul]:my-3 [&_ol]:my-3',
+                '[&_ol]:my-3 [&_p]:my-3 [&_ul]:my-3',
                 '[&_strong]:font-semibold [&_strong]:text-brand-tertiary',
                 '[&_code]:rounded [&_code]:bg-black/30 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-sm',
-                '[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5',
-                '[&_li]:my-1.5 [&_h1]:text-xl [&_h2]:text-lg [&_h3]:text-base',
+                '[&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5',
+                '[&_h1]:text-xl [&_h2]:text-lg [&_h3]:text-base [&_li]:my-1.5',
               )}
             >
               {renderContent(message.content)}
@@ -128,15 +123,17 @@ export function MessageBubble({ message, sources, loading }: MessageBubbleProps)
           )}
 
           {/* Sources row — only for AI messages, shown after loading is complete */}
-          {!isUser && !loading && sources && sources.length > 0 && (
-            <SourcesRow sources={sources} />
-          )}
+          {!isUser && !loading && sources && sources.length > 0 && <SourcesRow sources={sources} />}
 
           {/* Action row — only for AI messages */}
           {!isUser && (
-            <div className="flex items-center gap-1 pt-2.5 opacity-100 md:opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+            <div className="flex items-center gap-1 pt-2.5 opacity-100 transition-opacity focus-within:opacity-100 group-hover:opacity-100 md:opacity-0">
               <ActionButton onClick={handleCopy} label={copied ? 'Đã sao chép' : 'Sao chép'}>
-                {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? (
+                  <Check className="h-3.5 w-3.5 text-emerald-400" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
               </ActionButton>
               <ActionButton
                 onClick={() => setFeedback((f) => (f === 'up' ? null : 'up'))}
@@ -265,11 +262,7 @@ function ToolCallIndicator({
  * Only renders for assistant messages — the `message.answerSource` is
  * unset for user messages and for assistant messages still streaming.
  */
-function AnswerSourceBadge({
-  kind,
-}: {
-  kind: NonNullable<IMessage['answerSource']>;
-}) {
+function AnswerSourceBadge({ kind }: { kind: NonNullable<IMessage['answerSource']> }) {
   switch (kind) {
     case 'rag':
       return (

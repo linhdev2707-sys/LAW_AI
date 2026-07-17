@@ -42,9 +42,7 @@ export function useRateLimit() {
   const clear = useCallback(() => setBlockedUntil(null), []);
 
   const secondsRemaining =
-    blockedUntil == null
-      ? 0
-      : Math.max(0, Math.ceil((blockedUntil - now) / 1000));
+    blockedUntil == null ? 0 : Math.max(0, Math.ceil((blockedUntil - now) / 1000));
 
   return {
     blockedUntil,

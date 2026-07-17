@@ -2,11 +2,19 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { MessageCircle, X, Send, Sparkles, ArrowRight, Minus, AlertCircle, Maximize2 } from 'lucide-react';
+import {
+  MessageCircle,
+  X,
+  Send,
+  Sparkles,
+  ArrowRight,
+  Minus,
+  AlertCircle,
+  Maximize2,
+} from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { cn } from '@/lib/utils';
 import { streamInternalChatMessage, type InternalHistoryMessage } from '@/lib/internal-chat';
-
 
 interface Message {
   id: string;
@@ -229,8 +237,6 @@ export function FloatingChatbox() {
                     </div>
                   </div>
                 ))}
-
-
 
                 {error && (
                   <div className="flex items-start gap-2 rounded-lg border border-red-400/30 bg-red-500/10 p-2.5 text-xs text-red-200">
